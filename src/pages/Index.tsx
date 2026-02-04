@@ -1,12 +1,75 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import Header from "@/components/Header";
+import HeroSlider from "@/components/HeroSlider";
+import NewArrivals from "@/components/NewArrivals";
+import CategorySection from "@/components/CategorySection";
+import Footer from "@/components/Footer";
+import { useProducts, useFeaturedProducts } from "@/hooks/useProducts";
 
 const Index = () => {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+  const { data: products = [], isLoading: productsLoading } = useProducts();
+  const { data: featuredProducts = [], isLoading: featuredLoading } = useFeaturedProducts();
+
+  // Transform featured products into hero slides
+  const heroSlides = featuredProducts.map((product) => ({
+    id: product.id,
+    image: product.image_url || "https://images.unsplash.com/photo-1445205170230-053b83016050?w=1920&h=1080&fit=crop",
+    label: product.category || "Featured",
+    title: product.name,
+    description: product.description || "Discover our latest collection of premium fashion pieces.",
+    ctaText: "Shop Now",
+    ctaLink: "/",
+  }));
+
+  // Default slides if no featured products
+  const defaultSlides = [
+    {
+      id: "1",
+      image: "https://images.unsplash.com/photo-1445205170230-053b83016050?w=1920&h=1080&fit=crop",
+      label: "Spring Collection",
+      title: "Timeless Elegance",
+      description: "Discover our curated selection of contemporary pieces designed for the modern wardrobe.",
+      ctaText: "Shop Now",
+      ctaLink: "/",
+    },
+    {
+      id: "2",
+      image: "https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=1920&h=1080&fit=crop",
+      label: "New Arrivals",
+      title: "Refined Simplicity",
+      description: "Explore minimalist designs that speak to your personal style.",
+      ctaText: "Explore Collection",
+      ctaLink: "/",
+    },
+    {
+      id: "3",
+      image: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1920&h=1080&fit=crop",
+      label: "Limited Edition",
+      title: "Artisan Craft",
+      description: "Handcrafted pieces that blend tradition with modern aesthetics.",
+      ctaText: "Discover More",
+      ctaLink: "/",
+    },
+  ];
+
+  const slides = featuredProducts.length > 0 ? heroSlides : defaultSlides;
+
+  if (productsLoading || featuredLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent animate-spin" />
       </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen">
+      <Header />
+      <main>
+        <HeroSlider slides={slides} />
+        <NewArrivals products={products} />
+        <CategorySection />
+      </main>
+      <Footer />
     </div>
   );
 };
