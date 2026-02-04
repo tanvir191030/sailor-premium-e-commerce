@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -17,22 +17,57 @@ interface HeroSliderProps {
   slides: HeroSlide[];
 }
 
+// Preload images to prevent white flash
+const preloadImage = (src: string): Promise<void> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve();
+    img.onerror = () => resolve();
+    img.src = src;
+  });
+};
+
 const HeroSlider = ({ slides }: HeroSliderProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [direction, setDirection] = useState(0);
+  const [imagesLoaded, setImagesLoaded] = useState(false);
+  const preloadedRef = useRef<Set<string>>(new Set());
+
+  // Preload all images on mount
+  useEffect(() => {
+    const loadImages = async () => {
+      await Promise.all(slides.map((slide) => preloadImage(slide.image)));
+      setImagesLoaded(true);
+    };
+    if (slides.length > 0) {
+      loadImages();
+    }
+  }, [slides]);
+
+  // Preload adjacent images when index changes
+  useEffect(() => {
+    if (slides.length <= 1) return;
+    
+    const nextIndex = (currentIndex + 1) % slides.length;
+    const prevIndex = (currentIndex - 1 + slides.length) % slides.length;
+    
+    [nextIndex, prevIndex].forEach((idx) => {
+      const src = slides[idx].image;
+      if (!preloadedRef.current.has(src)) {
+        preloadImage(src);
+        preloadedRef.current.add(src);
+      }
+    });
+  }, [currentIndex, slides]);
 
   const nextSlide = useCallback(() => {
-    setDirection(1);
     setCurrentIndex((prev) => (prev + 1) % slides.length);
   }, [slides.length]);
 
   const prevSlide = () => {
-    setDirection(-1);
     setCurrentIndex((prev) => (prev - 1 + slides.length) % slides.length);
   };
 
   const goToSlide = (index: number) => {
-    setDirection(index > currentIndex ? 1 : -1);
     setCurrentIndex(index);
   };
 
@@ -50,20 +85,14 @@ const HeroSlider = ({ slides }: HeroSliderProps) => {
     );
   }
 
-  const slideVariants = {
-    enter: (direction: number) => ({
-      x: direction > 0 ? "100%" : "-100%",
-      opacity: 0,
-    }),
-    center: {
-      x: 0,
-      opacity: 1,
-    },
-    exit: (direction: number) => ({
-      x: direction > 0 ? "-100%" : "100%",
-      opacity: 0,
-    }),
-  };
+  // Show loading state until images are ready
+  if (!imagesLoaded) {
+    return (
+      <div className="h-screen bg-secondary flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent animate-spin" />
+      </div>
+    );
+  }
 
   const contentVariants = {
     hidden: { opacity: 0, y: 30 },
@@ -72,7 +101,15 @@ const HeroSlider = ({ slides }: HeroSliderProps) => {
       y: 0,
       transition: {
         duration: 0.6,
+        delay: 0.3,
         staggerChildren: 0.15,
+      },
+    },
+    exit: {
+      opacity: 0,
+      y: -20,
+      transition: {
+        duration: 0.3,
       },
     },
   };
@@ -83,59 +120,64 @@ const HeroSlider = ({ slides }: HeroSliderProps) => {
   };
 
   return (
-    <div className="relative h-screen w-full overflow-hidden">
-      <AnimatePresence initial={false} custom={direction} mode="wait">
-        <motion.div
-          key={currentIndex}
-          custom={direction}
-          variants={slideVariants}
-          initial="enter"
-          animate="center"
-          exit="exit"
-          transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}
-          className="absolute inset-0"
-        >
-          {/* Background Image */}
-          <div
+    <div className="relative h-screen w-full overflow-hidden bg-secondary">
+      {/* Background Images Layer - Crossfade */}
+      <div className="absolute inset-0">
+        {slides.map((slide, index) => (
+          <motion.div
+            key={slide.id}
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{ backgroundImage: `url(${slides[currentIndex].image})` }}
+            style={{ backgroundImage: `url(${slide.image})` }}
+            initial={false}
+            animate={{
+              opacity: index === currentIndex ? 1 : 0,
+              scale: index === currentIndex ? 1 : 1.05,
+            }}
+            transition={{
+              opacity: { duration: 1, ease: "easeInOut" },
+              scale: { duration: 6, ease: "linear" },
+            }}
           />
+        ))}
+      </div>
 
-          {/* Gradient Overlay */}
-          <div className="absolute inset-0 gradient-overlay-left" />
+      {/* Gradient Overlay - Always visible */}
+      <div className="absolute inset-0 gradient-overlay-left" />
 
-          {/* Content */}
-          <div className="relative h-full container mx-auto px-4 md:px-6 flex items-center">
-            <motion.div
-              variants={contentVariants}
-              initial="hidden"
-              animate="visible"
-              className="max-w-xl text-primary-foreground"
-            >
-              <motion.span variants={itemVariants} className="text-label text-primary-foreground/80 mb-4 block">
-                {slides[currentIndex].label}
-              </motion.span>
+      {/* Content Layer - Animated separately */}
+      <div className="relative h-full container mx-auto px-4 md:px-6 flex items-center">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentIndex}
+            variants={contentVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="max-w-xl text-primary-foreground"
+          >
+            <motion.span variants={itemVariants} className="text-label text-primary-foreground/80 mb-4 block">
+              {slides[currentIndex].label}
+            </motion.span>
 
-              <motion.h2 variants={itemVariants} className="heading-display text-primary-foreground mb-6">
-                {slides[currentIndex].title}
-              </motion.h2>
+            <motion.h2 variants={itemVariants} className="heading-display text-primary-foreground mb-6">
+              {slides[currentIndex].title}
+            </motion.h2>
 
-              <motion.p variants={itemVariants} className="text-lg md:text-xl font-light leading-relaxed mb-8 text-primary-foreground/90">
-                {slides[currentIndex].description}
-              </motion.p>
+            <motion.p variants={itemVariants} className="text-lg md:text-xl font-light leading-relaxed mb-8 text-primary-foreground/90">
+              {slides[currentIndex].description}
+            </motion.p>
 
-              <motion.div variants={itemVariants}>
-                <Link
-                  to={slides[currentIndex].ctaLink}
-                  className="inline-block bg-primary-foreground text-primary px-8 py-4 text-sm uppercase tracking-[0.15em] font-medium transition-all duration-300 hover:bg-primary-foreground/90"
-                >
-                  {slides[currentIndex].ctaText}
-                </Link>
-              </motion.div>
+            <motion.div variants={itemVariants}>
+              <Link
+                to={slides[currentIndex].ctaLink}
+                className="inline-block bg-primary-foreground text-primary px-8 py-4 text-sm uppercase tracking-[0.15em] font-medium transition-all duration-300 hover:bg-primary-foreground/90"
+              >
+                {slides[currentIndex].ctaText}
+              </Link>
             </motion.div>
-          </div>
-        </motion.div>
-      </AnimatePresence>
+          </motion.div>
+        </AnimatePresence>
+      </div>
 
       {/* Navigation Arrows */}
       {slides.length > 1 && (
