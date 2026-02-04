@@ -37,7 +37,7 @@ const ProductCard = ({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
-      className="product-card"
+      className="product-card group"
     >
       {/* Image Container */}
       <div className="product-image relative">
