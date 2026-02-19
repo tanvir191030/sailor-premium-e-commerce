@@ -4,11 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/lib/currency";
 import { Package, ShoppingCart, Clock, TrendingUp, AlertTriangle, Users, DollarSign } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
+import { useTheme } from "@/contexts/ThemeContext";
 
 type TimeRange = "daily" | "weekly" | "monthly";
 
 const AdminDashboard = () => {
   const [timeRange, setTimeRange] = useState<TimeRange>("weekly");
+  const { theme } = useTheme();
 
   const { data: products = [] } = useQuery({
     queryKey: ["admin-products"],
@@ -35,31 +37,21 @@ const AdminDashboard = () => {
   const deliveredOrders = orders.filter((o) => o.status === "delivered").length;
   const lowStockProducts = products.filter((p: any) => (p.stock ?? 0) < 5);
   const totalProducts = products.length;
-
-  // Unique customers count
   const uniqueCustomers = new Set(orders.map((o: any) => `${o.customer_name}-${o.phone}`)).size;
 
-  // Chart data based on time range
   const getChartData = () => {
     if (timeRange === "daily") {
-      return Array.from({ length: 24 }, (_, i) => {
-        const today = new Date();
-        today.setHours(i, 0, 0, 0);
-        const hour = i;
-        return {
-          label: `${hour}:00`,
-          orders: orders.filter((o) => {
-            const d = new Date(o.created_at!);
-            return d.toDateString() === new Date().toDateString() && d.getHours() === hour;
-          }).length,
-          revenue: orders
-            .filter((o) => {
-              const d = new Date(o.created_at!);
-              return d.toDateString() === new Date().toDateString() && d.getHours() === hour;
-            })
-            .reduce((s, o) => s + Number(o.total), 0),
-        };
-      });
+      return Array.from({ length: 24 }, (_, i) => ({
+        label: `${i}:00`,
+        orders: orders.filter((o) => {
+          const d = new Date(o.created_at!);
+          return d.toDateString() === new Date().toDateString() && d.getHours() === i;
+        }).length,
+        revenue: orders.filter((o) => {
+          const d = new Date(o.created_at!);
+          return d.toDateString() === new Date().toDateString() && d.getHours() === i;
+        }).reduce((s, o) => s + Number(o.total), 0),
+      }));
     } else if (timeRange === "weekly") {
       return Array.from({ length: 7 }, (_, i) => {
         const d = new Date();
@@ -86,8 +78,12 @@ const AdminDashboard = () => {
   };
 
   const chartData = getChartData();
+  const isDark = theme === "dark";
+  const gridColor = isDark ? "hsl(0,0%,25%)" : "hsl(0,0%,92%)";
+  const tickColor = isDark ? "hsl(0,0%,60%)" : "hsl(0,0%,40%)";
+  const tooltipBg = isDark ? "hsl(0,0%,15%)" : "#fff";
+  const tooltipBorder = isDark ? "hsl(0,0%,25%)" : "hsl(0,0%,90%)";
 
-  // Order status pie chart
   const statusData = [
     { name: "Pending", value: pendingOrders, color: "#f59e0b" },
     { name: "Processing", value: processingOrders, color: "#3b82f6" },
@@ -96,50 +92,38 @@ const AdminDashboard = () => {
   ].filter((d) => d.value > 0);
 
   const stats = [
-    { label: "মোট আয়", value: formatPrice(totalRevenue), icon: TrendingUp, bg: "bg-emerald-50", color: "text-emerald-600" },
-    { label: "মোট অর্ডার", value: orders.length, icon: ShoppingCart, bg: "bg-blue-50", color: "text-blue-600" },
-    { label: "পেন্ডিং অর্ডার", value: pendingOrders, icon: Clock, bg: "bg-amber-50", color: "text-amber-600" },
-    { label: "ডেলিভারড", value: deliveredOrders, icon: Package, bg: "bg-emerald-50", color: "text-emerald-600" },
-    { label: "কাস্টমার", value: uniqueCustomers, icon: Users, bg: "bg-purple-50", color: "text-purple-600" },
-    { label: "মোট প্রোডাক্ট", value: totalProducts, icon: DollarSign, bg: "bg-pink-50", color: "text-pink-600" },
+    { label: "মোট আয়", value: formatPrice(totalRevenue), icon: TrendingUp, bg: "bg-emerald-500/10", color: "text-emerald-500" },
+    { label: "মোট অর্ডার", value: orders.length, icon: ShoppingCart, bg: "bg-blue-500/10", color: "text-blue-500" },
+    { label: "পেন্ডিং অর্ডার", value: pendingOrders, icon: Clock, bg: "bg-amber-500/10", color: "text-amber-500" },
+    { label: "ডেলিভারড", value: deliveredOrders, icon: Package, bg: "bg-emerald-500/10", color: "text-emerald-500" },
+    { label: "কাস্টমার", value: uniqueCustomers, icon: Users, bg: "bg-purple-500/10", color: "text-purple-500" },
+    { label: "মোট প্রোডাক্ট", value: totalProducts, icon: DollarSign, bg: "bg-pink-500/10", color: "text-pink-500" },
   ];
 
-  const timeLabels: Record<TimeRange, string> = {
-    daily: "আজকের",
-    weekly: "সাপ্তাহিক",
-    monthly: "মাসিক",
-  };
+  const timeLabels: Record<TimeRange, string> = { daily: "আজকের", weekly: "সাপ্তাহিক", monthly: "মাসিক" };
 
   return (
     <div className="space-y-6">
-      {/* Stats Grid */}
+      {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {stats.map((s) => (
-          <div key={s.label} className="bg-white p-4 rounded-xl shadow-sm border border-[hsl(0,0%,92%)]">
-            <div className="flex items-center gap-2 mb-2">
-              <div className={`p-2 rounded-lg ${s.bg}`}>
-                <s.icon size={16} className={s.color} />
-              </div>
+          <div key={s.label} className="bg-card p-4 rounded-xl shadow-sm border border-border">
+            <div className={`p-2 rounded-lg ${s.bg} w-fit mb-2`}>
+              <s.icon size={16} className={s.color} />
             </div>
-            <p className="text-xl font-bold text-[hsl(0,0%,10%)]">{s.value}</p>
-            <p className="text-[11px] text-[hsl(0,0%,50%)] mt-0.5">{s.label}</p>
+            <p className="text-xl font-bold text-foreground">{s.value}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{s.label}</p>
           </div>
         ))}
       </div>
 
-      {/* Time Range Selector + Revenue Chart */}
-      <div className="bg-white p-5 rounded-xl shadow-sm border border-[hsl(0,0%,92%)]">
+      {/* Revenue Chart */}
+      <div className="bg-card p-5 rounded-xl shadow-sm border border-border">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-serif text-base">সেলস ওভারভিউ ({timeLabels[timeRange]})</h3>
-          <div className="flex gap-1 bg-[hsl(0,0%,95%)] p-1 rounded-lg">
+          <h3 className="font-serif text-base text-foreground">সেলস ওভারভিউ ({timeLabels[timeRange]})</h3>
+          <div className="flex gap-1 bg-secondary p-1 rounded-lg">
             {(["daily", "weekly", "monthly"] as TimeRange[]).map((t) => (
-              <button
-                key={t}
-                onClick={() => setTimeRange(t)}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                  timeRange === t ? "bg-white text-foreground shadow-sm" : "text-[hsl(0,0%,50%)] hover:text-foreground"
-                }`}
-              >
+              <button key={t} onClick={() => setTimeRange(t)} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${timeRange === t ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
                 {t === "daily" ? "দৈনিক" : t === "weekly" ? "সাপ্তাহিক" : "মাসিক"}
               </button>
             ))}
@@ -148,16 +132,11 @@ const AdminDashboard = () => {
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,92%)" />
-              <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip
-                contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid hsl(0,0%,90%)" }}
-                formatter={(value: number, name: string) =>
-                  name === "revenue" ? [formatPrice(value), "আয়"] : [value, "অর্ডার"]
-                }
-              />
-              <Bar dataKey="revenue" fill="hsl(160,84%,20%)" radius={[4, 4, 0, 0]} name="revenue" />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+              <XAxis dataKey="label" tick={{ fontSize: 11, fill: tickColor }} />
+              <YAxis tick={{ fontSize: 11, fill: tickColor }} />
+              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${tooltipBorder}`, backgroundColor: tooltipBg, color: isDark ? "#e5e5e5" : "#333" }} formatter={(value: number, name: string) => name === "revenue" ? [formatPrice(value), "আয়"] : [value, "অর্ডার"]} />
+              <Bar dataKey="revenue" fill="hsl(160,84%,30%)" radius={[4, 4, 0, 0]} name="revenue" />
               <Bar dataKey="orders" fill="hsl(210,80%,55%)" radius={[4, 4, 0, 0]} name="orders" />
             </BarChart>
           </ResponsiveContainer>
@@ -165,20 +144,18 @@ const AdminDashboard = () => {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Order Status Pie */}
-        <div className="bg-white p-5 rounded-xl shadow-sm border border-[hsl(0,0%,92%)]">
-          <h3 className="font-serif text-base mb-4">অর্ডার স্ট্যাটাস</h3>
+        {/* Pie */}
+        <div className="bg-card p-5 rounded-xl shadow-sm border border-border">
+          <h3 className="font-serif text-base mb-4 text-foreground">অর্ডার স্ট্যাটাস</h3>
           {statusData.length > 0 ? (
             <div className="flex items-center gap-6">
               <div className="h-48 w-48 flex-shrink-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie data={statusData} cx="50%" cy="50%" innerRadius={40} outerRadius={70} dataKey="value" stroke="none">
-                      {statusData.map((entry, i) => (
-                        <Cell key={i} fill={entry.color} />
-                      ))}
+                      {statusData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                     </Pie>
-                    <Tooltip formatter={(value: number) => [value, "অর্ডার"]} />
+                    <Tooltip contentStyle={{ backgroundColor: tooltipBg, border: `1px solid ${tooltipBorder}`, color: isDark ? "#e5e5e5" : "#333", borderRadius: 8, fontSize: 12 }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -186,28 +163,28 @@ const AdminDashboard = () => {
                 {statusData.map((s) => (
                   <div key={s.name} className="flex items-center gap-2 text-sm">
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: s.color }} />
-                    <span className="text-[hsl(0,0%,40%)]">{s.name}</span>
-                    <span className="font-semibold ml-auto">{s.value}</span>
+                    <span className="text-muted-foreground">{s.name}</span>
+                    <span className="font-semibold ml-auto text-foreground">{s.value}</span>
                   </div>
                 ))}
               </div>
             </div>
           ) : (
-            <p className="text-sm text-[hsl(0,0%,50%)] text-center py-8">কোনো অর্ডার নেই</p>
+            <p className="text-sm text-muted-foreground text-center py-8">কোনো অর্ডার নেই</p>
           )}
         </div>
 
-        {/* Revenue Trend Line */}
-        <div className="bg-white p-5 rounded-xl shadow-sm border border-[hsl(0,0%,92%)]">
-          <h3 className="font-serif text-base mb-4">আয়ের ট্রেন্ড</h3>
+        {/* Line */}
+        <div className="bg-card p-5 rounded-xl shadow-sm border border-border">
+          <h3 className="font-serif text-base mb-4 text-foreground">আয়ের ট্রেন্ড</h3>
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,92%)" />
-                <XAxis dataKey="label" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 10 }} />
-                <Tooltip formatter={(value: number) => [formatPrice(value), "আয়"]} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                <Line type="monotone" dataKey="revenue" stroke="hsl(160,84%,20%)" strokeWidth={2} dot={{ r: 3 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+                <XAxis dataKey="label" tick={{ fontSize: 10, fill: tickColor }} />
+                <YAxis tick={{ fontSize: 10, fill: tickColor }} />
+                <Tooltip formatter={(value: number) => [formatPrice(value), "আয়"]} contentStyle={{ fontSize: 12, borderRadius: 8, backgroundColor: tooltipBg, border: `1px solid ${tooltipBorder}`, color: isDark ? "#e5e5e5" : "#333" }} />
+                <Line type="monotone" dataKey="revenue" stroke="hsl(160,84%,30%)" strokeWidth={2} dot={{ r: 3 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -215,56 +192,52 @@ const AdminDashboard = () => {
       </div>
 
       {/* Recent Orders */}
-      <div className="bg-white p-5 rounded-xl shadow-sm border border-[hsl(0,0%,92%)]">
-        <h3 className="font-serif text-base mb-4">সাম্প্রতিক অর্ডার</h3>
+      <div className="bg-card p-5 rounded-xl shadow-sm border border-border">
+        <h3 className="font-serif text-base mb-4 text-foreground">সাম্প্রতিক অর্ডার</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[hsl(0,0%,92%)]">
-                <th className="text-left py-2 px-3 text-[hsl(0,0%,50%)] font-medium text-xs">অর্ডার</th>
-                <th className="text-left py-2 px-3 text-[hsl(0,0%,50%)] font-medium text-xs">কাস্টমার</th>
-                <th className="text-left py-2 px-3 text-[hsl(0,0%,50%)] font-medium text-xs">স্ট্যাটাস</th>
-                <th className="text-right py-2 px-3 text-[hsl(0,0%,50%)] font-medium text-xs">মোট</th>
+              <tr className="border-b border-border">
+                <th className="text-left py-2 px-3 text-muted-foreground font-medium text-xs">অর্ডার</th>
+                <th className="text-left py-2 px-3 text-muted-foreground font-medium text-xs">কাস্টমার</th>
+                <th className="text-left py-2 px-3 text-muted-foreground font-medium text-xs">স্ট্যাটাস</th>
+                <th className="text-right py-2 px-3 text-muted-foreground font-medium text-xs">মোট</th>
               </tr>
             </thead>
             <tbody>
               {orders.slice(0, 5).map((o: any) => (
-                <tr key={o.id} className="border-b border-[hsl(0,0%,96%)]">
-                  <td className="py-2.5 px-3 font-mono text-xs">#{o.id.slice(0, 8)}</td>
-                  <td className="py-2.5 px-3">{o.customer_name}</td>
+                <tr key={o.id} className="border-b border-border/50">
+                  <td className="py-2.5 px-3 font-mono text-xs text-foreground">#{o.id.slice(0, 8)}</td>
+                  <td className="py-2.5 px-3 text-foreground">{o.customer_name}</td>
                   <td className="py-2.5 px-3">
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium capitalize ${
-                      o.status === "delivered" ? "bg-emerald-50 text-emerald-700" :
-                      o.status === "shipped" ? "bg-purple-50 text-purple-700" :
-                      o.status === "processing" ? "bg-blue-50 text-blue-700" :
-                      "bg-amber-50 text-amber-700"
-                    }`}>
-                      {o.status || "pending"}
-                    </span>
+                      o.status === "delivered" ? "bg-emerald-500/10 text-emerald-500" :
+                      o.status === "shipped" ? "bg-purple-500/10 text-purple-500" :
+                      o.status === "processing" ? "bg-blue-500/10 text-blue-500" :
+                      "bg-amber-500/10 text-amber-500"
+                    }`}>{o.status || "pending"}</span>
                   </td>
-                  <td className="py-2.5 px-3 text-right font-medium">{formatPrice(o.total)}</td>
+                  <td className="py-2.5 px-3 text-right font-medium text-foreground">{formatPrice(o.total)}</td>
                 </tr>
               ))}
-              {orders.length === 0 && (
-                <tr><td colSpan={4} className="py-8 text-center text-[hsl(0,0%,60%)]">কোনো অর্ডার নেই</td></tr>
-              )}
+              {orders.length === 0 && <tr><td colSpan={4} className="py-8 text-center text-muted-foreground">কোনো অর্ডার নেই</td></tr>}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Low Stock Alert */}
+      {/* Low Stock */}
       {lowStockProducts.length > 0 && (
-        <div className="bg-white p-5 rounded-xl shadow-sm border-l-4 border-amber-400">
+        <div className="bg-card p-5 rounded-xl shadow-sm border-l-4 border-amber-400">
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle size={18} className="text-amber-500" />
-            <h3 className="font-medium text-sm">স্টক অ্যালার্ট — কম স্টক</h3>
+            <h3 className="font-medium text-sm text-foreground">স্টক অ্যালার্ট — কম স্টক</h3>
           </div>
           <div className="space-y-2">
             {lowStockProducts.map((p: any) => (
-              <div key={p.id} className="flex justify-between text-sm p-2 bg-amber-50/50 rounded-lg">
-                <span>{p.name}</span>
-                <span className="text-amber-600 font-semibold">{p.stock} টি বাকি</span>
+              <div key={p.id} className="flex justify-between text-sm p-2 bg-amber-500/10 rounded-lg">
+                <span className="text-foreground">{p.name}</span>
+                <span className="text-amber-500 font-semibold">{p.stock} টি বাকি</span>
               </div>
             ))}
           </div>

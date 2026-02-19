@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Heart, ShoppingBag, Menu, X } from "lucide-react";
+import { Search, Heart, ShoppingBag, Menu, X, Moon, Sun } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useProducts } from "@/hooks/useProducts";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useCart } from "@/contexts/CartContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -17,6 +18,7 @@ const Header = () => {
   const { data: products = [] } = useProducts();
   const { count: wishlistCount } = useWishlist();
   const { totalItems, setIsOpen: setCartOpen } = useCart();
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
@@ -190,6 +192,21 @@ const Header = () => {
                   )}
                 </AnimatePresence>
               </div>
+
+              <button
+                className="p-2 hover:opacity-70 transition-opacity"
+                aria-label="Toggle theme"
+                onClick={toggleTheme}
+              >
+                <motion.div
+                  key={theme}
+                  initial={{ rotate: -90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+                </motion.div>
+              </button>
 
               <button
                 className="p-2 hover:opacity-70 transition-opacity relative"
