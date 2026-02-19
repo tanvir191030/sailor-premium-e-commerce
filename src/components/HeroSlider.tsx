@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import AnimatedCtaButton from "./AnimatedCtaButton";
 
 interface HeroSlide {
   id: string;
@@ -168,12 +169,12 @@ const HeroSlider = ({ slides }: HeroSliderProps) => {
             </motion.p>
 
             <motion.div variants={itemVariants}>
-              <Link
+              <AnimatedCtaButton
                 to={slides[currentIndex].ctaLink}
-                className="inline-block bg-primary-foreground text-primary px-8 py-4 text-sm uppercase tracking-[0.15em] font-medium transition-all duration-300 hover:bg-primary-foreground/90"
+                className="bg-primary-foreground text-primary px-8 py-4 text-sm uppercase tracking-[0.15em] font-medium hover:bg-primary-foreground/90"
               >
                 {slides[currentIndex].ctaText}
-              </Link>
+              </AnimatedCtaButton>
             </motion.div>
           </motion.div>
         </AnimatePresence>
