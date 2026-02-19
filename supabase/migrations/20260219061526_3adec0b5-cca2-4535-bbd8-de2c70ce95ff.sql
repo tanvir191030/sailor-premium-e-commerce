@@ -1,0 +1,7 @@
+INSERT INTO products (name, description, price, category, is_featured, image_url) VALUES
+  ('Charcoal Tailored Suit', 'Impeccably crafted slim-fit suit in premium Italian wool. A modern essential for the discerning gentleman.', 895, 'Men', true, 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800&h=1200&fit=crop'),
+  ('Navy Linen Blazer', 'Relaxed yet refined linen blazer in deep navy. Perfect for warm-weather sophistication.', 425, 'Men', false, 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=1200&fit=crop'),
+  ('Silk Evening Gown', 'Flowing silk gown with a draped neckline and subtle shimmer. Effortless elegance for special occasions.', 1250, 'Women', true, 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=800&h=1200&fit=crop'),
+  ('Cashmere Wrap Coat', 'Luxurious double-faced cashmere coat with a belted waist. Timeless warmth meets contemporary design.', 980, 'Women', false, 'https://images.unsplash.com/photo-1539533113208-f6df8cc8b543?w=800&h=1200&fit=crop'),
+  ('Classic Denim Jacket', 'Durable yet soft denim jacket with a relaxed fit. A playful staple for everyday adventures.', 185, 'Kids', true, 'https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?w=800&h=1200&fit=crop'),
+  ('Cotton Stripe Polo', 'Breathable organic cotton polo with classic stripes. Smart-casual comfort for active kids.', 95, 'Kids', false, 'https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?w=800&h=1200&fit=crop');
