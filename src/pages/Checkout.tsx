@@ -40,18 +40,21 @@ const Checkout = () => {
 
   // Fetch delivery charges from settings
   const { data: deliverySettings } = useQuery({
-    queryKey: ["delivery-charges"],
+    queryKey: ["checkout-settings"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("site_settings")
         .select("key, value")
-        .in("key", ["delivery_inside_dhaka", "delivery_outside_dhaka"]);
+        .in("key", ["delivery_inside_dhaka", "delivery_outside_dhaka", "bkash_number", "nagad_number", "rocket_number"]);
       if (error) throw error;
-      const map: Record<string, number> = {};
-      data?.forEach((s) => { map[s.key] = Number(s.value) || 0; });
+      const map: Record<string, string> = {};
+      data?.forEach((s) => { map[s.key] = s.value || ""; });
       return {
-        inside_dhaka: map["delivery_inside_dhaka"] ?? 80,
-        outside_dhaka: map["delivery_outside_dhaka"] ?? 130,
+        inside_dhaka: Number(map["delivery_inside_dhaka"]) || 80,
+        outside_dhaka: Number(map["delivery_outside_dhaka"]) || 130,
+        bkash_number: map["bkash_number"] || "",
+        nagad_number: map["nagad_number"] || "",
+        rocket_number: map["rocket_number"] || "",
       };
     },
   });
@@ -272,25 +275,34 @@ const Checkout = () => {
                         ))}
                       </div>
 
-                      {paymentMethod !== "cod" && (
-                        <div className="mt-3 p-3 bg-secondary/50 rounded-xl border border-border space-y-2">
-                          <p className="text-xs text-muted-foreground">
-                            নিচের নম্বরে <strong className="text-foreground">{formatPrice(grandTotal)}</strong> Send Money করুন:
-                          </p>
-                          <p className="text-sm font-mono font-bold text-foreground">01XXXXXXXXX (Personal)</p>
-                          <div>
-                            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">ট্রানজেকশন আইডি *</label>
-                            <input
-                              value={transactionId}
-                              onChange={(e) => setTransactionId(e.target.value.replace(/\s/g, "").slice(0, 30))}
-                              placeholder="যেমন: TXN123ABC456"
-                              className={inputCls}
-                              required
-                              maxLength={30}
-                            />
+                      {paymentMethod !== "cod" && (() => {
+                        const numberMap: Record<string, string> = {
+                          bkash: deliverySettings?.bkash_number || "",
+                          nagad: deliverySettings?.nagad_number || "",
+                          rocket: deliverySettings?.rocket_number || "",
+                        };
+                        const displayNumber = numberMap[paymentMethod] || "নম্বর সেট করা হয়নি";
+                        const methodLabel = paymentMethod === "bkash" ? "bKash" : paymentMethod === "nagad" ? "Nagad" : "Rocket";
+                        return (
+                          <div className="mt-3 p-3 bg-secondary/50 rounded-xl border border-border space-y-2">
+                            <p className="text-xs text-muted-foreground">
+                              নিচের {methodLabel} নম্বরে <strong className="text-foreground">{formatPrice(grandTotal)}</strong> Send Money করুন:
+                            </p>
+                            <p className="text-sm font-mono font-bold text-foreground">{displayNumber} (Personal)</p>
+                            <div>
+                              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">ট্রানজেকশন আইডি *</label>
+                              <input
+                                value={transactionId}
+                                onChange={(e) => setTransactionId(e.target.value.replace(/\s/g, "").slice(0, 30))}
+                                placeholder="যেমন: TXN123ABC456"
+                                className={inputCls}
+                                required
+                                maxLength={30}
+                              />
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        );
+                      })()}
                     </div>
 
                     <button type="submit" disabled={submitting || items.length === 0} className="w-full py-3.5 bg-primary text-primary-foreground rounded-full text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50">

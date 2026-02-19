@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/lib/currency";
-import { Download, Save, Globe, Share2, Truck } from "lucide-react";
+import { Download, Save, Globe, Share2, Truck, Smartphone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const AdminSettings = () => {
@@ -22,6 +22,9 @@ const AdminSettings = () => {
   const [contactEmail, setContactEmail] = useState("");
   const [insideDhaka, setInsideDhaka] = useState("80");
   const [outsideDhaka, setOutsideDhaka] = useState("130");
+  const [bkashNumber, setBkashNumber] = useState("");
+  const [nagadNumber, setNagadNumber] = useState("");
+  const [rocketNumber, setRocketNumber] = useState("");
   const [loaded, setLoaded] = useState(false);
 
   if (settings.length > 0 && !loaded) {
@@ -30,6 +33,9 @@ const AdminSettings = () => {
     setContactEmail(getSetting("contact_email") || "");
     setInsideDhaka(getSetting("delivery_inside_dhaka") || "80");
     setOutsideDhaka(getSetting("delivery_outside_dhaka") || "130");
+    setBkashNumber(getSetting("bkash_number") || "");
+    setNagadNumber(getSetting("nagad_number") || "");
+    setRocketNumber(getSetting("rocket_number") || "");
     setLoaded(true);
   }
 
@@ -48,6 +54,9 @@ const AdminSettings = () => {
     saveSetting.mutate({ key: "contact_email", value: contactEmail });
     saveSetting.mutate({ key: "delivery_inside_dhaka", value: insideDhaka });
     saveSetting.mutate({ key: "delivery_outside_dhaka", value: outsideDhaka });
+    saveSetting.mutate({ key: "bkash_number", value: bkashNumber });
+    saveSetting.mutate({ key: "nagad_number", value: nagadNumber });
+    saveSetting.mutate({ key: "rocket_number", value: rocketNumber });
     toast({ title: "সেটিংস সেভ হয়েছে" });
   };
 
@@ -96,6 +105,17 @@ const AdminSettings = () => {
           </div>
         </div>
         <p className="text-xs text-muted-foreground mt-3">এই চার্জ চেকআউট পেজে স্বয়ংক্রিয়ভাবে প্রয়োগ হবে।</p>
+      </div>
+
+      {/* Payment Numbers */}
+      <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
+        <div className="flex items-center gap-2 mb-4"><Smartphone size={18} className="text-muted-foreground" /><h3 className="font-serif text-base text-foreground">পেমেন্ট নম্বর</h3></div>
+        <div className="space-y-3 max-w-lg">
+          <div><label className="text-xs text-muted-foreground mb-1 block">bKash নম্বর</label><input value={bkashNumber} onChange={(e) => setBkashNumber(e.target.value)} placeholder="01XXXXXXXXX" className={inputCls} maxLength={15} /></div>
+          <div><label className="text-xs text-muted-foreground mb-1 block">Nagad নম্বর</label><input value={nagadNumber} onChange={(e) => setNagadNumber(e.target.value)} placeholder="01XXXXXXXXX" className={inputCls} maxLength={15} /></div>
+          <div><label className="text-xs text-muted-foreground mb-1 block">Rocket নম্বর</label><input value={rocketNumber} onChange={(e) => setRocketNumber(e.target.value)} placeholder="01XXXXXXXXX" className={inputCls} maxLength={15} /></div>
+        </div>
+        <p className="text-xs text-muted-foreground mt-3">কাস্টমার চেকআউটে এই নম্বরগুলো দেখবে।</p>
       </div>
 
       <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
