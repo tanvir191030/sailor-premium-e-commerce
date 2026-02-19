@@ -281,14 +281,17 @@ const Checkout = () => {
                           nagad: deliverySettings?.nagad_number || "",
                           rocket: deliverySettings?.rocket_number || "",
                         };
-                        const displayNumber = numberMap[paymentMethod] || "নম্বর সেট করা হয়নি";
+                        const displayNumber = numberMap[paymentMethod];
                         const methodLabel = paymentMethod === "bkash" ? "bKash" : paymentMethod === "nagad" ? "Nagad" : "Rocket";
                         return (
                           <div className="mt-3 p-3 bg-secondary/50 rounded-xl border border-border space-y-2">
                             <p className="text-xs text-muted-foreground">
                               নিচের {methodLabel} নম্বরে <strong className="text-foreground">{formatPrice(grandTotal)}</strong> Send Money করুন:
                             </p>
-                            <p className="text-sm font-mono font-bold text-foreground">{displayNumber} (Personal)</p>
+                            <p className="text-sm font-mono font-bold text-foreground">
+                              {displayNumber || <span className="text-destructive text-xs font-sans">নম্বর সেট করা হয়নি (Admin Settings এ দিন)</span>}
+                              {displayNumber && " (Personal)"}
+                            </p>
                             <div>
                               <label className="text-xs font-medium text-muted-foreground mb-1.5 block">ট্রানজেকশন আইডি *</label>
                               <input
