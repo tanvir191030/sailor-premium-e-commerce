@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
+import PageTransition from "@/components/PageTransition";
 import { useProducts } from "@/hooks/useProducts";
 
 const Category = () => {
@@ -27,6 +28,7 @@ const Category = () => {
   }
 
   return (
+    <PageTransition>
     <div className="min-h-screen">
       <Header />
       <main>
@@ -53,15 +55,21 @@ const Category = () => {
             {filtered.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                 {filtered.map((product, index) => (
-                  <ProductCard
+                  <motion.div
                     key={product.id}
-                    id={product.id}
-                    name={product.name}
-                    price={product.price}
-                    image={product.image_url || "/placeholder.svg"}
-                    category={product.category || undefined}
-                    isNew={index < 4}
-                  />
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: index * 0.08 }}
+                  >
+                    <ProductCard
+                      id={product.id}
+                      name={product.name}
+                      price={product.price}
+                      image={product.image_url || "/placeholder.svg"}
+                      category={product.category || undefined}
+                      isNew={index < 4}
+                    />
+                  </motion.div>
                 ))}
               </div>
             ) : (
@@ -82,6 +90,7 @@ const Category = () => {
       </main>
       <Footer />
     </div>
+    </PageTransition>
   );
 };
 

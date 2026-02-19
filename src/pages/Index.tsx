@@ -3,6 +3,7 @@ import HeroSlider from "@/components/HeroSlider";
 import NewArrivals from "@/components/NewArrivals";
 import CategorySection from "@/components/CategorySection";
 import Footer from "@/components/Footer";
+import PageTransition from "@/components/PageTransition";
 import { useProducts, useFeaturedProducts } from "@/hooks/useProducts";
 
 const Index = () => {
@@ -62,15 +63,17 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen">
-      <Header />
-      <main>
-        <HeroSlider slides={slides} />
-        <NewArrivals products={products} />
-        <CategorySection />
-      </main>
-      <Footer />
-    </div>
+    <PageTransition>
+      <div className="min-h-screen">
+        <Header />
+        <main>
+          <HeroSlider slides={slides} />
+          <NewArrivals products={products} />
+          <CategorySection />
+        </main>
+        <Footer />
+      </div>
+    </PageTransition>
   );
 };
 

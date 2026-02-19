@@ -47,15 +47,22 @@ const NewArrivals = ({ products }: NewArrivalsProps) => {
         {/* Product Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           {newProducts.map((product, index) => (
-            <ProductCard
+            <motion.div
               key={product.id}
-              id={product.id}
-              name={product.name}
-              price={product.price}
-              image={product.image_url || "/placeholder.svg"}
-              category={product.category || undefined}
-              isNew={index < 4}
-            />
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.4, delay: index * 0.08 }}
+            >
+              <ProductCard
+                id={product.id}
+                name={product.name}
+                price={product.price}
+                image={product.image_url || "/placeholder.svg"}
+                category={product.category || undefined}
+                isNew={index < 4}
+              />
+            </motion.div>
           ))}
         </div>
 
