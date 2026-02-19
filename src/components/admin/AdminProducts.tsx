@@ -12,7 +12,8 @@ const AdminProducts = () => {
   const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const [form, setForm] = useState({ name: "", price: "", category: "", brand: "", stock: "", description: "", is_featured: false });
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -46,18 +47,28 @@ const AdminProducts = () => {
   const saveMutation = useMutation({
     mutationFn: async () => {
       let image_url = undefined;
-      if (imageFile) image_url = await uploadProductImage(imageFile);
+      // Upload first image as main product image
+      if (imageFiles.length > 0) image_url = await uploadProductImage(imageFiles[0]);
       const payload: any = {
         name: form.name, price: parseFloat(form.price), category: form.category || null,
         brand: form.brand || null, stock: parseInt(form.stock) || 0, description: form.description || null,
         is_featured: form.is_featured, ...(image_url && { image_url }),
       };
+      let productId = editingId;
       if (editingId) {
         const { error } = await supabase.from("products").update(payload).eq("id", editingId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("products").insert(payload);
+        const { data, error } = await supabase.from("products").insert(payload).select("id").single();
         if (error) throw error;
+        productId = data.id;
+      }
+      // Upload additional images to product_images table
+      if (imageFiles.length > 1 && productId) {
+        for (let i = 1; i < imageFiles.length; i++) {
+          const url = await uploadProductImage(imageFiles[i]);
+          await supabase.from("product_images").insert({ product_id: productId, image_url: url, sort_order: i, is_primary: false });
+        }
       }
     },
     onSuccess: () => {
@@ -110,8 +121,8 @@ const AdminProducts = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["brands"] }),
   });
 
-  const resetForm = () => { setForm({ name: "", price: "", category: "", brand: "", stock: "", description: "", is_featured: false }); setImageFile(null); setEditingId(null); setShowForm(false); };
-  const startEdit = (p: any) => { setForm({ name: p.name, price: String(p.price), category: p.category || "", brand: p.brand || "", stock: String(p.stock ?? 0), description: p.description || "", is_featured: p.is_featured || false }); setEditingId(p.id); setShowForm(true); };
+  const resetForm = () => { setForm({ name: "", price: "", category: "", brand: "", stock: "", description: "", is_featured: false }); setImageFiles([]); setImagePreviews([]); setEditingId(null); setShowForm(false); };
+  const startEdit = (p: any) => { setForm({ name: p.name, price: String(p.price), category: p.category || "", brand: p.brand || "", stock: String(p.stock ?? 0), description: p.description || "", is_featured: p.is_featured || false }); setEditingId(p.id); setImageFiles([]); setImagePreviews([]); setShowForm(true); };
   const filtered = products.filter((p: any) => p.name.toLowerCase().includes(search.toLowerCase()) || (p.category || "").toLowerCase().includes(search.toLowerCase()));
   const [newCategory, setNewCategory] = useState("");
   const [newBrand, setNewBrand] = useState("");
@@ -177,7 +188,30 @@ const AdminProducts = () => {
                 </select>
               </div>
               <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Description" rows={3} className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none resize-none bg-transparent text-foreground placeholder:text-muted-foreground" />
-              <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] || null)} className="w-full text-sm text-muted-foreground" />
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">Images (up to 10)</label>
+                <input type="file" accept="image/*" multiple onChange={(e) => {
+                  const files = Array.from(e.target.files || []).slice(0, 10);
+                  setImageFiles(files);
+                  // Generate previews
+                  const previews = files.map(f => URL.createObjectURL(f));
+                  setImagePreviews(previews);
+                }} className="w-full text-sm text-muted-foreground" />
+                {imagePreviews.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {imagePreviews.map((src, i) => (
+                      <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-border">
+                        <img src={src} alt={`Preview ${i + 1}`} className="w-full h-full object-cover" />
+                        <button type="button" onClick={() => {
+                          const newFiles = [...imageFiles]; newFiles.splice(i, 1); setImageFiles(newFiles);
+                          const newPreviews = [...imagePreviews]; URL.revokeObjectURL(newPreviews[i]); newPreviews.splice(i, 1); setImagePreviews(newPreviews);
+                        }} className="absolute top-0 right-0 bg-destructive text-destructive-foreground rounded-full w-4 h-4 flex items-center justify-center text-[10px]">×</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground mt-1">{imageFiles.length}/10 images selected</p>
+              </div>
               <label className="flex items-center gap-2 text-sm text-foreground">
                 <input type="checkbox" checked={form.is_featured} onChange={(e) => setForm({ ...form, is_featured: e.target.checked })} className="rounded" />
                 Featured product
