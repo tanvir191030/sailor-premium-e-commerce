@@ -11,6 +11,9 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SuccessAnimation from "@/components/SuccessAnimation";
 import jsPDF from "jspdf";
+import bkashLogo from "@/assets/bkash-logo.png";
+import nagadLogo from "@/assets/nagad-logo.png";
+import rocketLogo from "@/assets/rocket-logo.png";
 
 const BD_DISTRICTS = [
   "ঢাকা", "গাজীপুর", "নারায়ণগঞ্জ", "মানিকগঞ্জ", "মুন্সিগঞ্জ", "নরসিংদী", "টাঙ্গাইল", "কিশোরগঞ্জ",
@@ -249,9 +252,9 @@ const Checkout = () => {
                       <div className="grid grid-cols-2 gap-2">
                         {[
                           { value: "cod", label: "ক্যাশ অন ডেলিভারি", icon: <Truck size={16} /> },
-                          { value: "bkash", label: "bKash", icon: <img src="https://freelogopng.com/images/all_img/1656234841bkash-icon-png.png" alt="bKash" className="w-5 h-5 object-contain" /> },
-                          { value: "nagad", label: "Nagad", icon: <img src="https://download.logo.wine/logo/Nagad/Nagad-Logo.wine.png" alt="Nagad" className="w-5 h-5 object-contain" /> },
-                          { value: "rocket", label: "Rocket", icon: <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Dutch-Bangla_Bank_Rocket_logo.svg/1200px-Dutch-Bangla_Bank_Rocket_logo.svg.png" alt="Rocket" className="w-5 h-5 object-contain" /> },
+                          { value: "bkash", label: "bKash", icon: <img src={bkashLogo} alt="bKash" className="w-5 h-5 object-contain" /> },
+                          { value: "nagad", label: "Nagad", icon: <img src={nagadLogo} alt="Nagad" className="w-5 h-5 object-contain" /> },
+                          { value: "rocket", label: "Rocket", icon: <img src={rocketLogo} alt="Rocket" className="w-5 h-5 object-contain" /> },
                         ].map((opt) => (
                           <button
                             key={opt.value}
