@@ -228,6 +228,10 @@ const Checkout = () => {
                         <input value={form.thana} onChange={(e) => setForm({ ...form, thana: e.target.value })} placeholder="থানা/উপজেলার নাম" className={inputCls} maxLength={100} />
                       </div>
                     </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1.5 block">সম্পূর্ণ ঠিকানা *</label>
+                      <textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="বাড়ি নম্বর, রোড, এলাকা" rows={3} className={`${inputCls} resize-none`} required maxLength={500} />
+                    </div>
 
                     <div className="pt-2 border-t border-border">
                       <div className="flex items-center gap-2 py-3 text-sm text-muted-foreground">
