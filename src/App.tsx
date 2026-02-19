@@ -9,6 +9,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { CartProvider } from "./contexts/CartContext";
 import ScrollToTop from "./components/ScrollToTop";
 import CartDrawer from "./components/CartDrawer";
+import BuyNowDrawer from "./components/BuyNowDrawer";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -16,6 +17,7 @@ import Admin from "./pages/Admin";
 import Category from "./pages/Category";
 import Shop from "./pages/Shop";
 import Checkout from "./pages/Checkout";
+import TrackOrder from "./pages/TrackOrder";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +34,7 @@ const AnimatedRoutes = () => {
         <Route path="/category/:categoryName" element={<Category />} />
         <Route path="/shop" element={<Shop />} />
         <Route path="/checkout" element={<Checkout />} />
+        <Route path="/track-order" element={<TrackOrder />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>
@@ -49,6 +52,7 @@ const App = () => (
             <BrowserRouter>
               <ScrollToTop />
               <CartDrawer />
+              <BuyNowDrawer />
               <AnimatedRoutes />
             </BrowserRouter>
           </CartProvider>

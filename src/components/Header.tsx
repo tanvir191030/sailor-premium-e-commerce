@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Heart, ShoppingBag, Menu, X, Moon, Sun } from "lucide-react";
+import { Search, Heart, ShoppingBag, Menu, X, Moon, Sun, MapPin } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useProducts } from "@/hooks/useProducts";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -208,6 +208,10 @@ const Header = () => {
                 </motion.div>
               </button>
 
+              <Link to="/track-order" className="p-2 hover:opacity-70 transition-opacity hidden md:block" aria-label="Track Order">
+                <MapPin size={20} />
+              </Link>
+
               <button
                 className="p-2 hover:opacity-70 transition-opacity relative"
                 aria-label="Wishlist"
@@ -255,6 +259,9 @@ const Header = () => {
                     {link.name}
                   </Link>
                 ))}
+                <Link to="/track-order" className="text-sm uppercase tracking-[0.1em] font-medium py-2 flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
+                  <MapPin size={16} /> Track Order
+                </Link>
               </nav>
             </motion.div>
           )}

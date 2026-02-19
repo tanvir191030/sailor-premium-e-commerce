@@ -27,6 +27,7 @@ const Footer = () => {
   ];
 
   const helpLinks = [
+    { name: "Track Order", href: "/track-order" },
     { name: "Shipping & Returns", href: "/" },
     { name: "Size Guide", href: "/" },
     { name: "Contact Us", href: "/" },
