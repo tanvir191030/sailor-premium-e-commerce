@@ -126,11 +126,15 @@ export type Database = {
           courier_tracking_id: string | null
           created_at: string | null
           customer_name: string
+          district: string | null
+          email: string | null
           id: string
           payment_method: string | null
           phone: string
           status: string | null
+          thana: string | null
           total: number
+          tracking_id: string | null
           transaction_id: string | null
           user_id: string | null
         }
@@ -140,11 +144,15 @@ export type Database = {
           courier_tracking_id?: string | null
           created_at?: string | null
           customer_name: string
+          district?: string | null
+          email?: string | null
           id?: string
           payment_method?: string | null
           phone: string
           status?: string | null
+          thana?: string | null
           total: number
+          tracking_id?: string | null
           transaction_id?: string | null
           user_id?: string | null
         }
@@ -154,11 +162,15 @@ export type Database = {
           courier_tracking_id?: string | null
           created_at?: string | null
           customer_name?: string
+          district?: string | null
+          email?: string | null
           id?: string
           payment_method?: string | null
           phone?: string
           status?: string | null
+          thana?: string | null
           total?: number
+          tracking_id?: string | null
           transaction_id?: string | null
           user_id?: string | null
         }

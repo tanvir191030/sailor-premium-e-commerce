@@ -36,10 +36,12 @@ const ProductCard = ({
     addItem({ id, name, price, image, category });
   };
 
+  const { setIsBuyNowOpen } = useCart();
+
   const handleBuyNow = (e: React.MouseEvent) => {
     e.stopPropagation();
     addItem({ id, name, price, image, category });
-    navigate("/checkout");
+    setIsBuyNowOpen(true);
   };
 
   return (
