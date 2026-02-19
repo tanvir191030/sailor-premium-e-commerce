@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { ArrowLeft, ShoppingBag, FileDown, Truck, Copy, MapPin } from "lucide-react";
+import { ArrowLeft, ShoppingBag, FileDown, Truck, Copy, MapPin, Smartphone } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -29,6 +29,8 @@ const Checkout = () => {
   const [form, setForm] = useState({
     name: "", phone: "", email: "", district: "", thana: "", address: "",
   });
+  const [paymentMethod, setPaymentMethod] = useState<"cod" | "bkash" | "nagad" | "rocket">("cod");
+  const [transactionId, setTransactionId] = useState("");
   const [deliveryZone, setDeliveryZone] = useState<"inside_dhaka" | "outside_dhaka">("inside_dhaka");
   const [submitting, setSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState<any>(null);
@@ -84,6 +86,10 @@ const Checkout = () => {
       toast({ title: "কার্ট খালি", variant: "destructive" });
       return;
     }
+    if (paymentMethod !== "cod" && !transactionId.trim()) {
+      toast({ title: "ট্রানজেকশন আইডি দিন", variant: "destructive" });
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -98,7 +104,8 @@ const Checkout = () => {
         cart_items: items.map((i) => ({ name: i.name, price: i.price, quantity: i.quantity, image: i.image })),
         total: grandTotal,
         delivery_charge: deliveryCharge,
-        payment_method: "Cash on Delivery",
+        payment_method: paymentMethod === "cod" ? "Cash on Delivery" : paymentMethod === "bkash" ? "bKash" : paymentMethod === "nagad" ? "Nagad" : "Rocket",
+        transaction_id: paymentMethod !== "cod" ? transactionId.trim() : null,
       }).select().single();
 
       if (error) throw error;
@@ -122,7 +129,7 @@ const Checkout = () => {
     doc.setTextColor(0);
     doc.text(`Tracking ID: ${orderSuccess.tracking_id || "N/A"}`, 20, 45);
     doc.text(`Date: ${new Date(orderSuccess.created_at).toLocaleDateString("en-GB")}`, 20, 52);
-    doc.text(`Payment: Cash on Delivery`, 130, 45);
+    doc.text(`Payment: ${orderSuccess.payment_method || "Cash on Delivery"}${orderSuccess.transaction_id ? ` (TxnID: ${orderSuccess.transaction_id})` : ""}`, 130, 45);
     doc.setFontSize(11); doc.text("Customer:", 20, 65);
     doc.setFontSize(9);
     doc.text(`Name: ${orderSuccess.customer_name}`, 25, 73);
@@ -233,10 +240,53 @@ const Checkout = () => {
                       <textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="বাড়ি নম্বর, রোড, এলাকা" rows={3} className={`${inputCls} resize-none`} required maxLength={500} />
                     </div>
 
+                    {/* Payment Method */}
                     <div className="pt-2 border-t border-border">
-                      <div className="flex items-center gap-2 py-3 text-sm text-muted-foreground">
-                        <Truck size={16} /> ক্যাশ অন ডেলিভারি
+                      <label className="text-xs font-medium text-muted-foreground mb-3 block flex items-center gap-1.5">
+                        <Smartphone size={14} /> পেমেন্ট মেথড *
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { value: "cod", label: "ক্যাশ অন ডেলিভারি", icon: <Truck size={16} /> },
+                          { value: "bkash", label: "bKash", icon: <span className="text-xs font-bold text-pink-500">b</span> },
+                          { value: "nagad", label: "Nagad", icon: <span className="text-xs font-bold text-orange-500">N</span> },
+                          { value: "rocket", label: "Rocket", icon: <span className="text-xs font-bold text-purple-500">R</span> },
+                        ].map((opt) => (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => { setPaymentMethod(opt.value as any); if (opt.value === "cod") setTransactionId(""); }}
+                            className={`flex items-center gap-2 p-3 rounded-xl border text-sm font-medium transition-all ${
+                              paymentMethod === opt.value
+                                ? "border-primary bg-primary/10 text-primary"
+                                : "border-border text-muted-foreground hover:border-ring"
+                            }`}
+                          >
+                            {opt.icon}
+                            {opt.label}
+                          </button>
+                        ))}
                       </div>
+
+                      {paymentMethod !== "cod" && (
+                        <div className="mt-3 p-3 bg-secondary/50 rounded-xl border border-border space-y-2">
+                          <p className="text-xs text-muted-foreground">
+                            নিচের নম্বরে <strong className="text-foreground">{formatPrice(grandTotal)}</strong> Send Money করুন:
+                          </p>
+                          <p className="text-sm font-mono font-bold text-foreground">01XXXXXXXXX (Personal)</p>
+                          <div>
+                            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">ট্রানজেকশন আইডি *</label>
+                            <input
+                              value={transactionId}
+                              onChange={(e) => setTransactionId(e.target.value.replace(/\s/g, "").slice(0, 30))}
+                              placeholder="যেমন: TXN123ABC456"
+                              className={inputCls}
+                              required
+                              maxLength={30}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <button type="submit" disabled={submitting || items.length === 0} className="w-full py-3.5 bg-primary text-primary-foreground rounded-full text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50">
