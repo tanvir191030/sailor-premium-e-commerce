@@ -6,8 +6,18 @@ let pendingScrollRestore: number | null = null;
 /** Called by PageTransition after entrance animation completes */
 export const flushPendingScroll = () => {
   if (pendingScrollRestore !== null) {
-    window.scrollTo({ top: pendingScrollRestore, behavior: "instant" });
+    const target = pendingScrollRestore;
     pendingScrollRestore = null;
+
+    // Try immediately, then retry after a short delay to handle async content
+    const attempt = (retries: number) => {
+      window.scrollTo({ top: target, behavior: "instant" });
+      if (retries > 0 && Math.abs(window.scrollY - target) > 10) {
+        requestAnimationFrame(() => attempt(retries - 1));
+      }
+    };
+    // First attempt after a microtask to let React render
+    requestAnimationFrame(() => attempt(5));
   }
 };
 
@@ -15,6 +25,7 @@ const ScrollToTop = () => {
   const { pathname } = useLocation();
   const navType = useNavigationType();
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevPathRef = useRef(pathname);
 
   // Continuously save scroll position (debounced)
   useEffect(() => {
@@ -22,14 +33,20 @@ const ScrollToTop = () => {
       if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
       scrollTimeoutRef.current = setTimeout(() => {
         sessionStorage.setItem(`scroll:${pathname}`, window.scrollY.toString());
-      }, 100);
+      }, 80);
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => {
       window.removeEventListener("scroll", handleScroll);
       if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
-      // Save final position on unmount
-      sessionStorage.setItem(`scroll:${pathname}`, window.scrollY.toString());
+    };
+  }, [pathname]);
+
+  // Save position immediately before path changes
+  useEffect(() => {
+    return () => {
+      sessionStorage.setItem(`scroll:${prevPathRef.current}`, window.scrollY.toString());
+      prevPathRef.current = pathname;
     };
   }, [pathname]);
 
@@ -37,7 +54,6 @@ const ScrollToTop = () => {
   useEffect(() => {
     if (navType === "POP") {
       const saved = sessionStorage.getItem(`scroll:${pathname}`);
-      // Queue restore — PageTransition will flush after animation
       pendingScrollRestore = saved !== null ? parseInt(saved, 10) : 0;
     } else {
       pendingScrollRestore = null;
