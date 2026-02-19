@@ -1,45 +1,39 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Heart, ShoppingBag, Menu, X, User, LogOut } from "lucide-react";
+import { Search, Heart, ShoppingBag, Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { useProducts } from "@/hooks/useProducts";
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { data: products = [] } = useProducts();
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
+    const handleScroll = () => setIsScrolled(window.scrollY > 50);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
+    if (isSearchOpen) {
+      setTimeout(() => searchInputRef.current?.focus(), 100);
+    } else {
+      setSearchQuery("");
+    }
+  }, [isSearchOpen]);
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    toast({
-      title: "Signed out",
-      description: "You have been signed out successfully.",
-    });
-    navigate("/");
-  };
+  const filteredProducts = searchQuery.trim()
+    ? products.filter(
+        (p) =>
+          p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.category?.toLowerCase().includes(searchQuery.toLowerCase())
+      ).slice(0, 6)
+    : [];
 
   const navLinks = [
     { name: "New In", href: "/category/new" },
@@ -99,24 +93,13 @@ const Header = () => {
                 ))}
               </nav>
 
-              <button className="p-2 hover:opacity-70 transition-opacity" aria-label="Search">
+              <button
+                className="p-2 hover:opacity-70 transition-opacity"
+                aria-label="Search"
+                onClick={() => setIsSearchOpen(true)}
+              >
                 <Search size={20} />
               </button>
-
-              {user ? (
-                <>
-                  <Link to="/admin" className="p-2 hover:opacity-70 transition-opacity" aria-label="Admin">
-                    <User size={20} />
-                  </Link>
-                  <button onClick={handleLogout} className="p-2 hover:opacity-70 transition-opacity" aria-label="Logout">
-                    <LogOut size={20} />
-                  </button>
-                </>
-              ) : (
-                <Link to="/login" className="p-2 hover:opacity-70 transition-opacity" aria-label="Login">
-                  <User size={20} />
-                </Link>
-              )}
 
               <button className="p-2 hover:opacity-70 transition-opacity" aria-label="Wishlist">
                 <Heart size={20} />
@@ -158,6 +141,101 @@ const Header = () => {
           )}
         </AnimatePresence>
       </header>
+
+      {/* Search Overlay */}
+      <AnimatePresence>
+        {isSearchOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="fixed inset-0 z-[100] bg-background/95 backdrop-blur-sm"
+          >
+            <div className="container mx-auto px-4 md:px-6 pt-8">
+              {/* Close */}
+              <div className="flex justify-end mb-8">
+                <button
+                  onClick={() => setIsSearchOpen(false)}
+                  className="p-2 hover:opacity-70 transition-opacity"
+                  aria-label="Close search"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              {/* Search Input */}
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+                className="max-w-2xl mx-auto"
+              >
+                <div className="relative">
+                  <Search size={20} className="absolute left-0 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder="Search products..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-transparent border-b border-border py-4 pl-8 pr-4 text-xl md:text-2xl font-light focus:outline-none focus:border-foreground transition-colors placeholder:text-muted-foreground"
+                  />
+                </div>
+
+                {/* Results */}
+                {searchQuery.trim() && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="mt-8 space-y-4"
+                  >
+                    {filteredProducts.length > 0 ? (
+                      filteredProducts.map((product, index) => (
+                        <motion.div
+                          key={product.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                        >
+                          <button
+                            onClick={() => {
+                              setIsSearchOpen(false);
+                              if (product.category) {
+                                navigate(`/category/${product.category.toLowerCase()}`);
+                              }
+                            }}
+                            className="w-full flex items-center gap-4 p-3 hover:bg-secondary transition-colors text-left"
+                          >
+                            <div className="w-14 h-14 bg-secondary overflow-hidden flex-shrink-0">
+                              <img
+                                src={product.image_url || "/placeholder.svg"}
+                                alt={product.name}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm">{product.name}</p>
+                              <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                                {product.category || "Uncategorized"} ·{" "}
+                                {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(product.price)}
+                              </p>
+                            </div>
+                          </button>
+                        </motion.div>
+                      ))
+                    ) : (
+                      <p className="text-muted-foreground text-center py-8">
+                        No products found for "{searchQuery}"
+                      </p>
+                    )}
+                  </motion.div>
+                )}
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };
