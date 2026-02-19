@@ -113,7 +113,7 @@ const AdminProducts = () => {
 
   const resetForm = () => { setForm({ name: "", price: "", category: "", brand: "", stock: "", description: "", is_featured: false }); setImageFiles([]); setImagePreviews([]); setEditingId(null); setShowForm(false); };
   const startEdit = (p: any) => { setForm({ name: p.name, price: String(p.price), category: p.category || "", brand: p.brand || "", stock: String(p.stock ?? 0), description: p.description || "", is_featured: p.is_featured || false }); setEditingId(p.id); setImageFiles([]); setImagePreviews([]); setShowForm(true); };
-  const filtered = products.filter((p: any) => p.name.toLowerCase().includes(search.toLowerCase()) || (p.category || "").toLowerCase().includes(search.toLowerCase()));
+  const filtered = products.filter((p: any) => (p.name || "").toLowerCase().includes(search.toLowerCase()) || (p.category || "").toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="space-y-6">
