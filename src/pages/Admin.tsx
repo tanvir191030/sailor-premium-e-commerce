@@ -18,6 +18,8 @@ import {
   LogOut,
   Moon,
   Sun,
+  Tag,
+  Award,
 } from "lucide-react";
 import AdminDashboard from "@/components/admin/AdminDashboard";
 import AdminProducts from "@/components/admin/AdminProducts";
@@ -26,10 +28,14 @@ import AdminCustomers from "@/components/admin/AdminCustomers";
 import AdminPayments from "@/components/admin/AdminPayments";
 import AdminMarketing from "@/components/admin/AdminMarketing";
 import AdminSettings from "@/components/admin/AdminSettings";
+import AdminCategories from "@/components/admin/AdminCategories";
+import AdminBrands from "@/components/admin/AdminBrands";
 
 const sections = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "products", label: "Products", icon: Package },
+  { id: "categories", label: "Categories", icon: Tag },
+  { id: "brands", label: "Brands", icon: Award },
   { id: "orders", label: "Orders", icon: ShoppingCart },
   { id: "customers", label: "Customers", icon: Users },
   { id: "payments", label: "Payments", icon: CreditCard },
@@ -85,6 +91,8 @@ const Admin = () => {
     switch (activeSection) {
       case "dashboard": return <AdminDashboard />;
       case "products": return <AdminProducts />;
+      case "categories": return <AdminCategories />;
+      case "brands": return <AdminBrands />;
       case "orders": return <AdminOrders />;
       case "customers": return <AdminCustomers />;
       case "payments": return <AdminPayments />;
