@@ -27,7 +27,7 @@ const ProductCard = ({
 }: ProductCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const { toggle, isWishlisted } = useWishlist();
-  const { addItem } = useCart();
+  const { addItem, setIsBuyNowOpen, setIsOpen } = useCart();
   const navigate = useNavigate();
   const wishlisted = isWishlisted(id);
 
@@ -36,11 +36,11 @@ const ProductCard = ({
     addItem({ id, name, price, image, category });
   };
 
-  const { setIsBuyNowOpen } = useCart();
-
   const handleBuyNow = (e: React.MouseEvent) => {
     e.stopPropagation();
     addItem({ id, name, price, image, category });
+    // Close cart drawer and open buy-now drawer instead
+    setIsOpen(false);
     setIsBuyNowOpen(true);
   };
 
