@@ -111,6 +111,7 @@ const Checkout = () => {
       if (error) throw error;
       setOrderSuccess(data);
       clearCart();
+      window.scrollTo({ top: 0, behavior: "smooth" });
       toast({ title: "অর্ডার সফল হয়েছে! 🎉" });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -248,9 +249,9 @@ const Checkout = () => {
                       <div className="grid grid-cols-2 gap-2">
                         {[
                           { value: "cod", label: "ক্যাশ অন ডেলিভারি", icon: <Truck size={16} /> },
-                          { value: "bkash", label: "bKash", icon: <span className="text-xs font-bold text-pink-500">b</span> },
-                          { value: "nagad", label: "Nagad", icon: <span className="text-xs font-bold text-orange-500">N</span> },
-                          { value: "rocket", label: "Rocket", icon: <span className="text-xs font-bold text-purple-500">R</span> },
+                          { value: "bkash", label: "bKash", icon: <img src="https://freelogopng.com/images/all_img/1656234841bkash-icon-png.png" alt="bKash" className="w-5 h-5 object-contain" /> },
+                          { value: "nagad", label: "Nagad", icon: <img src="https://download.logo.wine/logo/Nagad/Nagad-Logo.wine.png" alt="Nagad" className="w-5 h-5 object-contain" /> },
+                          { value: "rocket", label: "Rocket", icon: <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Dutch-Bangla_Bank_Rocket_logo.svg/1200px-Dutch-Bangla_Bank_Rocket_logo.svg.png" alt="Rocket" className="w-5 h-5 object-contain" /> },
                         ].map((opt) => (
                           <button
                             key={opt.value}
