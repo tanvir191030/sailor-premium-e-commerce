@@ -154,24 +154,24 @@ const HeroSlider = ({ slides }: HeroSliderProps) => {
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="max-w-xl text-primary-foreground"
+            className="max-w-xl text-white"
           >
-            <motion.span variants={itemVariants} className="text-label text-primary-foreground/80 mb-4 block">
+            <motion.span variants={itemVariants} className="text-label text-white/80 mb-4 block">
               {slides[currentIndex].label}
             </motion.span>
 
-            <motion.h2 variants={itemVariants} className="heading-display text-primary-foreground mb-6">
+            <motion.h2 variants={itemVariants} className="heading-display text-white mb-6">
               {slides[currentIndex].title}
             </motion.h2>
 
-            <motion.p variants={itemVariants} className="text-lg md:text-xl font-light leading-relaxed mb-8 text-primary-foreground/90">
+            <motion.p variants={itemVariants} className="text-lg md:text-xl font-light leading-relaxed mb-8 text-white/90">
               {slides[currentIndex].description}
             </motion.p>
 
             <motion.div variants={itemVariants}>
               <AnimatedCtaButton
                 to={slides[currentIndex].ctaLink}
-                className="bg-primary-foreground text-primary px-8 py-4 text-sm uppercase tracking-[0.15em] font-medium hover:bg-primary-foreground/90"
+                className="bg-white text-black px-8 py-4 text-sm uppercase tracking-[0.15em] font-medium hover:bg-white/90"
               >
                 {slides[currentIndex].ctaText}
               </AnimatedCtaButton>
@@ -185,14 +185,14 @@ const HeroSlider = ({ slides }: HeroSliderProps) => {
         <>
           <button
             onClick={prevSlide}
-            className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 p-3 bg-background/20 backdrop-blur-sm text-primary-foreground hover:bg-background/40 transition-colors"
+            className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 p-3 bg-black/20 backdrop-blur-sm text-white hover:bg-black/40 transition-colors"
             aria-label="Previous slide"
           >
             <ChevronLeft size={24} />
           </button>
           <button
             onClick={nextSlide}
-            className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 p-3 bg-background/20 backdrop-blur-sm text-primary-foreground hover:bg-background/40 transition-colors"
+            className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 p-3 bg-black/20 backdrop-blur-sm text-white hover:bg-black/40 transition-colors"
             aria-label="Next slide"
           >
             <ChevronRight size={24} />
@@ -209,8 +209,8 @@ const HeroSlider = ({ slides }: HeroSliderProps) => {
               onClick={() => goToSlide(index)}
               className={`w-2 h-2 transition-all duration-300 ${
                 index === currentIndex
-                  ? "bg-primary-foreground w-8"
-                  : "bg-primary-foreground/50 hover:bg-primary-foreground/70"
+                  ? "bg-white w-8"
+                  : "bg-white/50 hover:bg-white/70"
               }`}
               aria-label={`Go to slide ${index + 1}`}
             />
