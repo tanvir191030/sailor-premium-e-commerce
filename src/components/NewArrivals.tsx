@@ -1,6 +1,6 @@
-import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import ProductCard from "./ProductCard";
+import AnimatedCtaButton from "./AnimatedCtaButton";
 
 interface Product {
   id: string;
@@ -67,9 +67,9 @@ const NewArrivals = ({ products }: NewArrivalsProps) => {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="text-center mt-12"
         >
-          <Link to="/shop" className="btn-outline">
+          <AnimatedCtaButton to="/shop" className="btn-outline">
             View All New Arrivals
-          </Link>
+          </AnimatedCtaButton>
         </motion.div>
       </div>
     </section>
