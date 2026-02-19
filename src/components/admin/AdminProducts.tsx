@@ -10,6 +10,7 @@ const AdminProducts = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const [form, setForm] = useState({ name: "", price: "", category: "", brand: "", stock: "", description: "", is_featured: false });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const queryClient = useQueryClient();
@@ -69,15 +70,34 @@ const AdminProducts = () => {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("products").delete().eq("id", id);
+    mutationFn: async (product: any) => {
+      // 1. Delete associated images from product_images table & storage
+      const { data: images } = await supabase.from("product_images").select("*").eq("product_id", product.id);
+      if (images && images.length > 0) {
+        const paths = images.map((img: any) => {
+          try { return new URL(img.image_url).pathname.split("/").slice(-2).join("/"); } catch { return null; }
+        }).filter(Boolean);
+        if (paths.length > 0) await supabase.storage.from("product-images").remove(paths as string[]);
+        await supabase.from("product_images").delete().eq("product_id", product.id);
+      }
+      // 2. Delete main product image from storage if exists
+      if (product.image_url) {
+        try {
+          const path = new URL(product.image_url).pathname.split("/").slice(-2).join("/");
+          await supabase.storage.from("product-images").remove([path]);
+        } catch {}
+      }
+      // 3. Delete the product
+      const { error } = await supabase.from("products").delete().eq("id", product.id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast({ title: "Product deleted" });
+      toast({ title: "প্রোডাক্ট ডিলিট হয়েছে" });
+      setDeleteTarget(null);
     },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const addCategoryMutation = useMutation({
@@ -202,7 +222,7 @@ const AdminProducts = () => {
                   <td className="p-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <button onClick={() => startEdit(p)} className="p-1.5 hover:bg-secondary rounded text-foreground"><Pencil size={14} /></button>
-                      <button onClick={() => deleteMutation.mutate(p.id)} className="p-1.5 hover:bg-red-500/10 text-red-500 rounded"><Trash2 size={14} /></button>
+                      <button onClick={() => setDeleteTarget(p)} className="p-1.5 hover:bg-red-500/10 text-red-500 rounded"><Trash2 size={14} /></button>
                     </div>
                   </td>
                 </tr>
@@ -212,6 +232,23 @@ const AdminProducts = () => {
           </table>
         </div>
       </div>
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-card rounded-xl shadow-2xl w-full max-w-sm p-6 border border-border text-center">
+            <Trash2 size={32} className="mx-auto mb-3 text-destructive" />
+            <h3 className="font-serif text-lg mb-2 text-foreground">ডিলিট নিশ্চিত করুন</h3>
+            <p className="text-sm text-muted-foreground mb-1">"{deleteTarget.name}"</p>
+            <p className="text-xs text-muted-foreground mb-6">এটি স্থায়ীভাবে মুছে ফেলা হবে এবং পূর্বাবস্থায় ফেরানো যাবে না।</p>
+            <div className="flex gap-3 justify-center">
+              <button onClick={() => setDeleteTarget(null)} className="px-5 py-2 border border-border rounded-full text-sm font-medium text-foreground hover:bg-secondary transition-colors">বাতিল</button>
+              <button onClick={() => deleteMutation.mutate(deleteTarget)} disabled={deleteMutation.isPending} className="px-5 py-2 bg-destructive text-destructive-foreground rounded-full text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50">
+                {deleteMutation.isPending ? "ডিলিট হচ্ছে..." : "ডিলিট করুন"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

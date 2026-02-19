@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/lib/currency";
-import { FileDown, Search } from "lucide-react";
+import { FileDown, Search, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 
@@ -18,6 +18,7 @@ const statusColors: Record<string, string> = {
 const AdminOrders = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -44,6 +45,19 @@ const AdminOrders = () => {
       if (error) throw error;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-orders"] }); toast({ title: "ট্র্যাকিং ID আপডেট হয়েছে" }); },
+  });
+
+  const deleteOrderMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("orders").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      toast({ title: "অর্ডার ডিলিট হয়েছে" });
+      setDeleteTarget(null);
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const generateInvoice = (order: any) => {
@@ -120,11 +134,32 @@ const AdminOrders = () => {
               <button onClick={() => generateInvoice(o)} className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary hover:bg-muted rounded-lg text-xs font-medium transition-colors text-foreground">
                 <FileDown size={13} /> ইনভয়েস
               </button>
+              <button onClick={() => setDeleteTarget(o)} className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-red-500/10 text-red-500 rounded-lg text-xs font-medium transition-colors">
+                <Trash2 size={13} /> ডিলিট
+              </button>
             </div>
           </div>
         ))}
         {filtered.length === 0 && <div className="bg-card p-8 rounded-xl shadow-sm text-center text-muted-foreground text-sm border border-border">কোনো অর্ডার পাওয়া যায়নি</div>}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-card rounded-xl shadow-2xl w-full max-w-sm p-6 border border-border text-center">
+            <Trash2 size={32} className="mx-auto mb-3 text-destructive" />
+            <h3 className="font-serif text-lg mb-2 text-foreground">অর্ডার ডিলিট করুন</h3>
+            <p className="text-sm text-muted-foreground mb-1">#{deleteTarget.id.slice(0, 8)} · {deleteTarget.customer_name}</p>
+            <p className="text-xs text-muted-foreground mb-6">এই অর্ডার স্থায়ীভাবে মুছে ফেলা হবে।</p>
+            <div className="flex gap-3 justify-center">
+              <button onClick={() => setDeleteTarget(null)} className="px-5 py-2 border border-border rounded-full text-sm font-medium text-foreground hover:bg-secondary transition-colors">বাতিল</button>
+              <button onClick={() => deleteOrderMutation.mutate(deleteTarget.id)} disabled={deleteOrderMutation.isPending} className="px-5 py-2 bg-destructive text-destructive-foreground rounded-full text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50">
+                {deleteOrderMutation.isPending ? "ডিলিট হচ্ছে..." : "ডিলিট করুন"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
