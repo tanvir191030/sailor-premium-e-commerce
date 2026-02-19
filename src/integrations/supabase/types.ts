@@ -14,38 +14,152 @@ export type Database = {
   }
   public: {
     Tables: {
+      banners: {
+        Row: {
+          created_at: string | null
+          id: string
+          image_url: string
+          is_active: boolean | null
+          link: string | null
+          sort_order: number | null
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          image_url: string
+          is_active?: boolean | null
+          link?: string | null
+          sort_order?: number | null
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          image_url?: string
+          is_active?: boolean | null
+          link?: string | null
+          sort_order?: number | null
+          title?: string
+        }
+        Relationships: []
+      }
+      brands: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      categories: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      coupons: {
+        Row: {
+          code: string
+          created_at: string | null
+          discount_type: string
+          discount_value: number
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          max_uses: number | null
+          min_order: number | null
+          used_count: number | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          min_order?: number | null
+          used_count?: number | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          min_order?: number | null
+          used_count?: number | null
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           address: string
           cart_items: Json
+          courier_tracking_id: string | null
           created_at: string | null
           customer_name: string
           id: string
+          payment_method: string | null
           phone: string
           status: string | null
           total: number
+          transaction_id: string | null
           user_id: string | null
         }
         Insert: {
           address: string
           cart_items: Json
+          courier_tracking_id?: string | null
           created_at?: string | null
           customer_name: string
           id?: string
+          payment_method?: string | null
           phone: string
           status?: string | null
           total: number
+          transaction_id?: string | null
           user_id?: string | null
         }
         Update: {
           address?: string
           cart_items?: Json
+          courier_tracking_id?: string | null
           created_at?: string | null
           customer_name?: string
           id?: string
+          payment_method?: string | null
           phone?: string
           status?: string | null
           total?: number
+          transaction_id?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -87,6 +201,7 @@ export type Database = {
       }
       products: {
         Row: {
+          brand: string | null
           category: string | null
           created_at: string | null
           description: string | null
@@ -95,8 +210,10 @@ export type Database = {
           is_featured: boolean | null
           name: string
           price: number
+          stock: number
         }
         Insert: {
+          brand?: string | null
           category?: string | null
           created_at?: string | null
           description?: string | null
@@ -105,8 +222,10 @@ export type Database = {
           is_featured?: boolean | null
           name: string
           price: number
+          stock?: number
         }
         Update: {
+          brand?: string | null
           category?: string | null
           created_at?: string | null
           description?: string | null
@@ -115,6 +234,7 @@ export type Database = {
           is_featured?: boolean | null
           name?: string
           price?: number
+          stock?: number
         }
         Relationships: []
       }
@@ -145,6 +265,27 @@ export type Database = {
         }
         Relationships: []
       }
+      site_settings: {
+        Row: {
+          id: string
+          key: string
+          updated_at: string | null
+          value: string | null
+        }
+        Insert: {
+          id?: string
+          key: string
+          updated_at?: string | null
+          value?: string | null
+        }
+        Update: {
+          id?: string
+          key?: string
+          updated_at?: string | null
+          value?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -171,7 +312,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["user_role_type"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       user_role_type: "admin" | "moderator" | "user"
