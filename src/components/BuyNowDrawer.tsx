@@ -1,14 +1,21 @@
+import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ShoppingBag, Minus, Plus } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { formatPrice } from "@/lib/currency";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 const BuyNowDrawer = () => {
   const { items, totalPrice, totalItems, updateQuantity, removeItem, isBuyNowOpen, setIsBuyNowOpen } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Auto-close on /checkout
+  useEffect(() => {
+    if (location.pathname === "/checkout") setIsBuyNowOpen(false);
+  }, [location.pathname, setIsBuyNowOpen]);
 
   const { data: deliverySettings } = useQuery({
     queryKey: ["delivery-charges"],
