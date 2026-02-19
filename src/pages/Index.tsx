@@ -17,7 +17,7 @@ const Index = () => {
     title: product.name,
     description: product.description || "Discover our latest collection of premium fashion pieces.",
     ctaText: "Shop Now",
-    ctaLink: "/",
+    ctaLink: `/category/${(product.category || "new").toLowerCase()}`,
   }));
 
   // Default slides if no featured products

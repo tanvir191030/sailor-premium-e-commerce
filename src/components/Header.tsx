@@ -42,11 +42,11 @@ const Header = () => {
   };
 
   const navLinks = [
-    { name: "New In", href: "/" },
-    { name: "Women", href: "/" },
-    { name: "Men", href: "/" },
-    { name: "Kids", href: "/" },
-    { name: "Sale", href: "/" },
+    { name: "New In", href: "/category/new" },
+    { name: "Women", href: "/category/women" },
+    { name: "Men", href: "/category/men" },
+    { name: "Kids", href: "/category/kids" },
+    { name: "Sale", href: "/category/sale" },
   ];
 
   return (
