@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { Search, Heart, ShoppingBag, Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useProducts } from "@/hooks/useProducts";
+import { useWishlist } from "@/contexts/WishlistContext";
+import { useCart } from "@/contexts/CartContext";
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -13,6 +15,8 @@ const Header = () => {
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { data: products = [] } = useProducts();
+  const { count: wishlistCount } = useWishlist();
+  const { totalItems, setIsOpen: setCartOpen } = useCart();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
@@ -28,7 +32,6 @@ const Header = () => {
     }
   }, [isSearchOpen]);
 
-  // Close on outside click
   useEffect(() => {
     if (!isSearchOpen) return;
     const handler = (e: MouseEvent) => {
@@ -60,12 +63,10 @@ const Header = () => {
 
   return (
     <>
-      {/* Announcement Bar */}
       <div className="bg-primary text-primary-foreground text-center py-2 text-xs tracking-[0.15em] uppercase">
-        Free Shipping on Orders Over $150
+        Free Shipping on Orders Over ৳5,000
       </div>
 
-      {/* Main Header */}
       <header
         className={`sticky top-0 z-50 transition-all duration-300 ${
           isScrolled ? "glass shadow-sm" : "bg-background"
@@ -73,7 +74,6 @@ const Header = () => {
       >
         <div className="container mx-auto px-4 md:px-6">
           <div className="grid grid-cols-3 items-center h-16 md:h-20">
-            {/* Left Navigation */}
             <nav className="hidden md:flex items-center gap-6">
               {navLinks.slice(0, 3).map((link) => (
                 <Link key={link.name} to={link.href} className="nav-link">
@@ -82,7 +82,6 @@ const Header = () => {
               ))}
             </nav>
 
-            {/* Mobile Menu Button */}
             <button
               className="md:hidden p-2 -ml-2"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -91,16 +90,13 @@ const Header = () => {
               {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
 
-            {/* Logo */}
             <Link to="/" className="flex justify-center">
               <h1 className="font-serif text-2xl md:text-3xl font-medium tracking-[0.1em]">
                 SAILOR
               </h1>
             </Link>
 
-            {/* Right Side */}
             <div className="flex items-center justify-end gap-4" ref={searchContainerRef}>
-              {/* Right nav links — hidden when search is open */}
               <AnimatePresence>
                 {!isSearchOpen && (
                   <motion.nav
@@ -119,7 +115,6 @@ const Header = () => {
                 )}
               </AnimatePresence>
 
-              {/* Inline Search */}
               <div className="relative flex items-center">
                 <AnimatePresence>
                   {isSearchOpen && (
@@ -150,7 +145,6 @@ const Header = () => {
                   {isSearchOpen ? <X size={18} /> : <Search size={20} />}
                 </button>
 
-                {/* Dropdown Results */}
                 <AnimatePresence>
                   {isSearchOpen && searchQuery.trim() && (
                     <motion.div
@@ -182,8 +176,7 @@ const Header = () => {
                             <div className="min-w-0">
                               <p className="font-medium text-xs truncate">{product.name}</p>
                               <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                                {product.category || "Uncategorized"} ·{" "}
-                                {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(product.price)}
+                                {product.category || "Uncategorized"} · ৳{product.price.toLocaleString()}
                               </p>
                             </div>
                           </button>
@@ -198,21 +191,33 @@ const Header = () => {
                 </AnimatePresence>
               </div>
 
-              <button className="p-2 hover:opacity-70 transition-opacity" aria-label="Wishlist">
-                <Heart size={20} />
+              <button
+                className="p-2 hover:opacity-70 transition-opacity relative"
+                aria-label="Wishlist"
+                onClick={() => navigate("/wishlist")}
+              >
+                <Heart size={20} className={wishlistCount > 0 ? "fill-destructive text-destructive" : ""} />
+                {wishlistCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] w-4 h-4 flex items-center justify-center">
+                    {wishlistCount}
+                  </span>
+                )}
               </button>
 
-              <button className="p-2 hover:opacity-70 transition-opacity relative" aria-label="Cart">
+              <button
+                className="p-2 hover:opacity-70 transition-opacity relative"
+                aria-label="Cart"
+                onClick={() => setCartOpen(true)}
+              >
                 <ShoppingBag size={20} />
                 <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] w-4 h-4 flex items-center justify-center">
-                  0
+                  {totalItems}
                 </span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Mobile Menu */}
         <AnimatePresence>
           {isMobileMenuOpen && (
             <motion.div
