@@ -129,37 +129,32 @@ const Checkout = () => {
   const downloadInvoice = () => {
     if (!orderSuccess) return;
     const savedDelivery = orderSuccess.delivery_charge ?? deliveryCharge;
-    const doc = new jsPDF();
-    doc.setFontSize(22); doc.text("SAILOR", 20, 25);
-    doc.setFontSize(10); doc.setTextColor(100); doc.text("Order Invoice", 20, 33);
-    doc.line(20, 36, 190, 36);
-    doc.setTextColor(0);
-    doc.text(`Tracking ID: ${orderSuccess.tracking_id || "N/A"}`, 20, 45);
-    doc.text(`Date: ${new Date(orderSuccess.created_at).toLocaleDateString("en-GB")}`, 20, 52);
-    doc.text(`Payment: ${orderSuccess.payment_method || "Cash on Delivery"}${orderSuccess.transaction_id ? ` (TxnID: ${orderSuccess.transaction_id})` : ""}`, 130, 45);
-    doc.setFontSize(11); doc.text("Customer:", 20, 65);
-    doc.setFontSize(9);
-    doc.text(`Name: ${orderSuccess.customer_name}`, 25, 73);
-    doc.text(`Phone: ${orderSuccess.phone}`, 25, 80);
-    doc.text(`Address: ${orderSuccess.address}`, 25, 87);
-
-    let y = 100;
-    doc.setFontSize(9); doc.setFillColor(245, 245, 245); doc.rect(20, y - 5, 170, 10, "F");
-    doc.text("Item", 25, y + 2); doc.text("Qty", 120, y + 2); doc.text("Price", 145, y + 2); doc.text("Total", 170, y + 2);
-    y += 12;
     const cartItems = Array.isArray(orderSuccess.cart_items) ? orderSuccess.cart_items : [];
-    cartItems.forEach((item: any) => {
-      doc.text(String(item.name || "Item").substring(0, 40), 25, y);
-      doc.text(String(item.quantity || 1), 123, y);
-      doc.text(`${item.price || 0}`, 145, y);
-      doc.text(`${(item.price || 0) * (item.quantity || 1)}`, 170, y);
-      y += 8;
-    });
-    doc.line(20, y, 190, y); y += 8;
-    doc.setFontSize(9); doc.text(`Subtotal: BDT ${orderSuccess.total - savedDelivery}`, 140, y); y += 7;
-    doc.text(`Delivery: BDT ${savedDelivery}`, 140, y); y += 7;
-    doc.setFontSize(12); doc.text(`Total: BDT ${orderSuccess.total}`, 140, y);
-    doc.save(`invoice-${orderSuccess.tracking_id || orderSuccess.id.slice(0, 8)}.pdf`);
+    const subtotal = orderSuccess.total - savedDelivery;
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Invoice - ${orderSuccess.tracking_id || ""}</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Tahoma,sans-serif;padding:40px;color:#111;max-width:800px;margin:auto}
+h1{font-size:28px;font-weight:700;margin-bottom:4px}h2{font-size:14px;font-weight:400;color:#666;margin-bottom:16px}
+.line{border-top:2px solid #111;margin:12px 0 20px}.meta{display:flex;justify-content:space-between;font-size:13px;line-height:1.8}
+.section-title{font-size:15px;font-weight:600;margin:20px 0 8px}.detail{font-size:13px;line-height:1.8;padding-left:12px}
+table{width:100%;border-collapse:collapse;margin-top:20px;font-size:13px}th{background:#f5f5f5;text-align:left;padding:10px 12px;border:1px solid #ddd}
+td{padding:10px 12px;border:1px solid #eee}.total-row{text-align:right;font-size:13px;margin-top:12px;line-height:2}
+.grand-total{font-size:20px;font-weight:700;text-align:right;margin-top:8px}
+@media print{body{padding:20px}button{display:none!important}}</style></head><body>
+<h1>SAILOR</h1><h2>Invoice / Memo</h2><div class="line"></div>
+<div class="meta"><div><div>Order ID: #${(orderSuccess.id || "").slice(0, 8)}</div><div>Date: ${new Date(orderSuccess.created_at).toLocaleDateString("en-GB")}</div></div>
+<div style="text-align:right"><div>Status: ${(orderSuccess.status || "PENDING").toUpperCase()}</div><div>Payment: ${orderSuccess.payment_method || "Cash on Delivery"}${orderSuccess.transaction_id ? ` (TxnID: ${orderSuccess.transaction_id})` : ""}</div></div></div>
+<div class="section-title">Customer Details:</div>
+<div class="detail">Name: ${orderSuccess.customer_name}<br>Phone: ${orderSuccess.phone}<br>Address: ${orderSuccess.address}</div>
+<table><thead><tr><th>Item</th><th style="width:60px">Qty</th><th style="width:90px">Price</th><th style="width:90px">Total</th></tr></thead><tbody>
+${cartItems.map((item: any) => `<tr><td>${item.name || "Item"}</td><td>${item.quantity || 1}</td><td>BDT ${item.price || 0}</td><td>BDT ${(item.price || 0) * (item.quantity || 1)}</td></tr>`).join("")}
+</tbody></table>
+<div class="total-row">Subtotal: BDT ${subtotal}<br>Delivery: BDT ${savedDelivery}</div>
+<div class="grand-total">Total: BDT ${orderSuccess.total}</div>
+<script>window.onload=function(){window.print()}<\/script></body></html>`;
+
+    const win = window.open("", "_blank");
+    if (win) { win.document.write(html); win.document.close(); }
   };
 
   const copyTrackingId = () => {
