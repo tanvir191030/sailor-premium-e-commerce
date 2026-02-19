@@ -11,17 +11,17 @@ const categories: Category[] = [
   {
     name: "Men",
     image: "https://images.unsplash.com/photo-1617137968427-85924c800a22?w=800&h=800&fit=crop",
-    href: "/",
+    href: "/category/men",
   },
   {
     name: "Women",
     image: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=800&h=800&fit=crop",
-    href: "/",
+    href: "/category/women",
   },
   {
     name: "Kids",
     image: "https://images.unsplash.com/photo-1503919545889-aef636e10ad4?w=800&h=800&fit=crop",
-    href: "/",
+    href: "/category/kids",
   },
 ];
 
