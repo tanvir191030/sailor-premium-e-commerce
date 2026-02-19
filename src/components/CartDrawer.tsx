@@ -1,11 +1,18 @@
+import { useEffect } from "react";
 import { X, Minus, Plus, ShoppingBag } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import { formatPrice } from "@/lib/currency";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 const CartDrawer = () => {
   const { items, isOpen, setIsOpen, removeItem, updateQuantity, totalItems, totalPrice } = useCart();
+  const location = useLocation();
+
+  // Auto-close on /checkout
+  useEffect(() => {
+    if (location.pathname === "/checkout") setIsOpen(false);
+  }, [location.pathname, setIsOpen]);
 
   return (
     <AnimatePresence>
