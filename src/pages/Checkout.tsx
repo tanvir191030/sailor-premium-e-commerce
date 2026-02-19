@@ -13,9 +13,14 @@ import SuccessAnimation from "@/components/SuccessAnimation";
 import jsPDF from "jspdf";
 
 const BD_DISTRICTS = [
-  "ঢাকা", "চট্টগ্রাম", "রাজশাহী", "খুলনা", "বরিশাল", "সিলেট", "রংপুর", "ময়মনসিংহ",
-  "কুমিল্লা", "গাজীপুর", "নারায়ণগঞ্জ", "টাঙ্গাইল", "ফরিদপুর", "নোয়াখালী", "বগুড়া",
-  "দিনাজপুর", "যশোর", "কুষ্টিয়া", "পাবনা", "নাটোর", "সাতক্ষীরা",
+  "ঢাকা", "গাজীপুর", "নারায়ণগঞ্জ", "মানিকগঞ্জ", "মুন্সিগঞ্জ", "নরসিংদী", "টাঙ্গাইল", "কিশোরগঞ্জ",
+  "ময়মনসিংহ", "জামালপুর", "শেরপুর", "নেত্রকোনা", "ফরিদপুর", "মাদারীপুর", "শরীয়তপুর", "রাজবাড়ী",
+  "গোপালগঞ্জ", "চট্টগ্রাম", "কক্সবাজার", "রাঙামাটি", "বান্দরবান", "খাগড়াছড়ি", "কুমিল্লা", "চাঁদপুর",
+  "লক্ষ্মীপুর", "নোয়াখালী", "ফেনী", "ব্রাহ্মণবাড়িয়া", "রাজশাহী", "নাটোর", "নওগাঁ", "চাঁপাইনবাবগঞ্জ",
+  "পাবনা", "সিরাজগঞ্জ", "বগুড়া", "জয়পুরহাট", "খুলনা", "বাগেরহাট", "সাতক্ষীরা", "যশোর",
+  "নড়াইল", "মাগুরা", "কুষ্টিয়া", "মেহেরপুর", "চুয়াডাঙ্গা", "ঝিনাইদহ", "বরিশাল", "পটুয়াখালী",
+  "ভোলা", "পিরোজপুর", "ঝালকাঠি", "বরগুনা", "সিলেট", "মৌলভীবাজার", "হবিগঞ্জ", "সুনামগঞ্জ",
+  "রংপুর", "দিনাজপুর", "গাইবান্ধা", "কুড়িগ্রাম", "লালমনিরহাট", "নীলফামারী", "ঠাকুরগাঁও", "পঞ্চগড়",
 ];
 
 const Checkout = () => {
@@ -65,6 +70,10 @@ const Checkout = () => {
     e.preventDefault();
     if (!form.name.trim() || !form.phone.trim() || !form.address.trim()) {
       toast({ title: "নাম, ফোন ও ঠিকানা আবশ্যক", variant: "destructive" });
+      return;
+    }
+    if (!form.district) {
+      toast({ title: "জেলা নির্বাচন করুন", variant: "destructive" });
       return;
     }
     if (!/^01\d{9}$/.test(form.phone.trim())) {
@@ -203,52 +212,20 @@ const Checkout = () => {
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="text-xs font-medium text-muted-foreground mb-1.5 block">জেলা</label>
-                        <select value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} className={inputCls}>
-                          <option value="">জেলা নির্বাচন</option>
+                         <label className="text-xs font-medium text-muted-foreground mb-1.5 block">জেলা *</label>
+                        <select value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} className={inputCls} required>
+                          <option value="">জেলা নির্বাচন করুন</option>
                           {BD_DISTRICTS.map((d) => <option key={d} value={d}>{d}</option>)}
                         </select>
+                        {form.district && (
+                          <p className="text-xs mt-1 text-muted-foreground">
+                            ডেলিভারি: {deliveryZone === "inside_dhaka" ? "ঢাকার ভিতরে" : "ঢাকার বাইরে"} — {formatPrice(deliveryCharge)}
+                          </p>
+                        )}
                       </div>
                       <div>
                         <label className="text-xs font-medium text-muted-foreground mb-1.5 block">থানা/উপজেলা</label>
                         <input value={form.thana} onChange={(e) => setForm({ ...form, thana: e.target.value })} placeholder="থানা/উপজেলার নাম" className={inputCls} maxLength={100} />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1.5 block">সম্পূর্ণ ঠিকানা *</label>
-                      <textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="বাড়ি নম্বর, রোড, এলাকা" rows={3} className={`${inputCls} resize-none`} required maxLength={500} />
-                    </div>
-
-                    {/* Delivery Zone Selection */}
-                    <div className="pt-2 border-t border-border">
-                      <label className="text-xs font-medium text-muted-foreground mb-3 block flex items-center gap-1.5">
-                        <MapPin size={14} /> ডেলিভারি এলাকা
-                      </label>
-                      <div className="grid grid-cols-2 gap-3">
-                        <button
-                          type="button"
-                          onClick={() => setDeliveryZone("inside_dhaka")}
-                          className={`p-3 rounded-xl border text-sm font-medium transition-all ${
-                            deliveryZone === "inside_dhaka"
-                              ? "border-primary bg-primary/10 text-primary"
-                              : "border-border text-muted-foreground hover:border-ring"
-                          }`}
-                        >
-                          <span className="block">ঢাকার ভিতরে</span>
-                          <span className="text-xs opacity-75">{formatPrice(deliverySettings?.inside_dhaka ?? 80)}</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDeliveryZone("outside_dhaka")}
-                          className={`p-3 rounded-xl border text-sm font-medium transition-all ${
-                            deliveryZone === "outside_dhaka"
-                              ? "border-primary bg-primary/10 text-primary"
-                              : "border-border text-muted-foreground hover:border-ring"
-                          }`}
-                        >
-                          <span className="block">ঢাকার বাইরে</span>
-                          <span className="text-xs opacity-75">{formatPrice(deliverySettings?.outside_dhaka ?? 130)}</span>
-                        </button>
                       </div>
                     </div>
 
