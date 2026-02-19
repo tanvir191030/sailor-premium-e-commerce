@@ -3,12 +3,24 @@ import { X, ShoppingBag, Minus, Plus } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { formatPrice } from "@/lib/currency";
 import { useNavigate } from "react-router-dom";
-
-const DELIVERY_CHARGE = 120;
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const BuyNowDrawer = () => {
   const { items, totalPrice, totalItems, updateQuantity, removeItem, isBuyNowOpen, setIsBuyNowOpen } = useCart();
   const navigate = useNavigate();
+
+  const { data: deliverySettings } = useQuery({
+    queryKey: ["delivery-charges"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("site_settings").select("key, value").in("key", ["delivery_inside_dhaka", "delivery_outside_dhaka"]);
+      if (error) throw error;
+      const map: Record<string, number> = {};
+      data?.forEach((s) => { map[s.key] = Number(s.value) || 0; });
+      return { inside: map["delivery_inside_dhaka"] ?? 80, outside: map["delivery_outside_dhaka"] ?? 130 };
+    },
+  });
+  const minDelivery = deliverySettings?.inside ?? 80;
 
   const handleCheckout = () => {
     setIsBuyNowOpen(false);
@@ -77,12 +89,12 @@ const BuyNowDrawer = () => {
                   <span>{formatPrice(totalPrice)}</span>
                 </div>
                 <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>ডেলিভারি</span>
-                  <span>{formatPrice(DELIVERY_CHARGE)}</span>
+                  <span>ডেলিভারি (থেকে)</span>
+                  <span>{formatPrice(minDelivery)}+</span>
                 </div>
                 <div className="flex justify-between font-bold text-foreground pt-2 border-t border-border">
-                  <span>মোট</span>
-                  <span>{formatPrice(totalPrice + DELIVERY_CHARGE)}</span>
+                  <span>মোট (আনুমানিক)</span>
+                  <span>{formatPrice(totalPrice + minDelivery)}</span>
                 </div>
                 <button
                   onClick={handleCheckout}

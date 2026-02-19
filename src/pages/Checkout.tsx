@@ -1,17 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { formatPrice } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { ArrowLeft, ShoppingBag, FileDown, Truck, Copy } from "lucide-react";
+import { ArrowLeft, ShoppingBag, FileDown, Truck, Copy, MapPin } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SuccessAnimation from "@/components/SuccessAnimation";
 import jsPDF from "jspdf";
-
-const DELIVERY_CHARGE = 120;
 
 const BD_DISTRICTS = [
   "ঢাকা", "চট্টগ্রাম", "রাজশাহী", "খুলনা", "বরিশাল", "সিলেট", "রংপুর", "ময়মনসিংহ",
@@ -25,10 +24,42 @@ const Checkout = () => {
   const [form, setForm] = useState({
     name: "", phone: "", email: "", district: "", thana: "", address: "",
   });
+  const [deliveryZone, setDeliveryZone] = useState<"inside_dhaka" | "outside_dhaka">("inside_dhaka");
   const [submitting, setSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState<any>(null);
 
-  const grandTotal = totalPrice + DELIVERY_CHARGE;
+  // Fetch delivery charges from settings
+  const { data: deliverySettings } = useQuery({
+    queryKey: ["delivery-charges"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("site_settings")
+        .select("key, value")
+        .in("key", ["delivery_inside_dhaka", "delivery_outside_dhaka"]);
+      if (error) throw error;
+      const map: Record<string, number> = {};
+      data?.forEach((s) => { map[s.key] = Number(s.value) || 0; });
+      return {
+        inside_dhaka: map["delivery_inside_dhaka"] ?? 80,
+        outside_dhaka: map["delivery_outside_dhaka"] ?? 130,
+      };
+    },
+  });
+
+  const deliveryCharge = deliveryZone === "inside_dhaka"
+    ? (deliverySettings?.inside_dhaka ?? 80)
+    : (deliverySettings?.outside_dhaka ?? 130);
+
+  const grandTotal = totalPrice + deliveryCharge;
+
+  // Auto-detect zone from district
+  useEffect(() => {
+    if (form.district === "ঢাকা" || form.district === "গাজীপুর" || form.district === "নারায়ণগঞ্জ") {
+      setDeliveryZone("inside_dhaka");
+    } else if (form.district) {
+      setDeliveryZone("outside_dhaka");
+    }
+  }, [form.district]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +88,7 @@ const Checkout = () => {
         address: fullAddress,
         cart_items: items.map((i) => ({ name: i.name, price: i.price, quantity: i.quantity, image: i.image })),
         total: grandTotal,
+        delivery_charge: deliveryCharge,
         payment_method: "Cash on Delivery",
       }).select().single();
 
@@ -73,6 +105,7 @@ const Checkout = () => {
 
   const downloadInvoice = () => {
     if (!orderSuccess) return;
+    const savedDelivery = orderSuccess.delivery_charge ?? deliveryCharge;
     const doc = new jsPDF();
     doc.setFontSize(22); doc.text("SAILOR", 20, 25);
     doc.setFontSize(10); doc.setTextColor(100); doc.text("Order Invoice", 20, 33);
@@ -100,8 +133,8 @@ const Checkout = () => {
       y += 8;
     });
     doc.line(20, y, 190, y); y += 8;
-    doc.setFontSize(9); doc.text(`Subtotal: BDT ${orderSuccess.total - DELIVERY_CHARGE}`, 140, y); y += 7;
-    doc.text(`Delivery: BDT ${DELIVERY_CHARGE}`, 140, y); y += 7;
+    doc.setFontSize(9); doc.text(`Subtotal: BDT ${orderSuccess.total - savedDelivery}`, 140, y); y += 7;
+    doc.text(`Delivery: BDT ${savedDelivery}`, 140, y); y += 7;
     doc.setFontSize(12); doc.text(`Total: BDT ${orderSuccess.total}`, 140, y);
     doc.save(`invoice-${orderSuccess.tracking_id || orderSuccess.id.slice(0, 8)}.pdf`);
   };
@@ -186,6 +219,39 @@ const Checkout = () => {
                       <textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="বাড়ি নম্বর, রোড, এলাকা" rows={3} className={`${inputCls} resize-none`} required maxLength={500} />
                     </div>
 
+                    {/* Delivery Zone Selection */}
+                    <div className="pt-2 border-t border-border">
+                      <label className="text-xs font-medium text-muted-foreground mb-3 block flex items-center gap-1.5">
+                        <MapPin size={14} /> ডেলিভারি এলাকা
+                      </label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setDeliveryZone("inside_dhaka")}
+                          className={`p-3 rounded-xl border text-sm font-medium transition-all ${
+                            deliveryZone === "inside_dhaka"
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-border text-muted-foreground hover:border-ring"
+                          }`}
+                        >
+                          <span className="block">ঢাকার ভিতরে</span>
+                          <span className="text-xs opacity-75">{formatPrice(deliverySettings?.inside_dhaka ?? 80)}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeliveryZone("outside_dhaka")}
+                          className={`p-3 rounded-xl border text-sm font-medium transition-all ${
+                            deliveryZone === "outside_dhaka"
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-border text-muted-foreground hover:border-ring"
+                          }`}
+                        >
+                          <span className="block">ঢাকার বাইরে</span>
+                          <span className="text-xs opacity-75">{formatPrice(deliverySettings?.outside_dhaka ?? 130)}</span>
+                        </button>
+                      </div>
+                    </div>
+
                     <div className="pt-2 border-t border-border">
                       <div className="flex items-center gap-2 py-3 text-sm text-muted-foreground">
                         <Truck size={16} /> ক্যাশ অন ডেলিভারি
@@ -224,7 +290,10 @@ const Checkout = () => {
                       </div>
                       <div className="border-t border-border pt-3 space-y-2">
                         <div className="flex justify-between text-sm text-muted-foreground"><span>সাবটোটাল</span><span>{formatPrice(totalPrice)}</span></div>
-                        <div className="flex justify-between text-sm text-muted-foreground"><span>ডেলিভারি চার্জ</span><span>{formatPrice(DELIVERY_CHARGE)}</span></div>
+                        <div className="flex justify-between text-sm text-muted-foreground">
+                          <span>ডেলিভারি ({deliveryZone === "inside_dhaka" ? "ঢাকা" : "ঢাকার বাইরে"})</span>
+                          <span>{formatPrice(deliveryCharge)}</span>
+                        </div>
                         <div className="flex justify-between font-bold text-base pt-2 border-t border-border text-foreground"><span>মোট</span><span>{formatPrice(grandTotal)}</span></div>
                       </div>
                     </>

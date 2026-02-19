@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/lib/currency";
-import { Download, Save, Globe, Share2 } from "lucide-react";
+import { Download, Save, Globe, Share2, Truck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const AdminSettings = () => {
@@ -20,12 +20,17 @@ const AdminSettings = () => {
   const [instagram, setInstagram] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [contactEmail, setContactEmail] = useState("");
+  const [insideDhaka, setInsideDhaka] = useState("80");
+  const [outsideDhaka, setOutsideDhaka] = useState("130");
   const [loaded, setLoaded] = useState(false);
 
   if (settings.length > 0 && !loaded) {
     setSiteName(getSetting("site_name") || "SAILOR"); setFacebook(getSetting("facebook") || "");
     setInstagram(getSetting("instagram") || ""); setContactPhone(getSetting("contact_phone") || "");
-    setContactEmail(getSetting("contact_email") || ""); setLoaded(true);
+    setContactEmail(getSetting("contact_email") || "");
+    setInsideDhaka(getSetting("delivery_inside_dhaka") || "80");
+    setOutsideDhaka(getSetting("delivery_outside_dhaka") || "130");
+    setLoaded(true);
   }
 
   const saveSetting = useMutation({
@@ -40,7 +45,10 @@ const AdminSettings = () => {
   const handleSave = () => {
     saveSetting.mutate({ key: "site_name", value: siteName }); saveSetting.mutate({ key: "facebook", value: facebook });
     saveSetting.mutate({ key: "instagram", value: instagram }); saveSetting.mutate({ key: "contact_phone", value: contactPhone });
-    saveSetting.mutate({ key: "contact_email", value: contactEmail }); toast({ title: "সেটিংস সেভ হয়েছে" });
+    saveSetting.mutate({ key: "contact_email", value: contactEmail });
+    saveSetting.mutate({ key: "delivery_inside_dhaka", value: insideDhaka });
+    saveSetting.mutate({ key: "delivery_outside_dhaka", value: outsideDhaka });
+    toast({ title: "সেটিংস সেভ হয়েছে" });
   };
 
   const { data: orders = [] } = useQuery({ queryKey: ["admin-orders"], queryFn: async () => { const { data, error } = await supabase.from("orders").select("*").order("created_at", { ascending: false }); if (error) throw error; return data; } });
@@ -72,6 +80,22 @@ const AdminSettings = () => {
           <div><label className="text-xs text-muted-foreground mb-1 block">কন্টাক্ট ফোন</label><input value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="01XXXXXXXXX" className={inputCls} /></div>
           <div><label className="text-xs text-muted-foreground mb-1 block">কন্টাক্ট ইমেইল</label><input value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="info@example.com" className={inputCls} /></div>
         </div>
+      </div>
+
+      {/* Delivery Charges */}
+      <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
+        <div className="flex items-center gap-2 mb-4"><Truck size={18} className="text-muted-foreground" /><h3 className="font-serif text-base text-foreground">ডেলিভারি চার্জ</h3></div>
+        <div className="grid sm:grid-cols-2 gap-4 max-w-lg">
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">ঢাকার ভিতরে (৳)</label>
+            <input type="number" value={insideDhaka} onChange={(e) => setInsideDhaka(e.target.value)} className={inputCls} min="0" />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">ঢাকার বাইরে (৳)</label>
+            <input type="number" value={outsideDhaka} onChange={(e) => setOutsideDhaka(e.target.value)} className={inputCls} min="0" />
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground mt-3">এই চার্জ চেকআউট পেজে স্বয়ংক্রিয়ভাবে প্রয়োগ হবে।</p>
       </div>
 
       <div className="bg-card p-6 rounded-xl shadow-sm border border-border">

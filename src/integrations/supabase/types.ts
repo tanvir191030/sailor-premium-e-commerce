@@ -126,6 +126,7 @@ export type Database = {
           courier_tracking_id: string | null
           created_at: string | null
           customer_name: string
+          delivery_charge: number | null
           district: string | null
           email: string | null
           id: string
@@ -144,6 +145,7 @@ export type Database = {
           courier_tracking_id?: string | null
           created_at?: string | null
           customer_name: string
+          delivery_charge?: number | null
           district?: string | null
           email?: string | null
           id?: string
@@ -162,6 +164,7 @@ export type Database = {
           courier_tracking_id?: string | null
           created_at?: string | null
           customer_name?: string
+          delivery_charge?: number | null
           district?: string | null
           email?: string | null
           id?: string
