@@ -111,21 +111,9 @@ const AdminProducts = () => {
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  const addCategoryMutation = useMutation({
-    mutationFn: async (name: string) => { const { error } = await supabase.from("categories").insert({ name }); if (error) throw error; },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["categories"] }),
-  });
-
-  const addBrandMutation = useMutation({
-    mutationFn: async (name: string) => { const { error } = await supabase.from("brands").insert({ name }); if (error) throw error; },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["brands"] }),
-  });
-
   const resetForm = () => { setForm({ name: "", price: "", category: "", brand: "", stock: "", description: "", is_featured: false }); setImageFiles([]); setImagePreviews([]); setEditingId(null); setShowForm(false); };
   const startEdit = (p: any) => { setForm({ name: p.name, price: String(p.price), category: p.category || "", brand: p.brand || "", stock: String(p.stock ?? 0), description: p.description || "", is_featured: p.is_featured || false }); setEditingId(p.id); setImageFiles([]); setImagePreviews([]); setShowForm(true); };
   const filtered = products.filter((p: any) => p.name.toLowerCase().includes(search.toLowerCase()) || (p.category || "").toLowerCase().includes(search.toLowerCase()));
-  const [newCategory, setNewCategory] = useState("");
-  const [newBrand, setNewBrand] = useState("");
 
   return (
     <div className="space-y-6">
@@ -137,30 +125,6 @@ const AdminProducts = () => {
         <button onClick={() => { resetForm(); setShowForm(true); }} className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-full text-sm font-medium hover:opacity-90 transition-opacity">
           <Plus size={16} /> Add Product
         </button>
-      </div>
-
-      {/* Categories & Brands */}
-      <div className="grid md:grid-cols-2 gap-4">
-        <div className="bg-card p-4 rounded-xl shadow-sm border border-border">
-          <h4 className="font-medium text-sm mb-3 text-foreground">Categories</h4>
-          <div className="flex gap-2 mb-2">
-            <input value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="New category" className="flex-1 px-3 py-1.5 border border-border rounded-lg text-sm focus:outline-none bg-transparent text-foreground placeholder:text-muted-foreground" />
-            <button onClick={() => { if (newCategory.trim()) { addCategoryMutation.mutate(newCategory.trim()); setNewCategory(""); } }} className="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium">Add</button>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {categories.map((c: any) => <span key={c.id} className="px-2.5 py-1 bg-emerald-500/10 text-emerald-500 text-xs rounded-full">{c.name}</span>)}
-          </div>
-        </div>
-        <div className="bg-card p-4 rounded-xl shadow-sm border border-border">
-          <h4 className="font-medium text-sm mb-3 text-foreground">Brands</h4>
-          <div className="flex gap-2 mb-2">
-            <input value={newBrand} onChange={(e) => setNewBrand(e.target.value)} placeholder="New brand" className="flex-1 px-3 py-1.5 border border-border rounded-lg text-sm focus:outline-none bg-transparent text-foreground placeholder:text-muted-foreground" />
-            <button onClick={() => { if (newBrand.trim()) { addBrandMutation.mutate(newBrand.trim()); setNewBrand(""); } }} className="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium">Add</button>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {brands.map((b: any) => <span key={b.id} className="px-2.5 py-1 bg-blue-500/10 text-blue-500 text-xs rounded-full">{b.name}</span>)}
-          </div>
-        </div>
       </div>
 
       {/* Form Modal */}
