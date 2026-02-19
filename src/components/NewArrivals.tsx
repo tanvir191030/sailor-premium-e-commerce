@@ -30,7 +30,7 @@ const NewArrivals = ({ products }: NewArrivalsProps) => {
   }
 
   return (
-    <section className="py-16 md:py-24">
+    <section className="py-10 md:py-14">
       <div className="container mx-auto px-4 md:px-6">
         {/* Section Header */}
         <motion.div
@@ -38,7 +38,7 @@ const NewArrivals = ({ products }: NewArrivalsProps) => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-12 md:mb-16"
+          className="text-center mb-8 md:mb-10"
         >
           <span className="text-label mb-4 block">Just Landed</span>
           <h2 className="heading-section">New Arrivals</h2>
