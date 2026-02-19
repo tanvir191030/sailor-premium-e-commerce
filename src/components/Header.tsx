@@ -10,6 +10,7 @@ const Header = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { data: products = [] } = useProducts();
 
@@ -21,18 +22,32 @@ const Header = () => {
 
   useEffect(() => {
     if (isSearchOpen) {
-      setTimeout(() => searchInputRef.current?.focus(), 100);
+      setTimeout(() => searchInputRef.current?.focus(), 200);
     } else {
       setSearchQuery("");
     }
   }, [isSearchOpen]);
 
+  // Close on outside click
+  useEffect(() => {
+    if (!isSearchOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setIsSearchOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [isSearchOpen]);
+
   const filteredProducts = searchQuery.trim()
-    ? products.filter(
-        (p) =>
-          p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.category?.toLowerCase().includes(searchQuery.toLowerCase())
-      ).slice(0, 6)
+    ? products
+        .filter(
+          (p) =>
+            p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            p.category?.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        .slice(0, 5)
     : [];
 
   const navLinks = [
@@ -83,23 +98,105 @@ const Header = () => {
               </h1>
             </Link>
 
-            {/* Right Navigation */}
-            <div className="flex items-center justify-end gap-4">
-              <nav className="hidden md:flex items-center gap-6 mr-4">
-                {navLinks.slice(3).map((link) => (
-                  <Link key={link.name} to={link.href} className="nav-link">
-                    {link.name}
-                  </Link>
-                ))}
-              </nav>
+            {/* Right Side */}
+            <div className="flex items-center justify-end gap-4" ref={searchContainerRef}>
+              {/* Right nav links — hidden when search is open */}
+              <AnimatePresence>
+                {!isSearchOpen && (
+                  <motion.nav
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="hidden md:flex items-center gap-6 mr-4"
+                  >
+                    {navLinks.slice(3).map((link) => (
+                      <Link key={link.name} to={link.href} className="nav-link">
+                        {link.name}
+                      </Link>
+                    ))}
+                  </motion.nav>
+                )}
+              </AnimatePresence>
 
-              <button
-                className="p-2 hover:opacity-70 transition-opacity"
-                aria-label="Search"
-                onClick={() => setIsSearchOpen(true)}
-              >
-                <Search size={20} />
-              </button>
+              {/* Inline Search */}
+              <div className="relative flex items-center">
+                <AnimatePresence>
+                  {isSearchOpen && (
+                    <motion.div
+                      initial={{ width: 0, opacity: 0 }}
+                      animate={{ width: 220, opacity: 1 }}
+                      exit={{ width: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                      className="overflow-hidden mr-1"
+                    >
+                      <input
+                        ref={searchInputRef}
+                        type="text"
+                        placeholder="Search..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full bg-transparent border-b border-foreground/30 py-1 text-sm focus:outline-none focus:border-foreground transition-colors placeholder:text-muted-foreground"
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <button
+                  className="p-2 hover:opacity-70 transition-opacity flex-shrink-0"
+                  aria-label={isSearchOpen ? "Close search" : "Search"}
+                  onClick={() => setIsSearchOpen((prev) => !prev)}
+                >
+                  {isSearchOpen ? <X size={18} /> : <Search size={20} />}
+                </button>
+
+                {/* Dropdown Results */}
+                <AnimatePresence>
+                  {isSearchOpen && searchQuery.trim() && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 4 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute top-full right-0 mt-2 w-72 bg-background border border-border shadow-lg z-50 max-h-80 overflow-y-auto"
+                    >
+                      {filteredProducts.length > 0 ? (
+                        filteredProducts.map((product) => (
+                          <button
+                            key={product.id}
+                            onClick={() => {
+                              setIsSearchOpen(false);
+                              if (product.category) {
+                                navigate(`/category/${product.category.toLowerCase()}`);
+                              }
+                            }}
+                            className="w-full flex items-center gap-3 p-3 hover:bg-secondary transition-colors text-left"
+                          >
+                            <div className="w-10 h-10 bg-secondary overflow-hidden flex-shrink-0">
+                              <img
+                                src={product.image_url || "/placeholder.svg"}
+                                alt={product.name}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-medium text-xs truncate">{product.name}</p>
+                              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                                {product.category || "Uncategorized"} ·{" "}
+                                {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(product.price)}
+                              </p>
+                            </div>
+                          </button>
+                        ))
+                      ) : (
+                        <p className="text-muted-foreground text-center text-xs py-6">
+                          No results for "{searchQuery}"
+                        </p>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
               <button className="p-2 hover:opacity-70 transition-opacity" aria-label="Wishlist">
                 <Heart size={20} />
@@ -141,101 +238,6 @@ const Header = () => {
           )}
         </AnimatePresence>
       </header>
-
-      {/* Search Overlay */}
-      <AnimatePresence>
-        {isSearchOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-[100] bg-background/95 backdrop-blur-sm"
-          >
-            <div className="container mx-auto px-4 md:px-6 pt-8">
-              {/* Close */}
-              <div className="flex justify-end mb-8">
-                <button
-                  onClick={() => setIsSearchOpen(false)}
-                  className="p-2 hover:opacity-70 transition-opacity"
-                  aria-label="Close search"
-                >
-                  <X size={24} />
-                </button>
-              </div>
-
-              {/* Search Input */}
-              <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.1 }}
-                className="max-w-2xl mx-auto"
-              >
-                <div className="relative">
-                  <Search size={20} className="absolute left-0 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <input
-                    ref={searchInputRef}
-                    type="text"
-                    placeholder="Search products..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-transparent border-b border-border py-4 pl-8 pr-4 text-xl md:text-2xl font-light focus:outline-none focus:border-foreground transition-colors placeholder:text-muted-foreground"
-                  />
-                </div>
-
-                {/* Results */}
-                {searchQuery.trim() && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="mt-8 space-y-4"
-                  >
-                    {filteredProducts.length > 0 ? (
-                      filteredProducts.map((product, index) => (
-                        <motion.div
-                          key={product.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.05 }}
-                        >
-                          <button
-                            onClick={() => {
-                              setIsSearchOpen(false);
-                              if (product.category) {
-                                navigate(`/category/${product.category.toLowerCase()}`);
-                              }
-                            }}
-                            className="w-full flex items-center gap-4 p-3 hover:bg-secondary transition-colors text-left"
-                          >
-                            <div className="w-14 h-14 bg-secondary overflow-hidden flex-shrink-0">
-                              <img
-                                src={product.image_url || "/placeholder.svg"}
-                                alt={product.name}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            <div>
-                              <p className="font-medium text-sm">{product.name}</p>
-                              <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                                {product.category || "Uncategorized"} ·{" "}
-                                {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(product.price)}
-                              </p>
-                            </div>
-                          </button>
-                        </motion.div>
-                      ))
-                    ) : (
-                      <p className="text-muted-foreground text-center py-8">
-                        No products found for "{searchQuery}"
-                      </p>
-                    )}
-                  </motion.div>
-                )}
-              </motion.div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </>
   );
 };
