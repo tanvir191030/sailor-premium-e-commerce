@@ -4,7 +4,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
+import { WishlistProvider } from "./contexts/WishlistContext";
+import { CartProvider } from "./contexts/CartContext";
 import ScrollToTop from "./components/ScrollToTop";
+import CartDrawer from "./components/CartDrawer";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -35,12 +38,17 @@ const AnimatedRoutes = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <ScrollToTop />
-        <AnimatedRoutes />
-      </BrowserRouter>
+      <WishlistProvider>
+        <CartProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <ScrollToTop />
+            <CartDrawer />
+            <AnimatedRoutes />
+          </BrowserRouter>
+        </CartProvider>
+      </WishlistProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

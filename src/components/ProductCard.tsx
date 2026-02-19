@@ -1,6 +1,10 @@
 import { useState } from "react";
-import { Heart } from "lucide-react";
+import { Heart, ShoppingCart, Zap } from "lucide-react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { useWishlist } from "@/contexts/WishlistContext";
+import { useCart } from "@/contexts/CartContext";
+import { formatPrice } from "@/lib/currency";
 
 interface ProductCardProps {
   id: string;
@@ -21,14 +25,21 @@ const ProductCard = ({
   category,
   isNew = false,
 }: ProductCardProps) => {
-  const [isWishlisted, setIsWishlisted] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const { toggle, isWishlisted } = useWishlist();
+  const { addItem } = useCart();
+  const navigate = useNavigate();
+  const wishlisted = isWishlisted(id);
 
-  const formatPrice = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    addItem({ id, name, price, image, category });
+  };
+
+  const handleBuyNow = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    addItem({ id, name, price, image, category });
+    navigate("/checkout");
   };
 
   return (
@@ -41,7 +52,6 @@ const ProductCard = ({
     >
       {/* Image Container */}
       <div className="product-image relative">
-        {/* Skeleton loader */}
         {!imageLoaded && (
           <div className="absolute inset-0 bg-secondary animate-pulse" />
         )}
@@ -72,21 +82,33 @@ const ProductCard = ({
         <button
           onClick={(e) => {
             e.preventDefault();
-            setIsWishlisted(!isWishlisted);
+            e.stopPropagation();
+            toggle(id);
           }}
           className="absolute top-3 right-3 p-2 bg-background/80 backdrop-blur-sm hover:bg-background transition-colors"
-          aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+          aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
         >
           <Heart
             size={18}
-            className={isWishlisted ? "fill-destructive text-destructive" : ""}
+            className={wishlisted ? "fill-destructive text-destructive" : ""}
           />
         </button>
 
-        {/* Quick Add Overlay */}
-        <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-          <button className="w-full bg-primary text-primary-foreground py-3 text-xs uppercase tracking-[0.15em] font-medium hover:bg-charcoal transition-colors">
-            Quick Add
+        {/* Dual Hover Buttons */}
+        <div className="absolute inset-x-0 bottom-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300 flex gap-2">
+          <button
+            onClick={handleAddToCart}
+            className="flex-1 bg-primary text-primary-foreground py-2.5 text-[10px] uppercase tracking-[0.12em] font-medium hover:bg-charcoal transition-colors flex items-center justify-center gap-1.5"
+          >
+            <ShoppingCart size={13} />
+            Add to Cart
+          </button>
+          <button
+            onClick={handleBuyNow}
+            className="flex-1 bg-background text-foreground border border-primary py-2.5 text-[10px] uppercase tracking-[0.12em] font-medium hover:bg-secondary transition-colors flex items-center justify-center gap-1.5"
+          >
+            <Zap size={13} />
+            Buy Now
           </button>
         </div>
       </div>
