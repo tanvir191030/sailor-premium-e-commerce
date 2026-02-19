@@ -1,50 +1,47 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
 
-const scrollPositions = new Map<string, number>();
-let pendingRestore: number | null = null;
-let currentNavType: "PUSH" | "POP" | "REPLACE" = "PUSH";
+let pendingScrollRestore: number | null = null;
 
-/** Call from PageTransition onAnimationComplete to restore scroll after animation */
-export const restoreScrollAfterTransition = (pathname: string) => {
-  if (currentNavType === "POP" && pendingRestore !== null) {
-    window.scrollTo(0, pendingRestore);
-    pendingRestore = null;
+/** Called by PageTransition after entrance animation completes */
+export const flushPendingScroll = () => {
+  if (pendingScrollRestore !== null) {
+    window.scrollTo({ top: pendingScrollRestore, behavior: "instant" });
+    pendingScrollRestore = null;
   }
-};
-
-export const useScrollRestore = () => {
-  const { pathname } = useLocation();
-
-  return useCallback(() => {
-    restoreScrollAfterTransition(pathname);
-  }, [pathname]);
 };
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
   const navType = useNavigationType();
-  const prevPath = useRef(pathname);
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Update module-level nav type
-  currentNavType = navType;
-
-  // Save scroll position when leaving a page
+  // Continuously save scroll position (debounced)
   useEffect(() => {
+    const handleScroll = () => {
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+      scrollTimeoutRef.current = setTimeout(() => {
+        sessionStorage.setItem(`scroll:${pathname}`, window.scrollY.toString());
+      }, 100);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => {
-      scrollPositions.set(prevPath.current, window.scrollY);
-      prevPath.current = pathname;
+      window.removeEventListener("scroll", handleScroll);
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+      // Save final position on unmount
+      sessionStorage.setItem(`scroll:${pathname}`, window.scrollY.toString());
     };
   }, [pathname]);
 
+  // On route change, decide scroll behavior
   useEffect(() => {
     if (navType === "POP") {
-      const saved = scrollPositions.get(pathname);
-      pendingRestore = saved ?? 0;
-      // Don't scroll here — PageTransition will call restoreScrollAfterTransition
+      const saved = sessionStorage.getItem(`scroll:${pathname}`);
+      // Queue restore — PageTransition will flush after animation
+      pendingScrollRestore = saved !== null ? parseInt(saved, 10) : 0;
     } else {
-      pendingRestore = null;
-      window.scrollTo(0, 0);
+      pendingScrollRestore = null;
+      window.scrollTo({ top: 0, behavior: "instant" });
     }
   }, [pathname, navType]);
 
