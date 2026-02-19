@@ -191,26 +191,38 @@ const AdminProducts = () => {
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">Images (up to 10)</label>
                 <input type="file" accept="image/*" multiple onChange={(e) => {
-                  const files = Array.from(e.target.files || []).slice(0, 10);
-                  setImageFiles(files);
-                  // Generate previews
-                  const previews = files.map(f => URL.createObjectURL(f));
-                  setImagePreviews(previews);
+                  const newFiles = Array.from(e.target.files || []);
+                  const combined = [...imageFiles, ...newFiles];
+                  if (combined.length > 10) {
+                    toast({ title: "সর্বোচ্চ ১০টি ছবি", description: `আপনি ${combined.length}টি সিলেক্ট করেছেন। সর্বোচ্চ ১০টি অনুমোদিত।`, variant: "destructive" });
+                    const trimmed = combined.slice(0, 10);
+                    setImageFiles(trimmed);
+                    // Revoke old previews first
+                    imagePreviews.forEach(p => URL.revokeObjectURL(p));
+                    setImagePreviews(trimmed.map(f => URL.createObjectURL(f)));
+                  } else {
+                    setImageFiles(combined);
+                    const newPrevs = newFiles.map(f => URL.createObjectURL(f));
+                    setImagePreviews(prev => [...prev, ...newPrevs]);
+                  }
+                  // Reset input so same file can be re-selected
+                  e.target.value = "";
                 }} className="w-full text-sm text-muted-foreground" />
                 {imagePreviews.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
+                  <div className="grid grid-cols-5 gap-2 mt-3">
                     {imagePreviews.map((src, i) => (
-                      <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-border">
+                      <div key={i} className="relative aspect-square rounded-lg overflow-hidden border border-border group">
                         <img src={src} alt={`Preview ${i + 1}`} className="w-full h-full object-cover" />
+                        {i === 0 && <span className="absolute bottom-0 left-0 right-0 bg-primary/80 text-primary-foreground text-[9px] text-center py-0.5">Main</span>}
                         <button type="button" onClick={() => {
                           const newFiles = [...imageFiles]; newFiles.splice(i, 1); setImageFiles(newFiles);
                           const newPreviews = [...imagePreviews]; URL.revokeObjectURL(newPreviews[i]); newPreviews.splice(i, 1); setImagePreviews(newPreviews);
-                        }} className="absolute top-0 right-0 bg-destructive text-destructive-foreground rounded-full w-4 h-4 flex items-center justify-center text-[10px]">×</button>
+                        }} className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity">×</button>
                       </div>
                     ))}
                   </div>
                 )}
-                <p className="text-xs text-muted-foreground mt-1">{imageFiles.length}/10 images selected</p>
+                <p className="text-xs text-muted-foreground mt-1">{imageFiles.length}/10 images selected {imageFiles.length > 0 && "• First image = main product image"}</p>
               </div>
               <label className="flex items-center gap-2 text-sm text-foreground">
                 <input type="checkbox" checked={form.is_featured} onChange={(e) => setForm({ ...form, is_featured: e.target.checked })} className="rounded" />
