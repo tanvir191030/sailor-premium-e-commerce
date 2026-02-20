@@ -21,6 +21,12 @@ import Checkout from "./pages/Checkout";
 import TrackOrder from "./pages/TrackOrder";
 import NotFound from "./pages/NotFound";
 import ProductDetail from "./pages/ProductDetail";
+import AboutUs from "./pages/AboutUs";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsConditions from "./pages/TermsConditions";
+import ShippingReturns from "./pages/ShippingReturns";
+import ContactUs from "./pages/ContactUs";
+import FAQ from "./pages/FAQ";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +44,12 @@ const AnimatedRoutes = () => {
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/track-order" element={<TrackOrder />} />
         <Route path="/product/:id" element={<ProductDetail />} />
+        <Route path="/about" element={<AboutUs />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsConditions />} />
+        <Route path="/shipping-returns" element={<ShippingReturns />} />
+        <Route path="/contact" element={<ContactUs />} />
+        <Route path="/faq" element={<FAQ />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>

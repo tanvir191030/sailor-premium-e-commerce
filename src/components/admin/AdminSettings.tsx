@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/lib/currency";
 import {
   Download, Save, Globe, Share2, Truck, Smartphone,
-  Upload, Image, Search, Mail, Phone, MapPin, FileText, Palette, Zap
+  Upload, Image, Search, Mail, Phone, MapPin, FileText, Palette, Zap, BookOpen
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -53,6 +53,8 @@ const AdminSettings = () => {
   const [faviconUrl, setFaviconUrl] = useState("");
   // Footer
   const [aboutUs, setAboutUs] = useState("");
+  const [aboutUsExtended, setAboutUsExtended] = useState("");
+  const [ourMission, setOurMission] = useState("");
   const [officeAddress, setOfficeAddress] = useState("");
   const [supportEmail, setSupportEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -72,6 +74,9 @@ const AdminSettings = () => {
   const [rocketNumber, setRocketNumber] = useState("");
   // Tracking
   const [facebookPixelId, setFacebookPixelId] = useState("");
+  // Pages
+  const [privacyPolicy, setPrivacyPolicy] = useState("");
+  const [termsConditions, setTermsConditions] = useState("");
 
   const [loaded, setLoaded] = useState(false);
   const [uploading, setUploading] = useState<"logo" | "favicon" | null>(null);
@@ -82,6 +87,8 @@ const AdminSettings = () => {
     setLogoUrl(getSetting("logo_url", ""));
     setFaviconUrl(getSetting("favicon_url", ""));
     setAboutUs(getSetting("about_us", ""));
+    setAboutUsExtended(getSetting("about_us_extended", ""));
+    setOurMission(getSetting("our_mission", ""));
     setOfficeAddress(getSetting("office_address", ""));
     setSupportEmail(getSetting("support_email", ""));
     setPhoneNumber(getSetting("phone_number", ""));
@@ -96,6 +103,8 @@ const AdminSettings = () => {
     setNagadNumber(getSetting("nagad_number", ""));
     setRocketNumber(getSetting("rocket_number", ""));
     setFacebookPixelId(getSetting("facebook_pixel_id", ""));
+    setPrivacyPolicy(getSetting("privacy_policy", ""));
+    setTermsConditions(getSetting("terms_conditions", ""));
     setLoaded(true);
   }
 
@@ -134,6 +143,8 @@ const AdminSettings = () => {
   const handleSaveFooter = async () => {
     await saveAll([
       { key: "about_us", value: aboutUs },
+      { key: "about_us_extended", value: aboutUsExtended },
+      { key: "our_mission", value: ourMission },
       { key: "office_address", value: officeAddress },
       { key: "support_email", value: supportEmail },
       { key: "phone_number", value: phoneNumber },
@@ -182,6 +193,14 @@ const AdminSettings = () => {
   const handleSaveTracking = async () => {
     await saveAll([{ key: "facebook_pixel_id", value: facebookPixelId }]);
     toast({ title: "✓ Tracking সেভ হয়েছে" });
+  };
+
+  const handleSavePages = async () => {
+    await saveAll([
+      { key: "privacy_policy", value: privacyPolicy },
+      { key: "terms_conditions", value: termsConditions },
+    ]);
+    toast({ title: "✓ পেজ কন্টেন্ট সেভ হয়েছে" });
   };
 
   // File upload helper
@@ -338,10 +357,16 @@ const AdminSettings = () => {
       </Section>
 
       {/* ── Footer Info ── */}
-      <Section icon={FileText} title="ফুটার তথ্য">
+      <Section icon={FileText} title="ফুটার ও About Us তথ্য">
         <div className="space-y-4 max-w-2xl">
-          <Field label="আমাদের সম্পর্কে (About Us)">
-            <textarea rows={3} value={aboutUs} onChange={(e) => setAboutUs(e.target.value)} placeholder="SAILOR হলো একটি প্রিমিয়াম ফ্যাশন ব্র্যান্ড..." className={textareaCls} />
+          <Field label="About Us (সংক্ষিপ্ত — ফুটারে দেখাবে)">
+            <textarea rows={2} value={aboutUs} onChange={(e) => setAboutUs(e.target.value)} placeholder="SAILOR হলো একটি প্রিমিয়াম ফ্যাশন ব্র্যান্ড..." className={textareaCls} />
+          </Field>
+          <Field label="About Us (বিস্তারিত — About পেজে দেখাবে)">
+            <textarea rows={5} value={aboutUsExtended} onChange={(e) => setAboutUsExtended(e.target.value)} placeholder="আমাদের বিস্তারিত গল্প এখানে লিখুন..." className={textareaCls} />
+          </Field>
+          <Field label="আমাদের লক্ষ্য (Mission)">
+            <textarea rows={2} value={ourMission} onChange={(e) => setOurMission(e.target.value)} placeholder="আমাদের লক্ষ্য হলো..." className={textareaCls} />
           </Field>
           <Field label="অফিসের ঠিকানা">
             <input value={officeAddress} onChange={(e) => setOfficeAddress(e.target.value)} placeholder="ঢাকা, বাংলাদেশ" className={inputCls} />
@@ -441,12 +466,26 @@ const AdminSettings = () => {
             </p>
           </Field>
           {facebookPixelId && (
-            <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs text-emerald-700 dark:text-emerald-400">
+            <div className="p-3 bg-primary/10 border border-primary/20 rounded-xl text-xs text-primary">
               ✓ Pixel ID সেট আছে — সাইটে স্বয়ংক্রিয়ভাবে সক্রিয় হবে
             </div>
           )}
         </div>
         <SaveBtn onClick={handleSaveTracking} />
+      </Section>
+
+      {/* ── Pages Content ── */}
+      <Section icon={BookOpen} title="পেজ কন্টেন্ট (Privacy Policy ও Terms)">
+        <div className="space-y-4 max-w-2xl">
+          <p className="text-xs text-muted-foreground">এখানে লেখা গুলো Privacy Policy ও Terms পেজে দেখাবে। খালি রাখলে ডিফল্ট কন্টেন্ট দেখাবে।</p>
+          <Field label="Privacy Policy (প্রাইভেসি পলিসি)">
+            <textarea rows={8} value={privacyPolicy} onChange={(e) => setPrivacyPolicy(e.target.value)} placeholder="**১. তথ্য সংগ্রহ**&#10;আমরা আপনার নাম..." className={textareaCls} />
+          </Field>
+          <Field label="Terms & Conditions (শর্তাবলী)">
+            <textarea rows={8} value={termsConditions} onChange={(e) => setTermsConditions(e.target.value)} placeholder="**১. শর্তাবলী গ্রহণ**&#10;এই ওয়েবসাইট ব্যবহার করে..." className={textareaCls} />
+          </Field>
+        </div>
+        <SaveBtn onClick={handleSavePages} />
       </Section>
 
       {/* ── Reports ── */}
