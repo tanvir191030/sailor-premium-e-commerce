@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/lib/currency";
 import {
   Download, Save, Globe, Share2, Truck, Smartphone,
-  Upload, Image, Search, Mail, Phone, MapPin, FileText, Palette
+  Upload, Image, Search, Mail, Phone, MapPin, FileText, Palette, Zap
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -70,6 +70,8 @@ const AdminSettings = () => {
   const [bkashNumber, setBkashNumber] = useState("");
   const [nagadNumber, setNagadNumber] = useState("");
   const [rocketNumber, setRocketNumber] = useState("");
+  // Tracking
+  const [facebookPixelId, setFacebookPixelId] = useState("");
 
   const [loaded, setLoaded] = useState(false);
   const [uploading, setUploading] = useState<"logo" | "favicon" | null>(null);
@@ -93,6 +95,7 @@ const AdminSettings = () => {
     setBkashNumber(getSetting("bkash_number", ""));
     setNagadNumber(getSetting("nagad_number", ""));
     setRocketNumber(getSetting("rocket_number", ""));
+    setFacebookPixelId(getSetting("facebook_pixel_id", ""));
     setLoaded(true);
   }
 
@@ -174,6 +177,11 @@ const AdminSettings = () => {
       { key: "rocket_number", value: rocketNumber },
     ]);
     toast({ title: "✓ পেমেন্ট নম্বর সেভ হয়েছে" });
+  };
+
+  const handleSaveTracking = async () => {
+    await saveAll([{ key: "facebook_pixel_id", value: facebookPixelId }]);
+    toast({ title: "✓ Tracking সেভ হয়েছে" });
   };
 
   // File upload helper
@@ -407,6 +415,38 @@ const AdminSettings = () => {
           </Field>
         </div>
         <SaveBtn onClick={handleSavePayment} />
+      </Section>
+
+      {/* ── Tracking & Analytics ── */}
+      <Section icon={Zap} title="Tracking ও Analytics">
+        <div className="space-y-4 max-w-2xl">
+          <Field label="Facebook Pixel ID">
+            <input
+              value={facebookPixelId}
+              onChange={(e) => setFacebookPixelId(e.target.value.trim())}
+              placeholder="যেমন: 1234567890123456"
+              className={inputCls}
+              maxLength={20}
+            />
+            <p className="text-xs text-muted-foreground mt-1.5">
+              Facebook Events Manager থেকে আপনার Pixel ID কপি করে এখানে পেস্ট করুন।{" "}
+              <a
+                href="https://www.facebook.com/business/help/952192354843755"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                কোথায় পাবেন?
+              </a>
+            </p>
+          </Field>
+          {facebookPixelId && (
+            <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs text-emerald-700 dark:text-emerald-400">
+              ✓ Pixel ID সেট আছে — সাইটে স্বয়ংক্রিয়ভাবে সক্রিয় হবে
+            </div>
+          )}
+        </div>
+        <SaveBtn onClick={handleSaveTracking} />
       </Section>
 
       {/* ── Reports ── */}

@@ -24,6 +24,7 @@ export interface SiteSettings {
   bkash_number: string;
   nagad_number: string;
   rocket_number: string;
+  facebook_pixel_id: string;
   facebook: string;
   instagram: string;
 }
@@ -50,6 +51,7 @@ const DEFAULTS: SiteSettings = {
   bkash_number: "",
   nagad_number: "",
   rocket_number: "",
+  facebook_pixel_id: "",
   facebook: "",
   instagram: "",
 };
