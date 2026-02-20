@@ -6,19 +6,21 @@ import { Search, Package, Truck, CheckCircle, Clock, ArrowLeft } from "lucide-re
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-
-const statusSteps = [
-  { key: "pending", label: "পেন্ডিং", icon: Clock },
-  { key: "processing", label: "প্রসেসিং", icon: Package },
-  { key: "shipped", label: "শিপড", icon: Truck },
-  { key: "delivered", label: "ডেলিভারড", icon: CheckCircle },
-];
+import { useTranslation } from "react-i18next";
 
 const TrackOrder = () => {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [order, setOrder] = useState<any>(null);
   const [error, setError] = useState("");
+  const { t } = useTranslation();
+
+  const statusSteps = [
+    { key: "pending", label: t("track.pending"), icon: Clock },
+    { key: "processing", label: t("track.processing"), icon: Package },
+    { key: "shipped", label: t("track.shipped"), icon: Truck },
+    { key: "delivered", label: t("track.delivered"), icon: CheckCircle },
+  ];
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,12 +40,12 @@ const TrackOrder = () => {
 
       if (result.error) throw result.error;
       if (!result.data) {
-        setError("কোনো অর্ডার পাওয়া যায়নি। ট্র্যাকিং আইডি বা ফোন নম্বর চেক করুন।");
+        setError(t("track.notFound"));
       } else {
         setOrder(result.data);
       }
     } catch {
-      setError("কিছু একটা সমস্যা হয়েছে। আবার চেষ্টা করুন।");
+      setError(t("track.error"));
     } finally {
       setLoading(false);
     }
@@ -56,20 +58,20 @@ const TrackOrder = () => {
       <Header />
       <main className="max-w-2xl mx-auto px-4 py-12 md:py-20">
         <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8 transition-colors">
-          <ArrowLeft size={16} /> হোম পেজে ফিরুন
+          <ArrowLeft size={16} /> {t("track.backHome")}
         </Link>
 
         <div className="text-center mb-10">
           <Package size={40} className="mx-auto mb-4 text-primary" />
-          <h1 className="font-serif text-2xl md:text-3xl tracking-wide mb-2 text-foreground">অর্ডার ট্র্যাক করুন</h1>
-          <p className="text-sm text-muted-foreground">ট্র্যাকিং আইডি (SN-XXXXX) বা ফোন নম্বর দিন</p>
+          <h1 className="font-serif text-2xl md:text-3xl tracking-wide mb-2 text-foreground">{t("track.title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("track.subtitle")}</p>
         </div>
 
         <form onSubmit={handleSearch} className="flex gap-2 mb-8">
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="SN-00001 বা 01XXXXXXXXX"
+            placeholder={t("track.placeholder")}
             className="flex-1 px-4 py-3 bg-card border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
             maxLength={20}
           />
@@ -78,7 +80,7 @@ const TrackOrder = () => {
             disabled={loading}
             className="px-6 py-3 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
           >
-            <Search size={16} /> {loading ? "খুঁজছি..." : "খুঁজুন"}
+            <Search size={16} /> {loading ? t("track.searching") : t("track.search")}
           </button>
         </form>
 
@@ -93,16 +95,15 @@ const TrackOrder = () => {
             <motion.div key="result" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-border rounded-2xl p-6 md:p-8">
               <div className="flex justify-between items-start mb-6">
                 <div>
-                  <p className="text-xs text-muted-foreground">ট্র্যাকিং আইডি</p>
+                  <p className="text-xs text-muted-foreground">{t("track.trackingIdLabel")}</p>
                   <p className="font-serif text-lg text-foreground">{order.tracking_id}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-muted-foreground">তারিখ</p>
+                  <p className="text-xs text-muted-foreground">{t("track.date")}</p>
                   <p className="text-sm text-foreground">{new Date(order.created_at).toLocaleDateString("bn-BD")}</p>
                 </div>
               </div>
 
-              {/* Status Steps */}
               <div className="flex items-center justify-between mb-8">
                 {statusSteps.map((step, i) => {
                   const active = i <= currentStepIndex;
@@ -115,17 +116,17 @@ const TrackOrder = () => {
                       <div className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center ${active ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"} transition-colors`}>
                         <Icon size={18} />
                       </div>
-                      <span className={`text-[10px] mt-2 ${active ? "text-foreground font-medium" : "text-muted-foreground"}`}>{step.label}</span>
+                      <span className={`text-[10px] mt-2 text-center ${active ? "text-foreground font-medium" : "text-muted-foreground"}`}>{step.label}</span>
                     </div>
                   );
                 })}
               </div>
 
               <div className="border-t border-border pt-4 space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">নাম</span><span className="text-foreground">{order.customer_name}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">ফোন</span><span className="text-foreground">{order.phone}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">ঠিকানা</span><span className="text-foreground text-right max-w-[60%]">{order.address}</span></div>
-                <div className="flex justify-between font-medium pt-2 border-t border-border"><span>মোট</span><span>{formatPrice(order.total)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">{t("track.name")}</span><span className="text-foreground">{order.customer_name}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">{t("track.phone")}</span><span className="text-foreground">{order.phone}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">{t("track.address")}</span><span className="text-foreground text-right max-w-[60%]">{order.address}</span></div>
+                <div className="flex justify-between font-medium pt-2 border-t border-border"><span>{t("track.total")}</span><span>{formatPrice(order.total)}</span></div>
               </div>
             </motion.div>
           )}
