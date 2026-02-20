@@ -103,7 +103,7 @@ const Header = () => {
         <div className="container mx-auto px-4 md:px-6">
           <div className="grid grid-cols-3 items-center h-16 md:h-20">
             <nav className="hidden md:flex items-center gap-6">
-              {navLinks.slice(0, 3).map((link) => (
+              {navLinks.map((link) => (
                 <Link key={link.name} to={link.href} className="nav-link">
                   {link.name}
                 </Link>
@@ -125,23 +125,6 @@ const Header = () => {
             </Link>
 
             <div className="flex items-center justify-end gap-3" ref={searchContainerRef}>
-              <AnimatePresence>
-                {!isSearchOpen && (
-                  <motion.nav
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                    transition={{ duration: 0.2 }}
-                    className="hidden md:flex items-center gap-6 mr-2"
-                  >
-                    {navLinks.slice(3).map((link) => (
-                      <Link key={link.name} to={link.href} className="nav-link">
-                        {link.name}
-                      </Link>
-                    ))}
-                  </motion.nav>
-                )}
-              </AnimatePresence>
 
               <LanguageSwitcher />
 
