@@ -7,12 +7,14 @@ import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 
 const statusColors: Record<string, string> = {
-  pending: "bg-amber-500/10 text-amber-500",
+  pending:    "bg-amber-500/10 text-amber-500",
+  paid:       "bg-sky-500/10 text-sky-600",
   processing: "bg-blue-500/10 text-blue-500",
-  shipped: "bg-purple-500/10 text-purple-500",
-  delivered: "bg-emerald-500/10 text-emerald-500",
-  refunded: "bg-red-500/10 text-red-500",
-  returned: "bg-muted text-muted-foreground",
+  shipped:    "bg-purple-500/10 text-purple-500",
+  delivered:  "bg-emerald-500/10 text-emerald-500",
+  cancelled:  "bg-rose-500/10 text-rose-500",
+  refunded:   "bg-red-500/10 text-red-500",
+  returned:   "bg-muted text-muted-foreground",
 };
 
 const AdminOrders = () => {
@@ -97,9 +99,9 @@ const AdminOrders = () => {
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="অর্ডার, নাম বা ফোন খুঁজুন..." className="w-full pl-9 pr-4 py-2.5 bg-card border border-border rounded-lg text-sm focus:outline-none text-foreground placeholder:text-muted-foreground" />
         </div>
         <div className="flex gap-1.5 flex-wrap">
-          {["all", "pending", "processing", "shipped", "delivered", "refunded", "returned"].map((s) => (
+          {["all", "pending", "paid", "processing", "shipped", "delivered", "cancelled", "refunded", "returned"].map((s) => (
             <button key={s} onClick={() => setStatusFilter(s)} className={`px-3 py-1.5 rounded-full text-xs capitalize font-medium transition-colors ${statusFilter === s ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground hover:bg-secondary"}`}>
-              {s === "all" ? "সব" : s}
+              {s === "all" ? "সব" : s === "pending" ? "Pending" : s === "paid" ? "Paid" : s === "processing" ? "Processing" : s === "shipped" ? "Shipped" : s === "delivered" ? "Delivered" : s === "cancelled" ? "Cancelled" : s === "refunded" ? "Refunded" : "Returned"}
             </button>
           ))}
         </div>
@@ -127,8 +129,19 @@ const AdminOrders = () => {
             <p className="text-xs text-muted-foreground mb-3">📍 {o.address}</p>
             {o.payment_method && <p className="text-xs text-muted-foreground mb-3">💳 {o.payment_method} {o.transaction_id ? `· TxnID: ${o.transaction_id}` : ""}</p>}
             <div className="flex flex-col md:flex-row gap-2 items-stretch md:items-center">
-              <select value={o.status || "pending"} onChange={(e) => updateStatus.mutate({ id: o.id, status: e.target.value })} className="px-3 py-1.5 border border-border rounded-lg text-xs bg-card text-foreground focus:outline-none">
-                <option value="pending">Pending</option><option value="processing">Processing</option><option value="shipped">Shipped</option><option value="delivered">Delivered</option><option value="refunded">Refunded</option><option value="returned">Returned</option>
+              <select
+                value={o.status || "pending"}
+                onChange={(e) => updateStatus.mutate({ id: o.id, status: e.target.value })}
+                className="px-3 py-1.5 border border-border rounded-lg text-xs bg-card text-foreground focus:outline-none cursor-pointer"
+              >
+                <option value="pending">⏳ Pending</option>
+                <option value="paid">💳 Paid</option>
+                <option value="processing">🔄 Processing</option>
+                <option value="shipped">🚚 Shipped</option>
+                <option value="delivered">✅ Delivered</option>
+                <option value="cancelled">❌ Cancelled</option>
+                <option value="refunded">↩️ Refunded</option>
+                <option value="returned">📦 Returned</option>
               </select>
               <input placeholder="কুরিয়ার ট্র্যাকিং ID" defaultValue={o.courier_tracking_id || ""} onBlur={(e) => { if (e.target.value !== (o.courier_tracking_id || "")) updateTracking.mutate({ id: o.id, courier_tracking_id: e.target.value }); }} className="px-3 py-1.5 border border-border rounded-lg text-xs focus:outline-none flex-1 bg-transparent text-foreground placeholder:text-muted-foreground" />
               <button onClick={() => generateInvoice(o)} className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary hover:bg-muted rounded-lg text-xs font-medium transition-colors text-foreground">
