@@ -4,9 +4,11 @@ import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import PageTransition from "@/components/PageTransition";
 import { useProducts } from "@/hooks/useProducts";
+import { useTranslation } from "react-i18next";
 
 const Shop = () => {
   const { data: products = [], isLoading } = useProducts();
+  const { t } = useTranslation();
 
   if (isLoading) {
     return (
@@ -23,16 +25,10 @@ const Shop = () => {
         <main>
           <section className="bg-secondary py-16 md:py-24">
             <div className="container mx-auto px-4 md:px-6 text-center">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-              >
-                <span className="text-label mb-4 block">All Products</span>
-                <h1 className="heading-display mb-4">Shop</h1>
-                <p className="text-body max-w-lg mx-auto">
-                  Browse our entire collection of premium fashion pieces.
-                </p>
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+                <span className="text-label mb-4 block">{t("shop.allProducts")}</span>
+                <h1 className="heading-display mb-4">{t("shop.title")}</h1>
+                <p className="text-body max-w-lg mx-auto">{t("shop.browseCollection")}</p>
               </motion.div>
             </div>
           </section>

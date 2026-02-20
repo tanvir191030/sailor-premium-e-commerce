@@ -6,6 +6,31 @@ import { useProducts } from "@/hooks/useProducts";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useCart } from "@/contexts/CartContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n/index";
+
+const LanguageSwitcher = () => {
+  const { i18n: i18nInstance } = useTranslation();
+  const isEn = i18nInstance.language === "en";
+
+  const toggle = () => {
+    const next = isEn ? "bn" : "en";
+    i18n.changeLanguage(next);
+    localStorage.setItem("sailor-language", next);
+  };
+
+  return (
+    <button
+      onClick={toggle}
+      className="hidden md:flex items-center gap-1 text-xs font-medium border border-foreground/20 rounded-full px-2.5 py-1 hover:border-foreground/50 transition-colors text-foreground/70 hover:text-foreground"
+      aria-label="Toggle language"
+    >
+      <span className={isEn ? "text-foreground font-bold" : "text-foreground/40"}>EN</span>
+      <span className="text-foreground/30">|</span>
+      <span className={!isEn ? "text-foreground font-bold" : "text-foreground/40"}>বাং</span>
+    </button>
+  );
+};
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -19,6 +44,7 @@ const Header = () => {
   const { count: wishlistCount } = useWishlist();
   const { totalItems, setIsOpen: setCartOpen } = useCart();
   const { theme, toggleTheme } = useTheme();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
@@ -56,17 +82,17 @@ const Header = () => {
     : [];
 
   const navLinks = [
-    { name: "New In", href: "/category/new" },
-    { name: "Women", href: "/category/women" },
-    { name: "Men", href: "/category/men" },
-    { name: "Kids", href: "/category/kids" },
-    { name: "Sale", href: "/category/sale" },
+    { name: t("nav.newIn"), href: "/category/new" },
+    { name: t("nav.women"), href: "/category/women" },
+    { name: t("nav.men"), href: "/category/men" },
+    { name: t("nav.kids"), href: "/category/kids" },
+    { name: t("nav.sale"), href: "/category/sale" },
   ];
 
   return (
     <>
       <div className="bg-primary text-primary-foreground text-center py-2 text-xs tracking-[0.15em] uppercase">
-        Free Shipping on Orders Over ৳5,000
+        {t("nav.freeShipping")}
       </div>
 
       <header
@@ -98,7 +124,7 @@ const Header = () => {
               </h1>
             </Link>
 
-            <div className="flex items-center justify-end gap-4" ref={searchContainerRef}>
+            <div className="flex items-center justify-end gap-3" ref={searchContainerRef}>
               <AnimatePresence>
                 {!isSearchOpen && (
                   <motion.nav
@@ -106,7 +132,7 @@ const Header = () => {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -10 }}
                     transition={{ duration: 0.2 }}
-                    className="hidden md:flex items-center gap-6 mr-4"
+                    className="hidden md:flex items-center gap-6 mr-2"
                   >
                     {navLinks.slice(3).map((link) => (
                       <Link key={link.name} to={link.href} className="nav-link">
@@ -116,6 +142,8 @@ const Header = () => {
                   </motion.nav>
                 )}
               </AnimatePresence>
+
+              <LanguageSwitcher />
 
               <div className="relative flex items-center">
                 <AnimatePresence>
@@ -130,7 +158,7 @@ const Header = () => {
                       <input
                         ref={searchInputRef}
                         type="text"
-                        placeholder="Search..."
+                        placeholder={t("nav.search")}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full bg-transparent border-b border-foreground/30 py-1 text-sm focus:outline-none focus:border-foreground transition-colors placeholder:text-muted-foreground"
@@ -260,8 +288,24 @@ const Header = () => {
                   </Link>
                 ))}
                 <Link to="/track-order" className="text-sm uppercase tracking-[0.1em] font-medium py-2 flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
-                  <MapPin size={16} /> Track Order
+                  <MapPin size={16} /> {t("nav.trackOrder")}
                 </Link>
+                {/* Mobile language switcher */}
+                <div className="flex items-center gap-3 pt-2 border-t border-border">
+                  <span className="text-xs text-muted-foreground">Language:</span>
+                  <button
+                    onClick={() => { i18n.changeLanguage("bn"); localStorage.setItem("sailor-language", "bn"); }}
+                    className={`text-sm font-medium px-3 py-1 rounded-full border transition-colors ${i18n.language === "bn" ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground"}`}
+                  >
+                    বাংলা
+                  </button>
+                  <button
+                    onClick={() => { i18n.changeLanguage("en"); localStorage.setItem("sailor-language", "en"); }}
+                    className={`text-sm font-medium px-3 py-1 rounded-full border transition-colors ${i18n.language === "en" ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground"}`}
+                  >
+                    English
+                  </button>
+                </div>
               </nav>
             </motion.div>
           )}
