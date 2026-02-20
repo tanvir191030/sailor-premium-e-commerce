@@ -37,6 +37,9 @@ const Checkout = () => {
   const [deliveryZone, setDeliveryZone] = useState<"inside_dhaka" | "outside_dhaka">("inside_dhaka");
   const [submitting, setSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState<any>(null);
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [couponChecking, setCouponChecking] = useState(false);
 
   // Fetch delivery charges from settings
   const { data: deliverySettings } = useQuery({
@@ -63,7 +66,50 @@ const Checkout = () => {
     ? (deliverySettings?.inside_dhaka ?? 80)
     : (deliverySettings?.outside_dhaka ?? 130);
 
-  const grandTotal = totalPrice + deliveryCharge;
+  const discount = appliedCoupon
+    ? appliedCoupon.discount_type === "percentage"
+      ? Math.round(totalPrice * appliedCoupon.discount_value / 100)
+      : appliedCoupon.discount_value
+    : 0;
+
+  const grandTotal = totalPrice - discount + deliveryCharge;
+
+  const applyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setCouponChecking(true);
+    try {
+      const { data, error } = await supabase
+        .from("coupons")
+        .select("*")
+        .eq("code", couponCode.toUpperCase().trim())
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) {
+        toast({ title: "অবৈধ কুপন কোড", description: "এই কুপনটি বিদ্যমান নেই বা নিষ্ক্রিয়।", variant: "destructive" });
+        return;
+      }
+      if (data.expires_at && new Date(data.expires_at) < new Date()) {
+        toast({ title: "কুপনের মেয়াদ শেষ", variant: "destructive" });
+        return;
+      }
+      if (data.max_uses > 0 && (data.used_count || 0) >= data.max_uses) {
+        toast({ title: "কুপনের সীমা শেষ হয়ে গেছে", variant: "destructive" });
+        return;
+      }
+      if (data.min_order > 0 && totalPrice < data.min_order) {
+        toast({ title: `সর্বনিম্ন অর্ডার ৳${data.min_order} হতে হবে`, variant: "destructive" });
+        return;
+      }
+      setAppliedCoupon(data);
+      toast({ title: "কুপন প্রযোজ্য হয়েছে! 🎉", description: data.discount_type === "percentage" ? `${data.discount_value}% ছাড় পেয়েছেন` : `৳${data.discount_value} ছাড় পেয়েছেন` });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setCouponChecking(false);
+    }
+  };
 
   // Auto-detect zone from district
   useEffect(() => {
@@ -242,7 +288,42 @@ ${cartItems.map((item: any) => `<tr><td>${item.name || "Item"}</td><td>${item.qu
                       <textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="বাড়ি নম্বর, রোড, এলাকা" rows={3} className={`${inputCls} resize-none`} required maxLength={500} />
                     </div>
 
-                    {/* Payment Method */}
+                    {/* Coupon Code */}
+                    <div className="pt-2 border-t border-border">
+                      <label className="text-xs font-medium text-muted-foreground mb-2 block">কুপন কোড</label>
+                      {appliedCoupon ? (
+                        <div className="flex items-center justify-between p-3 bg-primary/10 border border-primary/30 rounded-xl">
+                          <div>
+                            <span className="font-mono font-bold text-sm text-primary">{appliedCoupon.code}</span>
+                            <span className="text-xs text-muted-foreground ml-2">
+                              {appliedCoupon.discount_type === "percentage" ? `${appliedCoupon.discount_value}% ছাড়` : `৳${appliedCoupon.discount_value} ছাড়`}
+                            </span>
+                          </div>
+                          <button type="button" onClick={() => { setAppliedCoupon(null); setCouponCode(""); }} className="text-xs text-destructive hover:underline">সরান</button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <input
+                            value={couponCode}
+                            onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                            placeholder="কুপন কোড লিখুন"
+                            className={`${inputCls} flex-1`}
+                            maxLength={20}
+                            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), applyCoupon())}
+                          />
+                          <button
+                            type="button"
+                            onClick={applyCoupon}
+                            disabled={!couponCode.trim() || couponChecking}
+                            className="px-4 py-3 bg-secondary text-foreground border border-border rounded-xl text-sm font-medium hover:bg-secondary/80 disabled:opacity-50 transition-colors whitespace-nowrap"
+                          >
+                            {couponChecking ? "..." : "প্রযোজ্য করুন"}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                     {/* Payment Method */}
                     <div className="pt-2 border-t border-border">
                       <label className="text-xs font-medium text-muted-foreground mb-3 block flex items-center gap-1.5">
                         <Smartphone size={14} /> পেমেন্ট মেথড *
@@ -335,6 +416,12 @@ ${cartItems.map((item: any) => `<tr><td>${item.name || "Item"}</td><td>${item.qu
                       </div>
                       <div className="border-t border-border pt-3 space-y-2">
                         <div className="flex justify-between text-sm text-muted-foreground"><span>সাবটোটাল</span><span>{formatPrice(totalPrice)}</span></div>
+                        {appliedCoupon && (
+                          <div className="flex justify-between text-sm text-primary font-medium">
+                            <span>ছাড় ({appliedCoupon.code})</span>
+                            <span>- {formatPrice(discount)}</span>
+                          </div>
+                        )}
                         <div className="flex justify-between text-sm text-muted-foreground">
                           <span>ডেলিভারি ({deliveryZone === "inside_dhaka" ? "ঢাকা" : "ঢাকার বাইরে"})</span>
                           <span>{formatPrice(deliveryCharge)}</span>
