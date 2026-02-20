@@ -8,6 +8,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n/index";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const LanguageSwitcher = () => {
   const { i18n: i18nInstance } = useTranslation();
@@ -45,6 +46,10 @@ const Header = () => {
   const { totalItems, setIsOpen: setCartOpen } = useCart();
   const { theme, toggleTheme } = useTheme();
   const { t } = useTranslation();
+  const { settings } = useSiteSettings();
+
+  const storeName = settings.store_name || "SAILOR";
+  const announcementBar = settings.announcement_bar || t("nav.freeShipping");
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
@@ -92,7 +97,7 @@ const Header = () => {
   return (
     <>
       <div className="bg-primary text-primary-foreground text-center py-2 text-xs tracking-[0.15em] uppercase">
-        {t("nav.freeShipping")}
+        {announcementBar}
       </div>
 
       <header
@@ -127,9 +132,13 @@ const Header = () => {
               className="absolute left-1/2 -translate-x-1/2 flex items-center"
               aria-label="Sailor home"
             >
-              <h1 className="font-serif text-2xl md:text-3xl font-medium tracking-[0.1em] whitespace-nowrap">
-                SAILOR
-              </h1>
+              {settings.logo_url ? (
+                <img src={settings.logo_url} alt={storeName} className="h-8 md:h-10 object-contain" />
+              ) : (
+                <h1 className="font-serif text-2xl md:text-3xl font-medium tracking-[0.1em] whitespace-nowrap">
+                  {storeName}
+                </h1>
+              )}
             </Link>
 
             {/* RIGHT — Action icons */}
