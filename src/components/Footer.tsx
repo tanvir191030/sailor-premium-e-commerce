@@ -29,17 +29,17 @@ const Footer = () => {
 
   const helpLinks = [
     { name: t("footer.trackOrder"), href: "/track-order" },
-    { name: t("footer.shipping"), href: "/" },
-    { name: t("footer.sizeGuide"), href: "/" },
-    { name: t("footer.contact"), href: "/" },
-    { name: t("footer.faq"), href: "/" },
+    { name: t("footer.shipping"), href: "/shipping-returns" },
+    { name: t("footer.sizeGuide"), href: "/faq#size" },
+    { name: t("footer.contact"), href: "/contact" },
+    { name: t("footer.faq"), href: "/faq" },
   ];
 
   const aboutLinks = [
-    { name: t("footer.ourStory"), href: "/" },
-    { name: t("footer.sustainability"), href: "/" },
-    { name: t("footer.careers"), href: "/" },
-    { name: t("footer.press"), href: "/" },
+    { name: t("footer.ourStory"), href: "/about" },
+    { name: t("footer.sustainability"), href: "/about" },
+    { name: t("footer.careers"), href: "/contact" },
+    { name: t("footer.press"), href: "/contact" },
   ];
 
   const storeName = settings.store_name || "SAILOR";
@@ -167,8 +167,8 @@ const Footer = () => {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-primary-foreground/50 text-xs">© {new Date().getFullYear()} {storeName}. {t("footer.rights")}</p>
             <div className="flex gap-6">
-              <Link to="/" className="text-primary-foreground/50 hover:text-primary-foreground text-xs transition-colors">{t("footer.privacy")}</Link>
-              <Link to="/" className="text-primary-foreground/50 hover:text-primary-foreground text-xs transition-colors">{t("footer.terms")}</Link>
+              <Link to="/privacy-policy" className="text-primary-foreground/50 hover:text-primary-foreground text-xs transition-colors">{t("footer.privacy")}</Link>
+              <Link to="/terms" className="text-primary-foreground/50 hover:text-primary-foreground text-xs transition-colors">{t("footer.terms")}</Link>
             </div>
           </div>
         </div>
