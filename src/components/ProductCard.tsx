@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Heart, ShoppingCart, Zap, Ruler } from "lucide-react";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useCart } from "@/contexts/CartContext";
 import { formatPrice } from "@/lib/currency";
@@ -63,6 +64,7 @@ const ProductCard = ({
             <div className="absolute inset-0 bg-secondary animate-pulse" />
           )}
 
+          <Link to={`/product/${id}`} className="block w-full h-full absolute inset-0 z-[1]" aria-label={name} />
           <img
             src={image}
             alt={name}
@@ -92,7 +94,7 @@ const ProductCard = ({
               e.stopPropagation();
               toggle(id);
             }}
-            className="absolute top-3 right-3 p-2 bg-background/80 backdrop-blur-sm hover:bg-background transition-colors"
+            className="absolute top-3 right-3 p-2 bg-background/80 backdrop-blur-sm hover:bg-background transition-colors z-[2]"
             aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
           >
             <Heart
@@ -104,7 +106,7 @@ const ProductCard = ({
           {/* Size Chart button — visible on hover */}
           <button
             onClick={handleSizeChart}
-            className="absolute top-3 right-12 p-2 bg-background/80 backdrop-blur-sm hover:bg-background transition-colors opacity-0 group-hover:opacity-100"
+            className="absolute top-3 right-12 p-2 bg-background/80 backdrop-blur-sm hover:bg-background transition-colors opacity-0 group-hover:opacity-100 z-[2]"
             aria-label="Size chart"
             title="সাইজ চার্ট"
           >
@@ -112,10 +114,10 @@ const ProductCard = ({
           </button>
 
           {/* Dual Hover Buttons */}
-          <div className="absolute inset-x-0 bottom-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300 flex gap-2">
+          <div className="absolute inset-x-0 bottom-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300 flex gap-2 z-[2]">
             <button
               onClick={handleAddToCart}
-              className="flex-1 bg-primary text-primary-foreground py-2.5 text-[10px] uppercase tracking-[0.12em] font-medium hover:bg-charcoal transition-colors flex items-center justify-center gap-1.5"
+              className="flex-1 bg-primary text-primary-foreground py-2.5 text-[10px] uppercase tracking-[0.12em] font-medium hover:bg-primary/80 transition-colors flex items-center justify-center gap-1.5"
             >
               <ShoppingCart size={13} />
               Add to Cart
@@ -136,7 +138,9 @@ const ProductCard = ({
             <span className="text-label text-muted-foreground">{category}</span>
           )}
 
-          <h3 className="font-medium text-sm tracking-wide">{name}</h3>
+          <Link to={`/product/${id}`}>
+            <h3 className="font-medium text-sm tracking-wide hover:text-primary transition-colors">{name}</h3>
+          </Link>
 
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
