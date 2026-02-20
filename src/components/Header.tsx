@@ -100,9 +100,11 @@ const Header = () => {
           isScrolled ? "glass shadow-sm" : "bg-background"
         }`}
       >
-        <div className="container mx-auto px-4 md:px-6">
-          <div className="grid grid-cols-3 items-center h-16 md:h-20">
-            <nav className="hidden md:flex items-center gap-6">
+        <div className="max-w-7xl mx-auto px-6 lg:px-12">
+          <div className="relative flex items-center justify-between h-16 md:h-20">
+
+            {/* LEFT — Nav links (desktop) */}
+            <nav className="hidden md:flex items-center gap-6 flex-1">
               {navLinks.map((link) => (
                 <Link key={link.name} to={link.href} className="nav-link">
                   {link.name}
@@ -110,6 +112,7 @@ const Header = () => {
               ))}
             </nav>
 
+            {/* Mobile hamburger */}
             <button
               className="md:hidden p-2 -ml-2"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -118,22 +121,31 @@ const Header = () => {
               {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
 
-            <Link to="/" className="flex justify-center">
-              <h1 className="font-serif text-2xl md:text-3xl font-medium tracking-[0.1em]">
+            {/* CENTER — Logo (absolutely centered) */}
+            <Link
+              to="/"
+              className="absolute left-1/2 -translate-x-1/2 flex items-center"
+              aria-label="Sailor home"
+            >
+              <h1 className="font-serif text-2xl md:text-3xl font-medium tracking-[0.1em] whitespace-nowrap">
                 SAILOR
               </h1>
             </Link>
 
-            <div className="flex items-center justify-end gap-3" ref={searchContainerRef}>
-
+            {/* RIGHT — Action icons */}
+            <div
+              className="flex items-center justify-end gap-1 flex-1"
+              ref={searchContainerRef}
+            >
               <LanguageSwitcher />
 
+              {/* Search */}
               <div className="relative flex items-center">
                 <AnimatePresence>
                   {isSearchOpen && (
                     <motion.div
                       initial={{ width: 0, opacity: 0 }}
-                      animate={{ width: 220, opacity: 1 }}
+                      animate={{ width: 190, opacity: 1 }}
                       exit={{ width: 0, opacity: 0 }}
                       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                       className="overflow-hidden mr-1"
@@ -158,6 +170,7 @@ const Header = () => {
                   {isSearchOpen ? <X size={18} /> : <Search size={20} />}
                 </button>
 
+                {/* Search results dropdown */}
                 <AnimatePresence>
                   {isSearchOpen && searchQuery.trim() && (
                     <motion.div
@@ -204,6 +217,7 @@ const Header = () => {
                 </AnimatePresence>
               </div>
 
+              {/* Theme toggle */}
               <button
                 className="p-2 hover:opacity-70 transition-opacity"
                 aria-label="Toggle theme"
@@ -219,10 +233,16 @@ const Header = () => {
                 </motion.div>
               </button>
 
-              <Link to="/track-order" className="p-2 hover:opacity-70 transition-opacity hidden md:block" aria-label="Track Order">
+              {/* Track order */}
+              <Link
+                to="/track-order"
+                className="p-2 hover:opacity-70 transition-opacity hidden md:block"
+                aria-label="Track Order"
+              >
                 <MapPin size={20} />
               </Link>
 
+              {/* Wishlist */}
               <button
                 className="p-2 hover:opacity-70 transition-opacity relative"
                 aria-label="Wishlist"
@@ -236,6 +256,7 @@ const Header = () => {
                 )}
               </button>
 
+              {/* Cart */}
               <button
                 className="p-2 hover:opacity-70 transition-opacity relative"
                 aria-label="Cart"
@@ -250,6 +271,7 @@ const Header = () => {
           </div>
         </div>
 
+        {/* Mobile menu */}
         <AnimatePresence>
           {isMobileMenuOpen && (
             <motion.div
@@ -259,7 +281,7 @@ const Header = () => {
               transition={{ duration: 0.3 }}
               className="md:hidden overflow-hidden border-t border-border"
             >
-              <nav className="container mx-auto px-4 py-6 flex flex-col gap-4">
+              <nav className="max-w-7xl mx-auto px-6 py-6 flex flex-col gap-4">
                 {navLinks.map((link) => (
                   <Link
                     key={link.name}
@@ -270,7 +292,11 @@ const Header = () => {
                     {link.name}
                   </Link>
                 ))}
-                <Link to="/track-order" className="text-sm uppercase tracking-[0.1em] font-medium py-2 flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
+                <Link
+                  to="/track-order"
+                  className="text-sm uppercase tracking-[0.1em] font-medium py-2 flex items-center gap-2"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
                   <MapPin size={16} /> {t("nav.trackOrder")}
                 </Link>
                 {/* Mobile language switcher */}
