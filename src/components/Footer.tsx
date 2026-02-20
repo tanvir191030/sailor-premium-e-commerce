@@ -1,13 +1,15 @@
 import { Link } from "react-router-dom";
-import { Instagram, Facebook, Twitter } from "lucide-react";
+import { Instagram, Facebook, Twitter, MapPin, Mail, Phone } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const Footer = () => {
   const [email, setEmail] = useState("");
   const { toast } = useToast();
   const { t } = useTranslation();
+  const { settings } = useSiteSettings();
 
   const handleNewsletterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +42,15 @@ const Footer = () => {
     { name: t("footer.press"), href: "/" },
   ];
 
+  const storeName = settings.store_name || "SAILOR";
+  const facebookUrl = settings.facebook_url || settings.facebook || "https://facebook.com";
+  const instagramUrl = settings.instagram_url || settings.instagram || "https://instagram.com";
+  const twitterUrl = settings.twitter_url || "https://twitter.com";
+  const aboutUs = settings.about_us || t("footer.tagline");
+  const officeAddress = settings.office_address;
+  const supportEmail = settings.support_email || settings.contact_email;
+  const phoneNumber = settings.phone_number || settings.contact_phone;
+
   return (
     <footer className="bg-primary text-primary-foreground">
       <div className="border-b border-primary-foreground/10">
@@ -69,13 +80,44 @@ const Footer = () => {
 
       <div className="container mx-auto px-4 md:px-6 py-12 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12">
-          <div className="space-y-6">
-            <h2 className="font-serif text-2xl tracking-[0.1em]">SAILOR</h2>
-            <p className="text-primary-foreground/70 text-sm leading-relaxed">{t("footer.tagline")}</p>
-            <div className="flex gap-4">
-              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-primary-foreground/10 transition-colors" aria-label="Instagram"><Instagram size={20} /></a>
-              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-primary-foreground/10 transition-colors" aria-label="Facebook"><Facebook size={20} /></a>
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-primary-foreground/10 transition-colors" aria-label="Twitter"><Twitter size={20} /></a>
+          {/* Brand column */}
+          <div className="space-y-5">
+            <h2 className="font-serif text-2xl tracking-[0.1em]">{storeName}</h2>
+            <p className="text-primary-foreground/70 text-sm leading-relaxed">{aboutUs}</p>
+
+            {/* Contact info */}
+            <div className="space-y-2 pt-1">
+              {officeAddress && (
+                <div className="flex items-start gap-2 text-primary-foreground/60 text-xs">
+                  <MapPin size={13} className="mt-0.5 flex-shrink-0" />
+                  <span>{officeAddress}</span>
+                </div>
+              )}
+              {supportEmail && (
+                <div className="flex items-center gap-2 text-primary-foreground/60 text-xs">
+                  <Mail size={13} className="flex-shrink-0" />
+                  <a href={`mailto:${supportEmail}`} className="hover:text-primary-foreground transition-colors">{supportEmail}</a>
+                </div>
+              )}
+              {phoneNumber && (
+                <div className="flex items-center gap-2 text-primary-foreground/60 text-xs">
+                  <Phone size={13} className="flex-shrink-0" />
+                  <a href={`tel:${phoneNumber}`} className="hover:text-primary-foreground transition-colors">{phoneNumber}</a>
+                </div>
+              )}
+            </div>
+
+            {/* Social links */}
+            <div className="flex gap-3 pt-1">
+              <a href={instagramUrl} target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-primary-foreground/10 transition-colors rounded-full" aria-label="Instagram">
+                <Instagram size={18} />
+              </a>
+              <a href={facebookUrl} target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-primary-foreground/10 transition-colors rounded-full" aria-label="Facebook">
+                <Facebook size={18} />
+              </a>
+              <a href={twitterUrl} target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-primary-foreground/10 transition-colors rounded-full" aria-label="Twitter">
+                <Twitter size={18} />
+              </a>
             </div>
           </div>
 
@@ -83,7 +125,11 @@ const Footer = () => {
             <h4 className="text-sm uppercase tracking-[0.15em] font-medium mb-6">{t("footer.shop")}</h4>
             <ul className="space-y-3">
               {shopLinks.map((link) => (
-                <li key={link.name}><Link to={link.href} className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm">{link.name}</Link></li>
+                <li key={link.name}>
+                  <Link to={link.href} className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm">
+                    {link.name}
+                  </Link>
+                </li>
               ))}
             </ul>
           </div>
@@ -92,7 +138,11 @@ const Footer = () => {
             <h4 className="text-sm uppercase tracking-[0.15em] font-medium mb-6">{t("footer.help")}</h4>
             <ul className="space-y-3">
               {helpLinks.map((link) => (
-                <li key={link.name}><Link to={link.href} className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm">{link.name}</Link></li>
+                <li key={link.name}>
+                  <Link to={link.href} className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm">
+                    {link.name}
+                  </Link>
+                </li>
               ))}
             </ul>
           </div>
@@ -101,7 +151,11 @@ const Footer = () => {
             <h4 className="text-sm uppercase tracking-[0.15em] font-medium mb-6">{t("footer.about")}</h4>
             <ul className="space-y-3">
               {aboutLinks.map((link) => (
-                <li key={link.name}><Link to={link.href} className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm">{link.name}</Link></li>
+                <li key={link.name}>
+                  <Link to={link.href} className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm">
+                    {link.name}
+                  </Link>
+                </li>
               ))}
             </ul>
           </div>
@@ -111,7 +165,7 @@ const Footer = () => {
       <div className="border-t border-primary-foreground/10">
         <div className="container mx-auto px-4 md:px-6 py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-primary-foreground/50 text-xs">© {new Date().getFullYear()} SAILOR. {t("footer.rights")}</p>
+            <p className="text-primary-foreground/50 text-xs">© {new Date().getFullYear()} {storeName}. {t("footer.rights")}</p>
             <div className="flex gap-6">
               <Link to="/" className="text-primary-foreground/50 hover:text-primary-foreground text-xs transition-colors">{t("footer.privacy")}</Link>
               <Link to="/" className="text-primary-foreground/50 hover:text-primary-foreground text-xs transition-colors">{t("footer.terms")}</Link>

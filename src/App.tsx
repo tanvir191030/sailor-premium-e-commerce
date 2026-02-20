@@ -8,6 +8,7 @@ import { WishlistProvider } from "./contexts/WishlistContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { CartProvider } from "./contexts/CartContext";
 import ScrollToTop from "./components/ScrollToTop";
+import SiteMetaUpdater from "./components/SiteMetaUpdater";
 import CartDrawer from "./components/CartDrawer";
 import BuyNowDrawer from "./components/BuyNowDrawer";
 import Index from "./pages/Index";
@@ -51,6 +52,7 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <ScrollToTop />
+              <SiteMetaUpdater />
               <CartDrawer />
               <BuyNowDrawer />
               <AnimatedRoutes />
