@@ -171,7 +171,7 @@ const Admin = () => {
           <h1 className="font-serif text-base md:text-lg tracking-wide text-foreground truncate">{currentSection?.label}</h1>
         </header>
 
-        <main className="p-3 md:p-6 max-w-7xl">
+        <main className="p-3 md:p-6 max-w-7xl pb-20 lg:pb-6">
           {renderSection()}
         </main>
       </div>
