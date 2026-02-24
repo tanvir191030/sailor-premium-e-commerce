@@ -367,8 +367,8 @@ const ProductDetail = () => {
                   </div>
                 </div>
 
-                {/* CTA Buttons — hidden on mobile (shown as sticky bar) */}
-                <div className="hidden lg:flex gap-3 pt-1">
+                {/* CTA Buttons */}
+                <div className="hidden md:flex gap-3 pt-1">
                   <button
                     onClick={handleAddToCart}
                     disabled={!isInStock}
@@ -474,19 +474,19 @@ const ProductDetail = () => {
           )}
         </main>
 
-        {/* Sticky CTA Bar — mobile only */}
-        <div className="fixed bottom-0 left-0 right-0 z-40 bg-background border-t border-border p-3 flex gap-2 lg:hidden safe-bottom">
+        {/* Sticky CTA Bar — mobile only, above bottom nav */}
+        <div className="fixed bottom-[52px] left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-t border-border p-3 flex gap-2 md:hidden safe-bottom">
           <button
             onClick={handleAddToCart}
             disabled={!isInStock}
-            className="flex-1 bg-primary text-primary-foreground py-3.5 text-xs uppercase tracking-[0.12em] font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px]"
+            className="flex-1 bg-primary text-primary-foreground py-3 text-xs uppercase tracking-[0.12em] font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
           >
             <ShoppingCart size={15} /> কার্টে যোগ করুন
           </button>
           <button
             onClick={handleBuyNow}
             disabled={!isInStock}
-            className="flex-1 bg-background text-foreground border border-primary py-3.5 text-xs uppercase tracking-[0.12em] font-semibold hover:bg-secondary transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px]"
+            className="flex-1 bg-background text-foreground border border-primary py-3 text-xs uppercase tracking-[0.12em] font-semibold hover:bg-secondary transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
           >
             <Zap size={15} /> এখনই কিনুন
           </button>
