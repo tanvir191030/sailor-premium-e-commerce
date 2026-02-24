@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -34,7 +34,11 @@ const ProductDetail = () => {
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
 
-  // Update meta
+  // Touch swipe state
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
+  const sliderRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (product) {
       document.title = `${product.name} | SAILOR`;
@@ -44,7 +48,6 @@ const ProductDetail = () => {
     return () => { document.title = "SAILOR"; };
   }, [product]);
 
-  // Fetch additional product images
   useEffect(() => {
     if (!product) return;
     const fetchImages = async () => {
@@ -89,6 +92,27 @@ const ProductDetail = () => {
     const y = ((e.clientY - rect.top) / rect.height) * 100;
     setZoomPos({ x, y });
   };
+
+  // Touch handlers for swipeable gallery
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    const diff = touchStartX.current - touchEndX.current;
+    const threshold = 50;
+    if (Math.abs(diff) > threshold) {
+      if (diff > 0) {
+        setActiveIndex((i) => (i + 1) % galleryImages.length);
+      } else {
+        setActiveIndex((i) => (i - 1 + galleryImages.length) % galleryImages.length);
+      }
+    }
+  }, [galleryImages.length]);
 
   const shareUrl = window.location.href;
   const shareText = product ? `চেক আউট করুন: ${product.name}` : "";
@@ -138,9 +162,9 @@ const ProductDetail = () => {
       <SizeChartModal open={sizeChartOpen} onClose={() => setSizeChartOpen(false)} />
       <div className="min-h-screen bg-background">
         <Header />
-        <main>
+        <main className="pb-20 lg:pb-0">
           {/* Breadcrumb */}
-          <div className="container mx-auto px-4 md:px-6 py-4">
+          <div className="container mx-auto px-4 md:px-6 py-3 md:py-4">
             <nav className="flex items-center gap-2 text-xs text-muted-foreground">
               <Link to="/" className="hover:text-foreground transition-colors">হোম</Link>
               <span>/</span>
@@ -160,14 +184,20 @@ const ProductDetail = () => {
 
           {/* Main product section */}
           <section className="container mx-auto px-4 md:px-6 pb-12">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 xl:gap-16">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 xl:gap-16">
 
               {/* LEFT — Image Gallery */}
-              <div className="space-y-4">
-                {/* Main image */}
-                <div className="relative overflow-hidden bg-secondary aspect-[4/5] group">
+              <div className="space-y-3 md:space-y-4">
+                {/* Main image — touch swipeable on mobile */}
+                <div
+                  ref={sliderRef}
+                  className="relative overflow-hidden bg-secondary aspect-[4/5] group touch-pan-y"
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                >
                   <div
-                    className={`relative w-full h-full cursor-zoom-in ${zoomed ? "cursor-zoom-out" : ""}`}
+                    className={`relative w-full h-full lg:cursor-zoom-in ${zoomed ? "lg:cursor-zoom-out" : ""}`}
                     onMouseEnter={() => setZoomed(true)}
                     onMouseLeave={() => setZoomed(false)}
                     onMouseMove={handleMouseMove}
@@ -194,25 +224,27 @@ const ProductDetail = () => {
                       />
                     </AnimatePresence>
 
-                    {/* Zoom hint */}
+                    {/* Zoom hint — desktop only */}
                     {!zoomed && (
-                      <div className="absolute bottom-3 right-3 bg-background/80 backdrop-blur-sm p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute bottom-3 right-3 bg-background/80 backdrop-blur-sm p-2 opacity-0 group-hover:opacity-100 transition-opacity hidden lg:block">
                         <ZoomIn size={16} className="text-foreground" />
                       </div>
                     )}
 
-                    {/* Nav arrows (if multiple images) */}
+                    {/* Nav arrows */}
                     {galleryImages.length > 1 && (
                       <>
                         <button
                           onClick={prevImage}
-                          className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-background/80 backdrop-blur-sm hover:bg-background transition-colors opacity-0 group-hover:opacity-100"
+                          className="absolute left-2 top-1/2 -translate-y-1/2 p-2.5 bg-background/80 backdrop-blur-sm hover:bg-background transition-colors lg:opacity-0 lg:group-hover:opacity-100"
+                          aria-label="Previous image"
                         >
                           <ChevronLeft size={18} />
                         </button>
                         <button
                           onClick={nextImage}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-background/80 backdrop-blur-sm hover:bg-background transition-colors opacity-0 group-hover:opacity-100"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-background/80 backdrop-blur-sm hover:bg-background transition-colors lg:opacity-0 lg:group-hover:opacity-100"
+                          aria-label="Next image"
                         >
                           <ChevronRight size={18} />
                         </button>
@@ -226,11 +258,25 @@ const ProductDetail = () => {
                       </span>
                     )}
                   </div>
+
+                  {/* Dot indicators for mobile */}
+                  {galleryImages.length > 1 && (
+                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 lg:hidden">
+                      {galleryImages.map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setActiveIndex(i)}
+                          className={`w-2 h-2 rounded-full transition-colors ${i === activeIndex ? "bg-foreground" : "bg-foreground/30"}`}
+                          aria-label={`Image ${i + 1}`}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                {/* Thumbnails */}
+                {/* Thumbnails — desktop only */}
                 {galleryImages.length > 1 && (
-                  <div className="flex gap-2 overflow-x-auto pb-1">
+                  <div className="hidden lg:flex gap-2 overflow-x-auto pb-1">
                     {galleryImages.map((img, i) => (
                       <button
                         key={i}
@@ -247,7 +293,7 @@ const ProductDetail = () => {
               </div>
 
               {/* RIGHT — Product Info */}
-              <div className="flex flex-col gap-5">
+              <div className="flex flex-col gap-4 md:gap-5">
                 {/* Title & Wishlist */}
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -259,11 +305,11 @@ const ProductDetail = () => {
                         {product.category}
                       </Link>
                     )}
-                    <h1 className="text-2xl md:text-3xl font-medium tracking-tight leading-tight">{product.name}</h1>
+                    <h1 className="text-xl md:text-2xl lg:text-3xl font-medium tracking-tight leading-tight">{product.name}</h1>
                   </div>
                   <button
                     onClick={() => toggle(product.id)}
-                    className="p-2.5 border border-border hover:border-primary transition-colors flex-shrink-0 mt-1"
+                    className="p-2.5 border border-border hover:border-primary transition-colors flex-shrink-0 mt-1 min-w-[44px] min-h-[44px] flex items-center justify-center"
                     aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
                   >
                     <Heart size={20} className={wishlisted ? "fill-destructive text-destructive" : ""} />
@@ -272,7 +318,7 @@ const ProductDetail = () => {
 
                 {/* Price */}
                 <div className="flex items-baseline gap-3">
-                  <span className="text-3xl font-bold tracking-tight">{formatPrice(product.price)}</span>
+                  <span className="text-2xl md:text-3xl font-bold tracking-tight">{formatPrice(product.price)}</span>
                 </div>
 
                 {/* Stock & Meta chips */}
@@ -299,7 +345,7 @@ const ProductDetail = () => {
                     <span className="text-sm font-medium">সাইজ বেছে নিন</span>
                     <button
                       onClick={() => setSizeChartOpen(true)}
-                      className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                      className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors min-h-[44px] px-2"
                     >
                       <Ruler size={12} /> সাইজ গাইড
                     </button>
@@ -309,7 +355,7 @@ const ProductDetail = () => {
                       <button
                         key={size}
                         onClick={() => setSelectedSize(size === selectedSize ? null : size)}
-                        className={`w-12 h-10 text-xs font-medium border transition-colors ${
+                        className={`min-w-[44px] min-h-[44px] px-3 text-sm font-medium border transition-colors ${
                           selectedSize === size
                             ? "bg-primary text-primary-foreground border-primary"
                             : "bg-background text-foreground border-border hover:border-primary"
@@ -321,8 +367,8 @@ const ProductDetail = () => {
                   </div>
                 </div>
 
-                {/* CTA Buttons */}
-                <div className="flex gap-3 pt-1">
+                {/* CTA Buttons — hidden on mobile (shown as sticky bar) */}
+                <div className="hidden lg:flex gap-3 pt-1">
                   <button
                     onClick={handleAddToCart}
                     disabled={!isInStock}
@@ -341,14 +387,14 @@ const ProductDetail = () => {
 
                 {/* Description */}
                 {product.description && (
-                  <div className="border-t border-border pt-5">
+                  <div className="border-t border-border pt-4 md:pt-5">
                     <h3 className="text-sm font-semibold uppercase tracking-wide mb-2.5">পণ্যের বিবরণ</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{product.description}</p>
                   </div>
                 )}
 
                 {/* Product Info Table */}
-                <div className="border-t border-border pt-5 grid grid-cols-2 gap-3">
+                <div className="border-t border-border pt-4 md:pt-5 grid grid-cols-2 gap-3">
                   {product.category && (
                     <div className="flex items-start gap-2">
                       <Package size={13} className="mt-0.5 text-muted-foreground flex-shrink-0" />
@@ -370,17 +416,17 @@ const ProductDetail = () => {
                 </div>
 
                 {/* Social Share */}
-                <div className="border-t border-border pt-5 flex items-center gap-3">
+                <div className="border-t border-border pt-4 md:pt-5 flex items-center gap-3">
                   <span className="text-xs uppercase tracking-wider text-muted-foreground">শেয়ার করুন</span>
                   <button
                     onClick={handleFacebookShare}
-                    className="flex items-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground text-xs hover:bg-primary/90 transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-2.5 bg-primary text-primary-foreground text-xs hover:bg-primary/90 transition-colors min-h-[44px]"
                   >
                     <Facebook size={13} /> Facebook
                   </button>
                   <button
                     onClick={handleWhatsAppShare}
-                    className="flex items-center gap-1.5 px-3 py-2 bg-accent text-accent-foreground border border-border text-xs hover:bg-accent/80 transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-2.5 bg-accent text-accent-foreground border border-border text-xs hover:bg-accent/80 transition-colors min-h-[44px]"
                   >
                     <MessageCircle size={13} /> WhatsApp
                   </button>
@@ -391,20 +437,20 @@ const ProductDetail = () => {
 
           {/* Related Products */}
           {related.length > 0 && (
-            <section className="border-t border-border py-12 md:py-16">
+            <section className="border-t border-border py-10 md:py-16">
               <div className="container mx-auto px-4 md:px-6">
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5 }}
-                  className="text-center mb-8"
+                  className="text-center mb-6 md:mb-8"
                 >
                   <span className="text-label mb-3 block">একই ক্যাটাগরি</span>
                   <h2 className="heading-section">আপনি পছন্দ করতে পারেন</h2>
                 </motion.div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-5">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-5">
                   {related.map((p, i) => (
                     <motion.div
                       key={p.id}
@@ -427,6 +473,25 @@ const ProductDetail = () => {
             </section>
           )}
         </main>
+
+        {/* Sticky CTA Bar — mobile only */}
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-background border-t border-border p-3 flex gap-2 lg:hidden safe-bottom">
+          <button
+            onClick={handleAddToCart}
+            disabled={!isInStock}
+            className="flex-1 bg-primary text-primary-foreground py-3.5 text-xs uppercase tracking-[0.12em] font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px]"
+          >
+            <ShoppingCart size={15} /> কার্টে যোগ করুন
+          </button>
+          <button
+            onClick={handleBuyNow}
+            disabled={!isInStock}
+            className="flex-1 bg-background text-foreground border border-primary py-3.5 text-xs uppercase tracking-[0.12em] font-semibold hover:bg-secondary transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px]"
+          >
+            <Zap size={15} /> এখনই কিনুন
+          </button>
+        </div>
+
         <Footer />
       </div>
     </PageTransition>
