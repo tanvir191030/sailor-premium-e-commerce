@@ -76,7 +76,7 @@ const AdminSettings = () => {
   const [facebookPixelId, setFacebookPixelId] = useState("");
   // Chat Widget
   const [whatsappNumber, setWhatsappNumber] = useState("");
-  const [messengerUrl, setMessengerUrl] = useState("");
+  const [messengerId, setMessengerId] = useState("");
   // Pages
   const [privacyPolicy, setPrivacyPolicy] = useState("");
   const [termsConditions, setTermsConditions] = useState("");
@@ -107,7 +107,7 @@ const AdminSettings = () => {
     setRocketNumber(getSetting("rocket_number", ""));
     setFacebookPixelId(getSetting("facebook_pixel_id", ""));
     setWhatsappNumber(getSetting("whatsapp_number", ""));
-    setMessengerUrl(getSetting("messenger_url", ""));
+    setMessengerId(getSetting("messenger_id", ""));
     setPrivacyPolicy(getSetting("privacy_policy", ""));
     setTermsConditions(getSetting("terms_conditions", ""));
     setLoaded(true);
@@ -486,14 +486,14 @@ const AdminSettings = () => {
           <Field label="WhatsApp নম্বর (দেশের কোডসহ, যেমন: 8801XXXXXXXXX)">
             <input value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} placeholder="8801XXXXXXXXX" className={inputCls} maxLength={15} />
           </Field>
-          <Field label="Messenger Page URL">
-            <input value={messengerUrl} onChange={(e) => setMessengerUrl(e.target.value)} placeholder="https://m.me/yourpage" className={inputCls} />
+          <Field label="Messenger Link (যেমন: m.me/yourpageid অথবা পেজ ID)">
+            <input value={messengerId} onChange={(e) => setMessengerId(e.target.value)} placeholder="m.me/yourpageid" className={inputCls} />
           </Field>
         </div>
         <SaveBtn onClick={async () => {
           await saveAll([
             { key: "whatsapp_number", value: whatsappNumber },
-            { key: "messenger_url", value: messengerUrl },
+            { key: "messenger_id", value: messengerId },
           ]);
           toast({ title: "✓ চ্যাট সেটিংস সেভ হয়েছে" });
         }} />
