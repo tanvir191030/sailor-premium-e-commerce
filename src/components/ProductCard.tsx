@@ -122,24 +122,25 @@ const ProductCard = ({
             {/* Desktop variant: flex row, Mobile variant: absolute cart + full width bottom glass buy now */}
             <div className="flex w-full pointer-events-auto flex-col lg:flex-row gap-0 lg:gap-2 lg:justify-end">
 
-              {/* Add to Cart - Top right on mobile, alongside Buy Now on desktop */}
-              <button
-                onClick={handleAddToCart}
-                className="absolute top-12 right-2 md:top-14 md:right-3 lg:relative lg:top-auto lg:right-auto bg-background/80 backdrop-blur-sm text-foreground hover:bg-background transition-colors p-2.5 rounded shadow-sm flex items-center justify-center w-11 h-11 lg:w-9 lg:h-9"
-                aria-label="Add to cart"
-                title="Add to Cart"
-              >
-                <ShoppingCart size={18} className="lg:w-4 lg:h-4" />
-              </button>
-
-              {/* Buy Now - Full width bottom on mobile, alongside Add to Cart on desktop */}
+              {/* Buy Now - Top full width on mobile, right on desktop */}
               <button
                 onClick={handleBuyNow}
-                className="w-full lg:w-auto bg-background/60 lg:bg-primary/90 backdrop-blur-md lg:backdrop-blur-sm text-foreground lg:text-primary-foreground border-t border-white/20 lg:border-none hover:bg-background/80 lg:hover:bg-primary transition-colors px-3 py-3 lg:px-4 lg:py-2.5 lg:rounded shadow-sm flex items-center justify-center min-h-[44px] lg:min-h-[36px] text-sm lg:text-xs font-medium gap-1.5"
+                className="order-1 lg:order-2 w-full lg:w-auto bg-background/60 lg:bg-primary/90 backdrop-blur-md lg:backdrop-blur-sm text-foreground lg:text-primary-foreground border-t border-white/20 lg:border-none hover:bg-background/80 lg:hover:bg-primary transition-colors px-3 py-3 lg:px-4 lg:py-2.5 lg:rounded shadow-sm flex items-center justify-center min-h-[44px] lg:min-h-[36px] text-sm lg:text-xs font-medium gap-1.5"
                 title="Buy Now"
               >
                 <Zap size={16} className="lg:w-3.5 lg:h-3.5 text-primary lg:text-current" />
                 <span>Buy Now</span>
+              </button>
+
+              {/* Add to Cart - Bottom full width on mobile, left on desktop */}
+              <button
+                onClick={handleAddToCart}
+                className="order-2 lg:order-1 w-full lg:w-auto bg-primary/90 lg:bg-background/80 backdrop-blur-md lg:backdrop-blur-sm text-primary-foreground lg:text-foreground border-t border-white/20 lg:border-none hover:bg-primary/80 lg:hover:bg-background transition-colors px-3 py-3 lg:px-4 lg:py-2.5 lg:rounded shadow-sm flex items-center justify-center min-h-[44px] lg:min-h-[36px] text-sm lg:text-xs font-medium gap-1.5"
+                aria-label="Add to cart"
+                title="Add to Cart"
+              >
+                <ShoppingCart size={18} className="lg:w-4 lg:h-4" />
+                <span className="lg:hidden">Add to Cart</span>
               </button>
             </div>
           </div>
