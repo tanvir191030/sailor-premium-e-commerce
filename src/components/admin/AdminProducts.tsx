@@ -15,6 +15,7 @@ const AdminProducts = () => {
   const [form, setForm] = useState({
     name: "", name_bn: "", price: "", category: "", brand: "",
     stock: "", description: "", description_bn: "", is_featured: false,
+    sizes: {} as Record<string, string>,
   });
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -53,12 +54,22 @@ const AdminProducts = () => {
     mutationFn: async () => {
       let image_url = undefined;
       if (imageFiles.length > 0) image_url = await uploadProductImage(imageFiles[0]);
+      const parsedSizes = Object.entries(form.sizes).reduce((acc, [size, qtyStr]) => {
+        const qty = parseInt(qtyStr);
+        if (!isNaN(qty) && qty > 0) acc[size] = qty;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const totalStockFromSizes = Object.values(parsedSizes).reduce((a, b) => a + b, 0);
+      const finalStock = Object.keys(parsedSizes).length > 0 ? totalStockFromSizes : (parseInt(form.stock) || 0);
+
       const payload: any = {
         name: form.name,
         price: parseFloat(form.price),
         category: form.category || null,
         brand: form.brand || null,
-        stock: parseInt(form.stock) || 0,
+        stock: finalStock,
+        sizes: Object.keys(parsedSizes).length > 0 ? parsedSizes : null,
         description: form.description || null,
         is_featured: form.is_featured,
         ...(image_url && { image_url }),
@@ -102,7 +113,7 @@ const AdminProducts = () => {
         try {
           const path = new URL(product.image_url).pathname.split("/").slice(-2).join("/");
           await supabase.storage.from("product-images").remove([path]);
-        } catch {}
+        } catch { }
       }
       const { error } = await supabase.from("products").delete().eq("id", product.id);
       if (error) throw error;
@@ -117,7 +128,7 @@ const AdminProducts = () => {
   });
 
   const resetForm = () => {
-    setForm({ name: "", name_bn: "", price: "", category: "", brand: "", stock: "", description: "", description_bn: "", is_featured: false });
+    setForm({ name: "", name_bn: "", price: "", category: "", brand: "", stock: "", description: "", description_bn: "", is_featured: false, sizes: {} });
     setImageFiles([]); setImagePreviews([]); setEditingId(null); setShowForm(false);
   };
 
@@ -127,6 +138,7 @@ const AdminProducts = () => {
       category: p.category || "", brand: p.brand || "", stock: String(p.stock ?? 0),
       description: p.description || "", description_bn: p.description_bn || "",
       is_featured: p.is_featured || false,
+      sizes: p.sizes ? Object.entries(p.sizes).reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {}) : {},
     });
     setEditingId(p.id); setImageFiles([]); setImagePreviews([]); setShowForm(true);
   };
@@ -172,7 +184,32 @@ const AdminProducts = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <input value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder={t("admin.price")} type="number" className={inputCls} />
-                <input value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} placeholder={t("admin.stock")} type="number" className={inputCls} />
+                <input
+                  value={Object.keys(form.sizes).length > 0 ? Object.values(form.sizes).reduce((acc, curr) => acc + (parseInt(curr as string) || 0), 0) : form.stock}
+                  onChange={(e) => setForm({ ...form, stock: e.target.value })}
+                  disabled={Object.keys(form.sizes).length > 0}
+                  placeholder={t("admin.stock")}
+                  type="number"
+                  className={inputCls + (Object.keys(form.sizes).length > 0 ? " opacity-50 cursor-not-allowed" : "")}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Size-Specific Stock (Optional)</label>
+                <div className="grid grid-cols-5 gap-2">
+                  {["S", "M", "L", "XL", "XXL"].map((sz) => (
+                    <div key={sz}>
+                      <span className="block text-center text-[10px] text-muted-foreground mb-1">{sz}</span>
+                      <input
+                        type="number"
+                        value={form.sizes[sz] || ""}
+                        onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, [sz]: e.target.value } })}
+                        className={`text-center px-1 py-2 border border-border rounded-lg text-sm focus:outline-none bg-transparent text-foreground placeholder:text-muted-foreground`}
+                        placeholder="0"
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

@@ -193,6 +193,9 @@ const ProductDetail = () => {
     );
   }
 
+  const productSizes = product.sizes as Record<string, number> | undefined;
+  const hasSpecificSizes = productSizes && Object.keys(productSizes).length > 0;
+
   const isInStock = product.stock > 0;
   const wishlisted = isWishlisted(product.id);
   const currentImage = galleryImages[activeIndex] || "/placeholder.svg";
@@ -393,23 +396,39 @@ const ProductDetail = () => {
                     </button>
                   </div>
                   <div className="flex gap-2 flex-wrap">
-                    {SIZES.map((size) => (
-                      <button
-                        key={size}
-                        onClick={() => {
-                          setSelectedSize(size === selectedSize ? null : size);
-                          setSizeError(false);
-                        }}
-                        className={`min-w-[44px] min-h-[44px] px-3 text-sm font-medium border transition-colors ${selectedSize === size
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : sizeError
-                              ? "bg-background text-destructive border-destructive hover:border-destructive/80"
-                              : "bg-background text-foreground border-border hover:border-primary"
-                          }`}
-                      >
-                        {size}
-                      </button>
-                    ))}
+                    {SIZES.map((size) => {
+                      const stockCount = hasSpecificSizes ? (productSizes?.[size] || 0) : null;
+                      const isOutOfStock = hasSpecificSizes && stockCount === 0;
+
+                      return (
+                        <div key={size} className="flex flex-col items-center gap-1">
+                          <button
+                            onClick={() => {
+                              if (isOutOfStock) return;
+                              setSelectedSize(size === selectedSize ? null : size);
+                              setSizeError(false);
+                              setQuantity(1); // Reset quantity when size changes
+                            }}
+                            disabled={isOutOfStock}
+                            className={`min-w-[44px] min-h-[44px] px-3 text-sm font-medium border transition-colors ${isOutOfStock
+                                ? "bg-secondary text-muted-foreground border-border cursor-not-allowed opacity-50"
+                                : selectedSize === size
+                                  ? "bg-primary text-primary-foreground border-primary"
+                                  : sizeError
+                                    ? "bg-background text-destructive border-destructive hover:border-destructive/80"
+                                    : "bg-background text-foreground border-border hover:border-primary"
+                              }`}
+                          >
+                            {size}
+                          </button>
+                          {hasSpecificSizes && stockCount !== null && (
+                            <span className={`text-[10px] ${stockCount > 0 ? "text-muted-foreground" : "text-destructive font-medium"}`}>
+                              {stockCount > 0 ? `${stockCount} pcs` : "Out"}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -430,9 +449,12 @@ const ProductDetail = () => {
                         {quantity}
                       </span>
                       <button
-                        onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))}
+                        onClick={() => {
+                          const maxAvailableStock = hasSpecificSizes && selectedSize ? (productSizes?.[selectedSize] || 0) : product.stock;
+                          setQuantity((q) => Math.min(maxAvailableStock, q + 1));
+                        }}
                         className="w-10 h-10 flex items-center justify-center hover:bg-secondary transition-colors"
-                        disabled={!isInStock}
+                        disabled={!isInStock || (hasSpecificSizes && selectedSize ? quantity >= (productSizes?.[selectedSize] || 0) : quantity >= product.stock)}
                       >
                         <Plus size={14} />
                       </button>

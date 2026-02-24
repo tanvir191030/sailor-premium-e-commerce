@@ -155,7 +155,7 @@ const Checkout = () => {
         const checkId = item.productId || item.id.split('-')[0];
         const { data: productData, error: productError } = await supabase
           .from("products")
-          .select("name, stock")
+          .select("name, stock, sizes")
           .eq("id", checkId)
           .maybeSingle();
 
@@ -165,8 +165,19 @@ const Checkout = () => {
           return;
         }
 
-        if (productData.stock < item.quantity) {
-          toast({ title: "Inadequate Stock", description: `Only ${productData.stock} left for ${item.name}.`, variant: "destructive" });
+        const productSizes = productData.sizes as Record<string, number> | null;
+        const hasSpecificSizes = productSizes && Object.keys(productSizes).length > 0;
+
+        let availableStock = productData.stock;
+        if (hasSpecificSizes && item.size) {
+          availableStock = productSizes[item.size] || 0;
+        }
+
+        if (availableStock < item.quantity) {
+          const msg = hasSpecificSizes && item.size
+            ? `Only ${availableStock} left for ${item.name} (${item.size}).`
+            : `Only ${availableStock} left for ${item.name}.`;
+          toast({ title: "Inadequate Stock", description: msg, variant: "destructive" });
           setSubmitting(false);
           return;
         }
@@ -213,15 +224,26 @@ const Checkout = () => {
         const updateId = item.productId || item.id.split('-')[0];
         const { data: currentProduct } = await supabase
           .from("products")
-          .select("stock")
+          .select("stock, sizes")
           .eq("id", updateId)
           .maybeSingle();
 
         if (currentProduct) {
-          const newStock = Math.max(0, currentProduct.stock - item.quantity);
+          let newStock = Math.max(0, currentProduct.stock - item.quantity);
+          let newSizes = currentProduct.sizes as Record<string, number> | null;
+
+          if (newSizes && Object.keys(newSizes).length > 0 && item.size) {
+            const currentSizeStock = newSizes[item.size] || 0;
+            newSizes = {
+              ...newSizes,
+              [item.size]: Math.max(0, currentSizeStock - item.quantity)
+            };
+            newStock = Object.values(newSizes).reduce((a, b) => a + b, 0);
+          }
+
           await supabase
             .from("products")
-            .update({ stock: newStock })
+            .update({ stock: newStock, sizes: newSizes })
             .eq("id", updateId);
         }
       }
