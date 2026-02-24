@@ -79,8 +79,8 @@
   },
   "track": {
     "title": "Track Your Order",
-    "subtitle": "Enter Tracking ID (SN-XXXXX) or phone number",
-    "placeholder": "SN-00001 or 01XXXXXXXXX",
+    "subtitle": "Enter Tracking ID (MM-XXXXXX) or phone number",
+    "placeholder": "MM-123456 or 01XXXXXXXXX",
     "search": "Search",
     "searching": "Searching...",
     "notFound": "No order found. Please check your tracking ID or phone number.",

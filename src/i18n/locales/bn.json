@@ -79,8 +79,8 @@
   },
   "track": {
     "title": "অর্ডার ট্র্যাক করুন",
-    "subtitle": "ট্র্যাকিং আইডি (SN-XXXXX) বা ফোন নম্বর দিন",
-    "placeholder": "SN-00001 বা 01XXXXXXXXX",
+    "subtitle": "ট্র্যাকিং আইডি (MM-XXXXXX) বা ফোন নম্বর দিন",
+    "placeholder": "MM-123456 বা 01XXXXXXXXX",
     "search": "খুঁজুন",
     "searching": "খুঁজছি...",
     "notFound": "কোনো অর্ডার পাওয়া যায়নি।",
