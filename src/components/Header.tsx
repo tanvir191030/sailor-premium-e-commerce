@@ -260,9 +260,9 @@ const Header = () => {
                 <MapPin size={20} />
               </Link>
 
-              {/* Wishlist */}
+              {/* Wishlist — desktop only */}
               <button
-                className="p-2 hover:opacity-70 transition-opacity relative min-w-[40px] min-h-[40px] flex items-center justify-center"
+                className="p-2 hover:opacity-70 transition-opacity relative min-w-[40px] min-h-[40px] hidden md:flex items-center justify-center"
                 aria-label="Wishlist"
                 onClick={() => navigate("/wishlist")}
               >
@@ -274,9 +274,9 @@ const Header = () => {
                 )}
               </button>
 
-              {/* Cart */}
+              {/* Cart — desktop only */}
               <button
-                className="p-2 hover:opacity-70 transition-opacity relative min-w-[40px] min-h-[40px] flex items-center justify-center"
+                className="p-2 hover:opacity-70 transition-opacity relative min-w-[40px] min-h-[40px] hidden md:flex items-center justify-center"
                 aria-label="Cart"
                 onClick={() => setCartOpen(true)}
               >
