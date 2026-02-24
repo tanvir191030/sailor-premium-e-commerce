@@ -26,6 +26,11 @@ const BD_DISTRICTS = [
   "রংপুর", "দিনাজপুর", "গাইবান্ধা", "কুড়িগ্রাম", "লালমনিরহাট", "নীলফামারী", "ঠাকুরগাঁও", "পঞ্চগড়",
 ];
 
+const generateTrackingId = () => {
+  const randomChars = Math.floor(100000 + Math.random() * 900000).toString();
+  return `MM-${randomChars}`;
+};
+
 const Checkout = () => {
   const { items, totalPrice, clearCart } = useCart();
   const { toast } = useToast();
@@ -144,15 +149,34 @@ const Checkout = () => {
 
     setSubmitting(true);
     try {
+      // 1. Generate a unique tracking ID
+      let uniqueTrackingId = "";
+      let isUnique = false;
+
+      while (!isUnique) {
+        uniqueTrackingId = generateTrackingId();
+        const { data: existingData } = await supabase
+          .from("orders")
+          .select("id")
+          .eq("tracking_id", uniqueTrackingId)
+          .maybeSingle();
+
+        if (!existingData) {
+          isUnique = true;
+        }
+      }
+
+      // 2. Insert order with the guaranteed unique tracking ID
       const fullAddress = [form.thana, form.district, form.address].filter(Boolean).join(", ");
       const { data, error } = await supabase.from("orders").insert({
+        tracking_id: uniqueTrackingId,
         customer_name: form.name.trim(),
         phone: form.phone.trim(),
         email: form.email.trim() || null,
         district: form.district || null,
         thana: form.thana.trim() || null,
         address: fullAddress,
-        cart_items: items.map((i) => ({ name: i.name, price: i.price, quantity: i.quantity, image: i.image })),
+        cart_items: items.map((i) => ({ name: i.name, price: i.price, quantity: i.quantity, image: i.image, size: i.size })),
         total: grandTotal,
         delivery_charge: deliveryCharge,
         payment_method: paymentMethod === "cod" ? "Cash on Delivery" : paymentMethod === "bkash" ? "bKash" : paymentMethod === "nagad" ? "Nagad" : "Rocket",
@@ -267,7 +291,7 @@ ${cartItems.map((item: any) => `<tr><td>${item.name || "Item"}</td><td>${item.qu
                     {/* District & Thana — full width on mobile */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                         <label className="text-xs font-medium text-muted-foreground mb-1.5 block">জেলা *</label>
+                        <label className="text-xs font-medium text-muted-foreground mb-1.5 block">জেলা *</label>
                         <select value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} className={inputCls} required>
                           <option value="">জেলা নির্বাচন করুন</option>
                           {BD_DISTRICTS.map((d) => <option key={d} value={d}>{d}</option>)}
@@ -323,7 +347,7 @@ ${cartItems.map((item: any) => `<tr><td>${item.name || "Item"}</td><td>${item.qu
                       )}
                     </div>
 
-                     {/* Payment Method */}
+                    {/* Payment Method */}
                     <div className="pt-2 border-t border-border">
                       <label className="text-xs font-medium text-muted-foreground mb-3 block flex items-center gap-1.5">
                         <Smartphone size={14} /> পেমেন্ট মেথড *
@@ -339,11 +363,10 @@ ${cartItems.map((item: any) => `<tr><td>${item.name || "Item"}</td><td>${item.qu
                             key={opt.value}
                             type="button"
                             onClick={() => { setPaymentMethod(opt.value as any); if (opt.value === "cod") setTransactionId(""); }}
-                            className={`flex items-center gap-2 p-3 rounded-xl border text-sm font-medium transition-all min-h-[48px] ${
-                              paymentMethod === opt.value
+                            className={`flex items-center gap-2 p-3 rounded-xl border text-sm font-medium transition-all min-h-[48px] ${paymentMethod === opt.value
                                 ? "border-primary bg-primary/10 text-primary"
                                 : "border-border text-muted-foreground hover:border-ring"
-                            }`}
+                              }`}
                           >
                             {opt.icon}
                             <span className="truncate">{opt.label}</span>
