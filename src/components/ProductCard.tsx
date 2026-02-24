@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Heart, ShoppingCart, Zap, Ruler } from "lucide-react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useCart } from "@/contexts/CartContext";
 import { formatPrice } from "@/lib/currency";
+import { toast } from "sonner";
 import SizeChartModal from "@/components/SizeChartModal";
 
 interface ProductCardProps {
@@ -31,17 +32,21 @@ const ProductCard = ({
   const { toggle, isWishlisted } = useWishlist();
   const { addItem, setIsBuyNowOpen, setIsOpen } = useCart();
   const wishlisted = isWishlisted(id);
+  const navigate = useNavigate();
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     addItem({ id, name, price, image, category });
+    toast.success("Added to cart successfully");
   };
 
   const handleBuyNow = (e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     addItem({ id, name, price, image, category });
     setIsOpen(false);
-    setIsBuyNowOpen(true);
+    navigate("/checkout");
   };
 
   const handleSizeChart = (e: React.MouseEvent) => {
@@ -68,9 +73,8 @@ const ProductCard = ({
           <img
             src={image}
             alt={name}
-            className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${
-              imageLoaded ? "opacity-100" : "opacity-0"
-            }`}
+            className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${imageLoaded ? "opacity-100" : "opacity-0"
+              }`}
             onLoad={() => setImageLoaded(true)}
           />
 
@@ -113,32 +117,32 @@ const ProductCard = ({
             <Ruler size={14} />
           </button>
 
-          {/* Hover Buttons — desktop only */}
-          <div className="absolute inset-x-0 bottom-0 p-2 md:p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300 flex gap-1.5 md:gap-2 z-[2] hidden md:flex">
-            <button
-              onClick={handleAddToCart}
-              className="flex-1 bg-primary text-primary-foreground py-2 md:py-2.5 text-[9px] md:text-[10px] uppercase tracking-[0.12em] font-medium hover:bg-primary/80 transition-colors flex items-center justify-center gap-1 md:gap-1.5"
-            >
-              <ShoppingCart size={12} />
-              Add to Cart
-            </button>
-            <button
-              onClick={handleBuyNow}
-              className="flex-1 bg-background text-foreground border border-primary py-2 md:py-2.5 text-[9px] md:text-[10px] uppercase tracking-[0.12em] font-medium hover:bg-secondary transition-colors flex items-center justify-center gap-1 md:gap-1.5"
-            >
-              <Zap size={12} />
-              Buy Now
-            </button>
-          </div>
+          {/* Hover Buttons — unified for mobile and desktop */}
+          <div className="absolute inset-x-0 bottom-0 p-0 lg:p-3 flex justify-between items-end z-[2] opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300 pointer-events-none lg:pointer-events-none">
+            {/* Desktop variant: flex row, Mobile variant: absolute cart + full width bottom glass buy now */}
+            <div className="flex w-full pointer-events-auto flex-col lg:flex-row gap-0 lg:gap-2 lg:justify-end">
 
-          {/* Mobile: tap-friendly Add to Cart overlay button */}
-          <button
-            onClick={handleAddToCart}
-            className="absolute bottom-2 right-2 p-2.5 bg-primary text-primary-foreground z-[2] md:hidden min-w-[40px] min-h-[40px] flex items-center justify-center rounded-full shadow-lg"
-            aria-label="Add to cart"
-          >
-            <ShoppingCart size={16} />
-          </button>
+              {/* Add to Cart - Top right on mobile, alongside Buy Now on desktop */}
+              <button
+                onClick={handleAddToCart}
+                className="absolute top-12 right-2 md:top-14 md:right-3 lg:relative lg:top-auto lg:right-auto bg-background/80 backdrop-blur-sm text-foreground hover:bg-background transition-colors p-2.5 rounded shadow-sm flex items-center justify-center w-11 h-11 lg:w-9 lg:h-9"
+                aria-label="Add to cart"
+                title="Add to Cart"
+              >
+                <ShoppingCart size={18} className="lg:w-4 lg:h-4" />
+              </button>
+
+              {/* Buy Now - Full width bottom on mobile, alongside Add to Cart on desktop */}
+              <button
+                onClick={handleBuyNow}
+                className="w-full lg:w-auto bg-background/60 lg:bg-primary/90 backdrop-blur-md lg:backdrop-blur-sm text-foreground lg:text-primary-foreground border-t border-white/20 lg:border-none hover:bg-background/80 lg:hover:bg-primary transition-colors px-3 py-3 lg:px-4 lg:py-2.5 lg:rounded shadow-sm flex items-center justify-center min-h-[44px] lg:min-h-[36px] text-sm lg:text-xs font-medium gap-1.5"
+                title="Buy Now"
+              >
+                <Zap size={16} className="lg:w-3.5 lg:h-3.5 text-primary lg:text-current" />
+                <span>Buy Now</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Product Info */}
