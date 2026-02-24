@@ -149,6 +149,29 @@ const Checkout = () => {
 
     setSubmitting(true);
     try {
+      // 0. Stock validation
+      for (const item of items) {
+        // Fallback to item.id if productId is mistakenly undefined (unlikely due to updated CartContext)
+        const checkId = item.productId || item.id.split('-')[0];
+        const { data: productData, error: productError } = await supabase
+          .from("products")
+          .select("name, stock")
+          .eq("id", checkId)
+          .maybeSingle();
+
+        if (productError || !productData) {
+          toast({ title: "Product not found", description: `Could not verify stock for ${item.name}`, variant: "destructive" });
+          setSubmitting(false);
+          return;
+        }
+
+        if (productData.stock < item.quantity) {
+          toast({ title: "Inadequate Stock", description: `Only ${productData.stock} left for ${item.name}.`, variant: "destructive" });
+          setSubmitting(false);
+          return;
+        }
+      }
+
       // 1. Generate a unique tracking ID
       let uniqueTrackingId = "";
       let isUnique = false;
@@ -184,6 +207,25 @@ const Checkout = () => {
       }).select().single();
 
       if (error) throw error;
+
+      // 3. Subtract stock from products manually
+      for (const item of items) {
+        const updateId = item.productId || item.id.split('-')[0];
+        const { data: currentProduct } = await supabase
+          .from("products")
+          .select("stock")
+          .eq("id", updateId)
+          .maybeSingle();
+
+        if (currentProduct) {
+          const newStock = Math.max(0, currentProduct.stock - item.quantity);
+          await supabase
+            .from("products")
+            .update({ stock: newStock })
+            .eq("id", updateId);
+        }
+      }
+
       setOrderSuccess(data);
       clearCart();
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -364,8 +406,8 @@ ${cartItems.map((item: any) => `<tr><td>${item.name || "Item"}</td><td>${item.qu
                             type="button"
                             onClick={() => { setPaymentMethod(opt.value as any); if (opt.value === "cod") setTransactionId(""); }}
                             className={`flex items-center gap-2 p-3 rounded-xl border text-sm font-medium transition-all min-h-[48px] ${paymentMethod === opt.value
-                                ? "border-primary bg-primary/10 text-primary"
-                                : "border-border text-muted-foreground hover:border-ring"
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-border text-muted-foreground hover:border-ring"
                               }`}
                           >
                             {opt.icon}

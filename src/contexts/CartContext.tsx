@@ -1,7 +1,8 @@
 import { createContext, useContext, useState, ReactNode, useCallback } from "react";
 
 export interface CartItem {
-  id: string;
+  id: string; // This might be productId-size
+  productId?: string; // The actual Supabase UUID
   name: string;
   price: number;
   image: string;
@@ -52,7 +53,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       if (existing) {
         return prev.map((i) => (i.id === cartItemId ? { ...i, quantity: i.quantity + qty } : i));
       }
-      return [...prev, { ...item, id: cartItemId, quantity: qty }];
+      return [...prev, { ...item, id: cartItemId, productId: item.id, quantity: qty }];
     });
   }, []);
 
