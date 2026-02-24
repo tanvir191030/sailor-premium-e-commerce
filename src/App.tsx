@@ -11,6 +11,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import SiteMetaUpdater from "./components/SiteMetaUpdater";
 import CartDrawer from "./components/CartDrawer";
 import BuyNowDrawer from "./components/BuyNowDrawer";
+import MobileBottomNav from "./components/MobileBottomNav";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -70,6 +71,7 @@ const App = () => (
               <CartDrawer />
               <BuyNowDrawer />
               <AnimatedRoutes />
+              <MobileBottomNav />
             </BrowserRouter>
           </CartProvider>
         </WishlistProvider>
