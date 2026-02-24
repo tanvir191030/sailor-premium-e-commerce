@@ -34,11 +34,11 @@ export interface SiteSettings {
 }
 
 const DEFAULTS: SiteSettings = {
-  store_name: "SAILOR",
+  store_name: "Modest Mart",
   announcement_bar: "সকল অর্ডারে ফ্রি শিপিং · Free Shipping on All Orders",
   logo_url: "",
   favicon_url: "",
-  about_us: "SAILOR হলো একটি প্রিমিয়াম ফ্যাশন ব্র্যান্ড যা আপনার জীবনধারার সাথে মিলে যায়।",
+  about_us: "Modest Mart হলো একটি প্রিমিয়াম ফ্যাশন ব্র্যান্ড যা আপনার জীবনধারার সাথে মিলে যায়।",
   about_us_extended: "",
   our_mission: "আমাদের লক্ষ্য হলো বাংলাদেশের প্রতিটি মানুষের কাছে আন্তর্জাতিক মানের ফ্যাশন সাশ্রয়ী মূল্যে পৌঁছে দেওয়া।",
   office_address: "ঢাকা, বাংলাদেশ",
@@ -47,11 +47,11 @@ const DEFAULTS: SiteSettings = {
   facebook_url: "https://facebook.com",
   instagram_url: "https://instagram.com",
   twitter_url: "https://twitter.com",
-  site_title: "SAILOR - Premium Fashion Bangladesh",
-  meta_description: "SAILOR - বাংলাদেশের সেরা প্রিমিয়াম ফ্যাশন ব্র্যান্ড। নারী, পুরুষ ও শিশুদের জন্য সর্বোচ্চ মানের পোশাক।",
+  site_title: "Modest Mart - Premium Fashion Bangladesh",
+  meta_description: "Modest Mart - বাংলাদেশের সেরা প্রিমিয়াম ফ্যাশন ব্র্যান্ড। নারী, পুরুষ ও শিশুদের জন্য সর্বোচ্চ মানের পোশাক।",
   privacy_policy: "",
   terms_conditions: "",
-  site_name: "SAILOR",
+  site_name: "Modest Mart",
   contact_phone: "",
   contact_email: "",
   delivery_inside_dhaka: "80",

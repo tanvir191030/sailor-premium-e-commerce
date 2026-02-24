@@ -107,7 +107,7 @@ const Admin = () => {
         <div className="p-5 border-b border-border flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 text-foreground hover:opacity-70 transition-opacity">
             <ArrowLeft size={16} />
-            <span className="font-serif text-lg tracking-[0.1em]">SAILOR</span>
+            <span className="font-serif text-lg tracking-[0.1em]">Modest Mart</span>
           </Link>
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-2 hover:bg-secondary rounded min-w-[44px] min-h-[44px] flex items-center justify-center">
             <X size={18} />

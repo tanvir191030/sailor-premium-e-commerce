@@ -48,7 +48,7 @@ const Header = () => {
   const { t } = useTranslation();
   const { settings } = useSiteSettings();
 
-  const storeName = settings.store_name || "SAILOR";
+  const storeName = settings.store_name || "Modest Mart";
   const announcementBar = settings.announcement_bar || t("nav.freeShipping");
 
   useEffect(() => {
