@@ -42,7 +42,7 @@ const Footer = () => {
     { name: t("footer.press"), href: "/contact" },
   ];
 
-  const storeName = settings.store_name || "SAILOR";
+  const storeName = settings.store_name || "Modest Mart";
   const facebookUrl = settings.facebook_url || settings.facebook || "https://facebook.com";
   const instagramUrl = settings.instagram_url || settings.instagram || "https://instagram.com";
   const twitterUrl = settings.twitter_url || "https://twitter.com";
