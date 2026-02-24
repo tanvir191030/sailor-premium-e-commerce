@@ -32,7 +32,7 @@ export interface SiteSettings {
   facebook: string;
   instagram: string;
   whatsapp_number: string;
-  messenger_url: string;
+  messenger_id: string;
 }
 
 const DEFAULTS: SiteSettings = {
@@ -65,7 +65,7 @@ const DEFAULTS: SiteSettings = {
   facebook: "",
   instagram: "",
   whatsapp_number: "",
-  messenger_url: "",
+  messenger_id: "",
 };
 
 export const useSiteSettings = () => {

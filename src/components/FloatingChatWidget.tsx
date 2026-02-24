@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { MessageCircle, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
@@ -16,37 +16,52 @@ const MessengerIcon = ({ size = 20 }: { size?: number }) => (
   </svg>
 );
 
+const itemVariants = {
+  open: { opacity: 1, y: 0, scale: 1 },
+  closed: { opacity: 0, y: 16, scale: 0.85 },
+};
+
 const FloatingChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { settings } = useSiteSettings();
   const location = useLocation();
 
-  // Hide on admin pages
+  const handleMouseLeave = useCallback(() => {
+    if (window.innerWidth >= 768) setIsOpen(false);
+  }, []);
+
   if (location.pathname.startsWith("/admin")) return null;
 
-  const whatsappNumber = (settings as any).whatsapp_number || settings.phone_number || settings.contact_phone;
-  const messengerUrl = (settings as any).messenger_url || "";
+  const whatsappNumber = settings.whatsapp_number || settings.phone_number || settings.contact_phone;
+  const messengerId = settings.messenger_id;
 
   const hasWhatsApp = !!whatsappNumber;
-  const hasMessenger = !!messengerUrl;
+  const hasMessenger = !!messengerId;
 
-  if (!hasWhatsApp && !hasMessenger) return null;
-
-  const whatsappLink = `https://wa.me/${whatsappNumber?.replace(/[^0-9]/g, "")}`;
+  // Show widget even with no config — it just won't have sub-icons
+  const whatsappLink = hasWhatsApp
+    ? `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, "")}`
+    : "";
+  const messengerLink = hasMessenger
+    ? (messengerId.startsWith("http") ? messengerId : `https://m.me/${messengerId}`)
+    : "";
 
   return (
-    <div className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-[60] flex flex-col items-end gap-2">
+    <div
+      className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-[60] flex flex-col items-end gap-2"
+      onMouseLeave={handleMouseLeave}
+    >
       {/* Sub-icons */}
       <AnimatePresence>
-        {isOpen && (
+        {isOpen && (hasWhatsApp || hasMessenger) && (
           <motion.div
             className="flex flex-col items-end gap-2.5 mb-1"
             initial="closed"
             animate="open"
             exit="closed"
             variants={{
-              open: { transition: { staggerChildren: 0.07, staggerDirection: -1 } },
-              closed: { transition: { staggerChildren: 0.04 } },
+              open: { transition: { staggerChildren: 0.08, staggerDirection: -1 } },
+              closed: { transition: { staggerChildren: 0.05 } },
             }}
           >
             {hasWhatsApp && (
@@ -54,35 +69,29 @@ const FloatingChatWidget = () => {
                 href={whatsappLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2.5 bg-[#25D366] text-white pl-4 pr-3 py-2.5 rounded-full shadow-lg hover:shadow-xl transition-shadow"
-                variants={{
-                  open: { opacity: 1, y: 0, scale: 1 },
-                  closed: { opacity: 0, y: 20, scale: 0.8 },
-                }}
-                transition={{ type: "spring", stiffness: 400, damping: 22 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                className="flex items-center gap-2.5 bg-[#25D366] text-white pl-4 pr-3.5 py-2.5 rounded-full shadow-lg hover:shadow-xl transition-shadow min-h-[44px]"
+                variants={itemVariants}
+                transition={{ type: "spring", stiffness: 380, damping: 20 }}
+                whileHover={{ scale: 1.06 }}
+                whileTap={{ scale: 0.94 }}
               >
-                <span className="text-xs font-medium whitespace-nowrap">WhatsApp</span>
-                <WhatsAppIcon size={18} />
+                <span className="text-sm font-medium whitespace-nowrap">WhatsApp</span>
+                <WhatsAppIcon size={20} />
               </motion.a>
             )}
             {hasMessenger && (
               <motion.a
-                href={messengerUrl}
+                href={messengerLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2.5 bg-[#0084FF] text-white pl-4 pr-3 py-2.5 rounded-full shadow-lg hover:shadow-xl transition-shadow"
-                variants={{
-                  open: { opacity: 1, y: 0, scale: 1 },
-                  closed: { opacity: 0, y: 20, scale: 0.8 },
-                }}
-                transition={{ type: "spring", stiffness: 400, damping: 22 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                className="flex items-center gap-2.5 bg-[#0084FF] text-white pl-4 pr-3.5 py-2.5 rounded-full shadow-lg hover:shadow-xl transition-shadow min-h-[44px]"
+                variants={itemVariants}
+                transition={{ type: "spring", stiffness: 380, damping: 20 }}
+                whileHover={{ scale: 1.06 }}
+                whileTap={{ scale: 0.94 }}
               >
-                <span className="text-xs font-medium whitespace-nowrap">Messenger</span>
-                <MessengerIcon size={18} />
+                <span className="text-sm font-medium whitespace-nowrap">Messenger</span>
+                <MessengerIcon size={20} />
               </motion.a>
             )}
           </motion.div>
@@ -95,13 +104,18 @@ const FloatingChatWidget = () => {
         onMouseEnter={() => {
           if (window.innerWidth >= 768) setIsOpen(true);
         }}
-        className="relative flex items-center gap-2 bg-primary text-primary-foreground pl-4 pr-5 py-3 rounded-full shadow-xl hover:shadow-2xl transition-shadow"
+        className="relative flex items-center gap-2.5 bg-primary text-primary-foreground pl-4 pr-5 py-3 rounded-full shadow-xl hover:shadow-2xl transition-shadow min-h-[48px]"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
         {/* Pulse ring */}
         {!isOpen && (
-          <span className="absolute inset-0 rounded-full animate-ping bg-primary/30 pointer-events-none" style={{ animationDuration: "2s" }} />
+          <span
+            className="absolute inset-0 rounded-full bg-primary/25 pointer-events-none"
+            style={{
+              animation: "ping 2.5s cubic-bezier(0, 0, 0.2, 1) infinite",
+            }}
+          />
         )}
         <motion.div
           animate={{ rotate: isOpen ? 90 : 0 }}
@@ -109,7 +123,7 @@ const FloatingChatWidget = () => {
         >
           {isOpen ? <X size={20} /> : <MessageCircle size={20} />}
         </motion.div>
-        <span className="text-xs font-medium whitespace-nowrap">
+        <span className="text-xs font-semibold whitespace-nowrap tracking-wide">
           {isOpen ? "বন্ধ করুন" : "চ্যাট করুন"}
         </span>
       </motion.button>
