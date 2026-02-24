@@ -109,9 +109,6 @@
     @apply border-border;
     transition: background-color 0.3s ease, color 0.2s ease, border-color 0.3s ease;
   }
-  * {
-    @apply border-border;
-  }
 
   html {
     scroll-behavior: smooth;
@@ -121,6 +118,41 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* Modern minimal scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(0 0% 70% / 0.4);
+    border-radius: 100px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(0 0% 55% / 0.6);
+  }
+  .dark ::-webkit-scrollbar-thumb {
+    background: hsl(0 0% 40% / 0.4);
+  }
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: hsl(0 0% 50% / 0.5);
+  }
+
+  /* Hide scrollbar on mobile for cleaner look */
+  @media (max-width: 768px) {
+    ::-webkit-scrollbar {
+      width: 0px;
+      display: none;
+    }
+    body {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
   }
 }
 
