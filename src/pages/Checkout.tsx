@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { ArrowLeft, ShoppingBag, FileDown, Truck, Copy, MapPin, Smartphone } from "lucide-react";
+import { ArrowLeft, ShoppingBag, FileDown, Truck, Copy, MapPin, Smartphone, ChevronDown, ChevronUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -40,8 +40,8 @@ const Checkout = () => {
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [couponChecking, setCouponChecking] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
-  // Fetch delivery charges from settings
   const { data: deliverySettings } = useQuery({
     queryKey: ["checkout-settings"],
     queryFn: async () => {
@@ -111,7 +111,6 @@ const Checkout = () => {
     }
   };
 
-  // Auto-detect zone from district
   useEffect(() => {
     if (form.district === "ঢাকা" || form.district === "গাজীপুর" || form.district === "নারায়ণগঞ্জ") {
       setDeliveryZone("inside_dhaka");
@@ -210,48 +209,48 @@ ${cartItems.map((item: any) => `<tr><td>${item.name || "Item"}</td><td>${item.qu
     }
   };
 
-  const inputCls = "w-full px-4 py-3 bg-card border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground transition-all";
+  const inputCls = "w-full px-4 py-3 bg-card border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground transition-all min-h-[44px]";
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="max-w-6xl mx-auto px-4 py-8 md:py-12">
-        <Link to="/shop" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors">
+      <main className="max-w-6xl mx-auto px-4 py-6 md:py-12">
+        <Link to="/shop" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4 md:mb-6 transition-colors min-h-[44px]">
           <ArrowLeft size={16} /> শপিং চালিয়ে যান
         </Link>
 
-        <h1 className="font-serif text-2xl md:text-3xl tracking-wide mb-8 text-foreground">Checkout</h1>
+        <h1 className="font-serif text-xl md:text-3xl tracking-wide mb-6 md:mb-8 text-foreground">Checkout</h1>
 
         <AnimatePresence mode="wait">
           {orderSuccess ? (
-            <motion.div key="success" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-lg mx-auto text-center py-16">
+            <motion.div key="success" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-lg mx-auto text-center py-10 md:py-16">
               <SuccessAnimation />
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}>
-                <h2 className="font-serif text-2xl mb-2 text-foreground mt-6">অর্ডার সফল হয়েছে!</h2>
+                <h2 className="font-serif text-xl md:text-2xl mb-2 text-foreground mt-6">অর্ডার সফল হয়েছে!</h2>
                 <div className="bg-card border border-border rounded-xl p-4 mb-4 inline-block">
                   <p className="text-xs text-muted-foreground mb-1">ট্র্যাকিং আইডি</p>
                   <div className="flex items-center gap-2 justify-center">
-                    <span className="font-mono text-xl font-bold text-primary">{orderSuccess.tracking_id}</span>
-                    <button onClick={copyTrackingId} className="p-1 hover:bg-secondary rounded"><Copy size={14} /></button>
+                    <span className="font-mono text-lg md:text-xl font-bold text-primary">{orderSuccess.tracking_id}</span>
+                    <button onClick={copyTrackingId} className="p-2 hover:bg-secondary rounded min-w-[44px] min-h-[44px] flex items-center justify-center"><Copy size={14} /></button>
                   </div>
                 </div>
                 <p className="text-muted-foreground text-sm mb-6">আমরা শীঘ্রই আপনার সাথে যোগাযোগ করবো।</p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <button onClick={downloadInvoice} className="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-full text-sm font-medium hover:opacity-90 transition-opacity">
+                  <button onClick={downloadInvoice} className="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-full text-sm font-medium hover:opacity-90 transition-opacity min-h-[48px]">
                     <FileDown size={16} /> ইনভয়েস ডাউনলোড
                   </button>
-                  <Link to="/track-order" className="px-6 py-3 border border-border rounded-full text-sm font-medium text-foreground hover:bg-secondary transition-colors text-center">
+                  <Link to="/track-order" className="px-6 py-3 border border-border rounded-full text-sm font-medium text-foreground hover:bg-secondary transition-colors text-center min-h-[48px] flex items-center justify-center">
                     অর্ডার ট্র্যাক করুন
                   </Link>
                 </div>
               </motion.div>
             </motion.div>
           ) : (
-            <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid lg:grid-cols-5 gap-8">
+            <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid lg:grid-cols-5 gap-6 md:gap-8">
               <div className="lg:col-span-3">
-                <div className="bg-card p-6 md:p-8 rounded-2xl shadow-sm border border-border">
+                <div className="bg-card p-5 md:p-8 rounded-2xl shadow-sm border border-border">
                   <h2 className="font-serif text-lg mb-1 text-foreground">ডেলিভারি তথ্য</h2>
-                  <p className="text-xs text-muted-foreground mb-6">লগিন ছাড়াই অর্ডার করুন</p>
+                  <p className="text-xs text-muted-foreground mb-5 md:mb-6">লগিন ছাড়াই অর্ডার করুন</p>
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                       <label className="text-xs font-medium text-muted-foreground mb-1.5 block">আপনার নাম *</label>
@@ -265,7 +264,8 @@ ${cartItems.map((item: any) => `<tr><td>${item.name || "Item"}</td><td>${item.qu
                       <label className="text-xs font-medium text-muted-foreground mb-1.5 block">ইমেইল (ঐচ্ছিক)</label>
                       <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="email@example.com" className={inputCls} maxLength={100} />
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    {/* District & Thana — full width on mobile */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                          <label className="text-xs font-medium text-muted-foreground mb-1.5 block">জেলা *</label>
                         <select value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} className={inputCls} required>
@@ -299,7 +299,7 @@ ${cartItems.map((item: any) => `<tr><td>${item.name || "Item"}</td><td>${item.qu
                               {appliedCoupon.discount_type === "percentage" ? `${appliedCoupon.discount_value}% ছাড়` : `৳${appliedCoupon.discount_value} ছাড়`}
                             </span>
                           </div>
-                          <button type="button" onClick={() => { setAppliedCoupon(null); setCouponCode(""); }} className="text-xs text-destructive hover:underline">সরান</button>
+                          <button type="button" onClick={() => { setAppliedCoupon(null); setCouponCode(""); }} className="text-xs text-destructive hover:underline min-h-[44px] px-2">সরান</button>
                         </div>
                       ) : (
                         <div className="flex gap-2">
@@ -315,7 +315,7 @@ ${cartItems.map((item: any) => `<tr><td>${item.name || "Item"}</td><td>${item.qu
                             type="button"
                             onClick={applyCoupon}
                             disabled={!couponCode.trim() || couponChecking}
-                            className="px-4 py-3 bg-secondary text-foreground border border-border rounded-xl text-sm font-medium hover:bg-secondary/80 disabled:opacity-50 transition-colors whitespace-nowrap"
+                            className="px-4 py-3 bg-secondary text-foreground border border-border rounded-xl text-sm font-medium hover:bg-secondary/80 disabled:opacity-50 transition-colors whitespace-nowrap min-h-[44px]"
                           >
                             {couponChecking ? "..." : "প্রযোজ্য করুন"}
                           </button>
@@ -339,14 +339,14 @@ ${cartItems.map((item: any) => `<tr><td>${item.name || "Item"}</td><td>${item.qu
                             key={opt.value}
                             type="button"
                             onClick={() => { setPaymentMethod(opt.value as any); if (opt.value === "cod") setTransactionId(""); }}
-                            className={`flex items-center gap-2 p-3 rounded-xl border text-sm font-medium transition-all ${
+                            className={`flex items-center gap-2 p-3 rounded-xl border text-sm font-medium transition-all min-h-[48px] ${
                               paymentMethod === opt.value
                                 ? "border-primary bg-primary/10 text-primary"
                                 : "border-border text-muted-foreground hover:border-ring"
                             }`}
                           >
                             {opt.icon}
-                            {opt.label}
+                            <span className="truncate">{opt.label}</span>
                           </button>
                         ))}
                       </div>
@@ -384,52 +384,71 @@ ${cartItems.map((item: any) => `<tr><td>${item.name || "Item"}</td><td>${item.qu
                       })()}
                     </div>
 
-                    <button type="submit" disabled={submitting || items.length === 0} className="w-full py-3.5 bg-primary text-primary-foreground rounded-full text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50">
+                    <button type="submit" disabled={submitting || items.length === 0} className="w-full py-3.5 bg-primary text-primary-foreground rounded-full text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 min-h-[48px]">
                       {submitting ? "অর্ডার হচ্ছে..." : `অর্ডার করুন · ${formatPrice(grandTotal)}`}
                     </button>
                   </form>
                 </div>
               </div>
 
-              <div className="lg:col-span-2">
-                <div className="bg-card p-6 rounded-2xl shadow-sm border border-border sticky top-24">
-                  <h2 className="font-serif text-lg mb-4 text-foreground flex items-center gap-2">
+              {/* Order Summary — collapsible on mobile */}
+              <div className="lg:col-span-2 order-first lg:order-last">
+                <div className="bg-card p-5 md:p-6 rounded-2xl shadow-sm border border-border lg:sticky lg:top-24">
+                  {/* Mobile: collapsible header */}
+                  <button
+                    onClick={() => setSummaryOpen(!summaryOpen)}
+                    className="w-full flex items-center justify-between lg:hidden mb-2"
+                  >
+                    <h2 className="font-serif text-lg text-foreground flex items-center gap-2">
+                      <ShoppingBag size={18} /> অর্ডার সারাংশ ({items.length})
+                    </h2>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-foreground">{formatPrice(grandTotal)}</span>
+                      {summaryOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                    </div>
+                  </button>
+                  {/* Desktop: always visible header */}
+                  <h2 className="font-serif text-lg mb-4 text-foreground items-center gap-2 hidden lg:flex">
                     <ShoppingBag size={18} /> অর্ডার সারাংশ
                   </h2>
-                  {items.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-8">কার্ট খালি</p>
-                  ) : (
-                    <>
-                      <div className="space-y-3 max-h-64 overflow-y-auto mb-4">
-                        {items.map((item) => (
-                          <div key={item.id} className="flex gap-3">
-                            <div className="w-14 h-16 bg-secondary rounded-lg overflow-hidden flex-shrink-0">
-                              <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+
+                  {/* Content — always visible on desktop, toggle on mobile */}
+                  <div className={`${summaryOpen ? "block" : "hidden"} lg:block`}>
+                    {items.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-8">কার্ট খালি</p>
+                    ) : (
+                      <>
+                        <div className="space-y-3 max-h-64 overflow-y-auto mb-4">
+                          {items.map((item) => (
+                            <div key={item.id} className="flex gap-3">
+                              <div className="w-14 h-16 bg-secondary rounded-lg overflow-hidden flex-shrink-0">
+                                <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate text-foreground">{item.name}</p>
+                                <p className="text-xs text-muted-foreground">x{item.quantity}</p>
+                              </div>
+                              <p className="text-sm font-medium text-foreground whitespace-nowrap">{formatPrice(item.price * item.quantity)}</p>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate text-foreground">{item.name}</p>
-                              <p className="text-xs text-muted-foreground">x{item.quantity}</p>
-                            </div>
-                            <p className="text-sm font-medium text-foreground whitespace-nowrap">{formatPrice(item.price * item.quantity)}</p>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="border-t border-border pt-3 space-y-2">
-                        <div className="flex justify-between text-sm text-muted-foreground"><span>সাবটোটাল</span><span>{formatPrice(totalPrice)}</span></div>
-                        {appliedCoupon && (
-                          <div className="flex justify-between text-sm text-primary font-medium">
-                            <span>ছাড় ({appliedCoupon.code})</span>
-                            <span>- {formatPrice(discount)}</span>
-                          </div>
-                        )}
-                        <div className="flex justify-between text-sm text-muted-foreground">
-                          <span>ডেলিভারি ({deliveryZone === "inside_dhaka" ? "ঢাকা" : "ঢাকার বাইরে"})</span>
-                          <span>{formatPrice(deliveryCharge)}</span>
+                          ))}
                         </div>
-                        <div className="flex justify-between font-bold text-base pt-2 border-t border-border text-foreground"><span>মোট</span><span>{formatPrice(grandTotal)}</span></div>
-                      </div>
-                    </>
-                  )}
+                        <div className="border-t border-border pt-3 space-y-2">
+                          <div className="flex justify-between text-sm text-muted-foreground"><span>সাবটোটাল</span><span>{formatPrice(totalPrice)}</span></div>
+                          {appliedCoupon && (
+                            <div className="flex justify-between text-sm text-primary font-medium">
+                              <span>ছাড় ({appliedCoupon.code})</span>
+                              <span>- {formatPrice(discount)}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between text-sm text-muted-foreground">
+                            <span>ডেলিভারি ({deliveryZone === "inside_dhaka" ? "ঢাকা" : "ঢাকার বাইরে"})</span>
+                            <span>{formatPrice(deliveryCharge)}</span>
+                          </div>
+                          <div className="flex justify-between font-bold text-base pt-2 border-t border-border text-foreground"><span>মোট</span><span>{formatPrice(grandTotal)}</span></div>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             </motion.div>

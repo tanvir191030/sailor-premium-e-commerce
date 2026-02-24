@@ -76,13 +76,13 @@ const ProductCard = ({
 
           {/* Badges */}
           {isNew && (
-            <span className="absolute top-3 left-3 bg-primary text-primary-foreground px-3 py-1 text-[10px] uppercase tracking-[0.1em]">
+            <span className="absolute top-2 left-2 md:top-3 md:left-3 bg-primary text-primary-foreground px-2 py-0.5 md:px-3 md:py-1 text-[9px] md:text-[10px] uppercase tracking-[0.1em]">
               New
             </span>
           )}
 
           {originalPrice && originalPrice > price && (
-            <span className="absolute top-3 left-3 bg-destructive text-destructive-foreground px-3 py-1 text-[10px] uppercase tracking-[0.1em]">
+            <span className="absolute top-2 left-2 md:top-3 md:left-3 bg-destructive text-destructive-foreground px-2 py-0.5 md:px-3 md:py-1 text-[9px] md:text-[10px] uppercase tracking-[0.1em]">
               Sale
             </span>
           )}
@@ -94,70 +94,72 @@ const ProductCard = ({
               e.stopPropagation();
               toggle(id);
             }}
-            className="absolute top-3 right-3 p-2 bg-background/80 backdrop-blur-sm hover:bg-background transition-colors z-[2]"
+            className="absolute top-2 right-2 md:top-3 md:right-3 p-2 bg-background/80 backdrop-blur-sm hover:bg-background transition-colors z-[2] min-w-[36px] min-h-[36px] flex items-center justify-center"
             aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
           >
             <Heart
-              size={18}
+              size={16}
               className={wishlisted ? "fill-destructive text-destructive" : ""}
             />
           </button>
 
-          {/* Size Chart button — visible on hover */}
+          {/* Size Chart button — visible on hover (desktop only) */}
           <button
             onClick={handleSizeChart}
-            className="absolute top-3 right-12 p-2 bg-background/80 backdrop-blur-sm hover:bg-background transition-colors opacity-0 group-hover:opacity-100 z-[2]"
+            className="absolute top-2 right-11 md:top-3 md:right-12 p-2 bg-background/80 backdrop-blur-sm hover:bg-background transition-colors opacity-0 group-hover:opacity-100 z-[2] hidden md:flex items-center justify-center"
             aria-label="Size chart"
             title="সাইজ চার্ট"
           >
-            <Ruler size={16} />
+            <Ruler size={14} />
           </button>
 
-          {/* Dual Hover Buttons */}
-          <div className="absolute inset-x-0 bottom-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300 flex gap-2 z-[2]">
+          {/* Hover Buttons — desktop only */}
+          <div className="absolute inset-x-0 bottom-0 p-2 md:p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300 flex gap-1.5 md:gap-2 z-[2] hidden md:flex">
             <button
               onClick={handleAddToCart}
-              className="flex-1 bg-primary text-primary-foreground py-2.5 text-[10px] uppercase tracking-[0.12em] font-medium hover:bg-primary/80 transition-colors flex items-center justify-center gap-1.5"
+              className="flex-1 bg-primary text-primary-foreground py-2 md:py-2.5 text-[9px] md:text-[10px] uppercase tracking-[0.12em] font-medium hover:bg-primary/80 transition-colors flex items-center justify-center gap-1 md:gap-1.5"
             >
-              <ShoppingCart size={13} />
+              <ShoppingCart size={12} />
               Add to Cart
             </button>
             <button
               onClick={handleBuyNow}
-              className="flex-1 bg-background text-foreground border border-primary py-2.5 text-[10px] uppercase tracking-[0.12em] font-medium hover:bg-secondary transition-colors flex items-center justify-center gap-1.5"
+              className="flex-1 bg-background text-foreground border border-primary py-2 md:py-2.5 text-[9px] md:text-[10px] uppercase tracking-[0.12em] font-medium hover:bg-secondary transition-colors flex items-center justify-center gap-1 md:gap-1.5"
             >
-              <Zap size={13} />
+              <Zap size={12} />
               Buy Now
             </button>
           </div>
+
+          {/* Mobile: tap-friendly Add to Cart overlay button */}
+          <button
+            onClick={handleAddToCart}
+            className="absolute bottom-2 right-2 p-2.5 bg-primary text-primary-foreground z-[2] md:hidden min-w-[40px] min-h-[40px] flex items-center justify-center rounded-full shadow-lg"
+            aria-label="Add to cart"
+          >
+            <ShoppingCart size={16} />
+          </button>
         </div>
 
         {/* Product Info */}
-        <div className="pt-4 space-y-2">
+        <div className="pt-3 md:pt-4 space-y-1 md:space-y-2">
           {category && (
-            <span className="text-label text-muted-foreground">{category}</span>
+            <span className="text-label text-muted-foreground text-[10px] md:text-xs">{category}</span>
           )}
 
           <Link to={`/product/${id}`}>
-            <h3 className="font-medium text-sm tracking-wide hover:text-primary transition-colors">{name}</h3>
+            <h3 className="font-medium text-xs md:text-sm tracking-wide hover:text-primary transition-colors line-clamp-2">{name}</h3>
           </Link>
 
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <span className="font-medium">{formatPrice(price)}</span>
+          <div className="flex items-center justify-between gap-1">
+            <div className="flex items-center gap-1.5">
+              <span className="font-medium text-sm md:text-base">{formatPrice(price)}</span>
               {originalPrice && originalPrice > price && (
-                <span className="text-muted-foreground line-through text-sm">
+                <span className="text-muted-foreground line-through text-xs">
                   {formatPrice(originalPrice)}
                 </span>
               )}
             </div>
-            <button
-              onClick={handleSizeChart}
-              className="text-[10px] text-muted-foreground hover:text-primary underline underline-offset-2 transition-colors"
-              title="সাইজ চার্ট দেখুন"
-            >
-              সাইজ গাইড
-            </button>
           </div>
         </div>
       </motion.div>
