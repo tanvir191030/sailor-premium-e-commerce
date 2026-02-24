@@ -143,13 +143,13 @@ const Header = () => {
 
             {/* RIGHT — Action icons */}
             <div
-              className="flex items-center justify-end gap-1 flex-1"
+              className="flex items-center justify-end gap-0.5 md:gap-1 flex-1"
               ref={searchContainerRef}
             >
               <LanguageSwitcher />
 
-              {/* Search */}
-              <div className="relative flex items-center">
+              {/* Search — desktop only inline, mobile via menu */}
+              <div className="relative hidden md:flex items-center">
                 <AnimatePresence>
                   {isSearchOpen && (
                     <motion.div
@@ -226,9 +226,18 @@ const Header = () => {
                 </AnimatePresence>
               </div>
 
-              {/* Theme toggle */}
+              {/* Mobile search button */}
               <button
-                className="p-2 hover:opacity-70 transition-opacity"
+                className="p-2 hover:opacity-70 transition-opacity md:hidden min-w-[40px] min-h-[40px] flex items-center justify-center"
+                aria-label="Search"
+                onClick={() => setIsSearchOpen((prev) => !prev)}
+              >
+                <Search size={20} />
+              </button>
+
+              {/* Theme toggle — desktop only */}
+              <button
+                className="p-2 hover:opacity-70 transition-opacity hidden md:flex items-center justify-center"
                 aria-label="Toggle theme"
                 onClick={toggleTheme}
               >
@@ -242,7 +251,7 @@ const Header = () => {
                 </motion.div>
               </button>
 
-              {/* Track order */}
+              {/* Track order — desktop only */}
               <Link
                 to="/track-order"
                 className="p-2 hover:opacity-70 transition-opacity hidden md:block"
@@ -253,7 +262,7 @@ const Header = () => {
 
               {/* Wishlist */}
               <button
-                className="p-2 hover:opacity-70 transition-opacity relative"
+                className="p-2 hover:opacity-70 transition-opacity relative min-w-[40px] min-h-[40px] flex items-center justify-center"
                 aria-label="Wishlist"
                 onClick={() => navigate("/wishlist")}
               >
@@ -267,7 +276,7 @@ const Header = () => {
 
               {/* Cart */}
               <button
-                className="p-2 hover:opacity-70 transition-opacity relative"
+                className="p-2 hover:opacity-70 transition-opacity relative min-w-[40px] min-h-[40px] flex items-center justify-center"
                 aria-label="Cart"
                 onClick={() => setCartOpen(true)}
               >
@@ -278,6 +287,60 @@ const Header = () => {
               </button>
             </div>
           </div>
+
+          {/* Mobile search bar — slides down */}
+          <AnimatePresence>
+            {isSearchOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                className="md:hidden overflow-hidden border-t border-border"
+                ref={searchContainerRef}
+              >
+                <div className="px-4 py-3 relative">
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder={t("nav.search")}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-secondary/50 border border-border rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
+                  />
+                  {/* Mobile search results */}
+                  {searchQuery.trim() && (
+                    <div className="mt-2 bg-background border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {filteredProducts.length > 0 ? (
+                        filteredProducts.map((product) => (
+                          <button
+                            key={product.id}
+                            onClick={() => {
+                              setIsSearchOpen(false);
+                              if (product.category) {
+                                navigate(`/category/${product.category.toLowerCase()}`);
+                              }
+                            }}
+                            className="w-full flex items-center gap-3 p-3 hover:bg-secondary transition-colors text-left"
+                          >
+                            <div className="w-10 h-10 bg-secondary overflow-hidden flex-shrink-0 rounded">
+                              <img src={product.image_url || "/placeholder.svg"} alt={product.name} className="w-full h-full object-cover" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-medium text-xs truncate">{product.name}</p>
+                              <p className="text-[10px] text-muted-foreground">৳{product.price.toLocaleString()}</p>
+                            </div>
+                          </button>
+                        ))
+                      ) : (
+                        <p className="text-muted-foreground text-center text-xs py-4">কোনো ফলাফল নেই</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Mobile menu */}
@@ -295,7 +358,7 @@ const Header = () => {
                   <Link
                     key={link.name}
                     to={link.href}
-                    className="text-sm uppercase tracking-[0.1em] font-medium py-2"
+                    className="text-sm uppercase tracking-[0.1em] font-medium py-2 min-h-[44px] flex items-center"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     {link.name}
@@ -303,23 +366,33 @@ const Header = () => {
                 ))}
                 <Link
                   to="/track-order"
-                  className="text-sm uppercase tracking-[0.1em] font-medium py-2 flex items-center gap-2"
+                  className="text-sm uppercase tracking-[0.1em] font-medium py-2 flex items-center gap-2 min-h-[44px]"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   <MapPin size={16} /> {t("nav.trackOrder")}
                 </Link>
+
+                {/* Theme toggle in mobile menu */}
+                <button
+                  onClick={toggleTheme}
+                  className="flex items-center gap-2 text-sm uppercase tracking-[0.1em] font-medium py-2 min-h-[44px]"
+                >
+                  {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+                  {theme === "dark" ? "Light Mode" : "Dark Mode"}
+                </button>
+
                 {/* Mobile language switcher */}
                 <div className="flex items-center gap-3 pt-2 border-t border-border">
                   <span className="text-xs text-muted-foreground">Language:</span>
                   <button
                     onClick={() => { i18n.changeLanguage("bn"); localStorage.setItem("sailor-language", "bn"); }}
-                    className={`text-sm font-medium px-3 py-1 rounded-full border transition-colors ${i18n.language === "bn" ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground"}`}
+                    className={`text-sm font-medium px-3 py-1.5 rounded-full border transition-colors min-h-[40px] ${i18n.language === "bn" ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground"}`}
                   >
                     বাংলা
                   </button>
                   <button
                     onClick={() => { i18n.changeLanguage("en"); localStorage.setItem("sailor-language", "en"); }}
-                    className={`text-sm font-medium px-3 py-1 rounded-full border transition-colors ${i18n.language === "en" ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground"}`}
+                    className={`text-sm font-medium px-3 py-1.5 rounded-full border transition-colors min-h-[40px] ${i18n.language === "en" ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground"}`}
                   >
                     English
                   </button>
