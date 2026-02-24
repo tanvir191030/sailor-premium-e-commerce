@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -24,10 +24,20 @@ import i18n from "@/i18n/index";
 const Admin = () => {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [activeSection, setActiveSection] = useState("dashboard");
+  const { section } = useParams();
+  const [activeSection, setActiveSection] = useState(section || "dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Sync URL parameter to state
+  useEffect(() => {
+    if (section && sections.some(s => s.id === section)) {
+      setActiveSection(section);
+    } else if (!section) {
+      setActiveSection("dashboard");
+    }
+  }, [section]);
   const { theme, toggleTheme } = useTheme();
   const { t } = useTranslation();
 
@@ -118,12 +128,14 @@ const Admin = () => {
           {sections.map((s) => (
             <button
               key={s.id}
-              onClick={() => { setActiveSection(s.id); setSidebarOpen(false); }}
-              className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
-                activeSection === s.id
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-              }`}
+              onClick={() => {
+                navigate(`/admin/${s.id}`);
+                setSidebarOpen(false);
+              }}
+              className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${activeSection === s.id
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                }`}
             >
               <s.icon size={18} />
               {s.label}
@@ -181,10 +193,9 @@ const Admin = () => {
         {sections.slice(0, 5).map((s) => (
           <button
             key={s.id}
-            onClick={() => setActiveSection(s.id)}
-            className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors ${
-              activeSection === s.id ? "text-primary" : "text-muted-foreground"
-            }`}
+            onClick={() => navigate(`/admin/${s.id}`)}
+            className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors ${activeSection === s.id ? "text-primary" : "text-muted-foreground"
+              }`}
           >
             <s.icon size={18} />
             <span className="truncate max-w-full px-1">{s.label}</span>
