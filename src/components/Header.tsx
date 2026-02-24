@@ -343,62 +343,97 @@ const Header = () => {
           </AnimatePresence>
         </div>
 
-        {/* Mobile menu */}
+        {/* Mobile side drawer */}
         <AnimatePresence>
           {isMobileMenuOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="md:hidden overflow-hidden border-t border-border"
-            >
-              <nav className="max-w-7xl mx-auto px-6 py-6 flex flex-col gap-4">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.name}
-                    to={link.href}
-                    className="text-sm uppercase tracking-[0.1em] font-medium py-2 min-h-[44px] flex items-center"
+            <>
+              {/* Overlay */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                className="fixed inset-0 bg-black/40 z-[70] md:hidden"
+                onClick={() => setIsMobileMenuOpen(false)}
+              />
+              {/* Drawer */}
+              <motion.aside
+                initial={{ x: "-100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "-100%" }}
+                transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                className="fixed top-0 left-0 bottom-0 w-[280px] bg-background z-[80] flex flex-col shadow-2xl md:hidden"
+              >
+                {/* Drawer header */}
+                <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+                  <span className="font-serif text-lg tracking-[0.1em]">{storeName}</span>
+                  <button
                     onClick={() => setIsMobileMenuOpen(false)}
+                    className="p-2 hover:bg-secondary rounded-lg min-w-[40px] min-h-[40px] flex items-center justify-center"
+                    aria-label="Close menu"
                   >
-                    {link.name}
-                  </Link>
-                ))}
-                <Link
-                  to="/track-order"
-                  className="text-sm uppercase tracking-[0.1em] font-medium py-2 flex items-center gap-2 min-h-[44px]"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <MapPin size={16} /> {t("nav.trackOrder")}
-                </Link>
-
-                {/* Theme toggle in mobile menu */}
-                <button
-                  onClick={toggleTheme}
-                  className="flex items-center gap-2 text-sm uppercase tracking-[0.1em] font-medium py-2 min-h-[44px]"
-                >
-                  {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-                  {theme === "dark" ? "Light Mode" : "Dark Mode"}
-                </button>
-
-                {/* Mobile language switcher */}
-                <div className="flex items-center gap-3 pt-2 border-t border-border">
-                  <span className="text-xs text-muted-foreground">Language:</span>
-                  <button
-                    onClick={() => { i18n.changeLanguage("bn"); localStorage.setItem("sailor-language", "bn"); }}
-                    className={`text-sm font-medium px-3 py-1.5 rounded-full border transition-colors min-h-[40px] ${i18n.language === "bn" ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground"}`}
-                  >
-                    বাংলা
-                  </button>
-                  <button
-                    onClick={() => { i18n.changeLanguage("en"); localStorage.setItem("sailor-language", "en"); }}
-                    className={`text-sm font-medium px-3 py-1.5 rounded-full border transition-colors min-h-[40px] ${i18n.language === "en" ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground"}`}
-                  >
-                    English
+                    <X size={20} />
                   </button>
                 </div>
-              </nav>
-            </motion.div>
+
+                {/* Nav links */}
+                <nav className="flex-1 overflow-y-auto py-2">
+                  {navLinks.map((link, i) => (
+                    <Link
+                      key={link.name}
+                      to={link.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={`block px-6 py-3.5 text-[13px] uppercase tracking-[0.12em] font-medium text-foreground/80 hover:bg-secondary/60 hover:text-foreground transition-colors ${
+                        i < navLinks.length - 1 ? "border-b border-border/40" : ""
+                      }`}
+                    >
+                      {link.name}
+                    </Link>
+                  ))}
+
+                  <div className="border-t border-border my-1" />
+
+                  <Link
+                    to="/track-order"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-3 px-6 py-3.5 text-[13px] uppercase tracking-[0.12em] font-medium text-foreground/80 hover:bg-secondary/60 hover:text-foreground transition-colors"
+                  >
+                    <MapPin size={16} /> {t("nav.trackOrder")}
+                  </Link>
+
+                  <button
+                    onClick={() => { toggleTheme(); setIsMobileMenuOpen(false); }}
+                    className="w-full flex items-center gap-3 px-6 py-3.5 text-[13px] uppercase tracking-[0.12em] font-medium text-foreground/80 hover:bg-secondary/60 hover:text-foreground transition-colors"
+                  >
+                    {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+                    {theme === "dark" ? "Light Mode" : "Dark Mode"}
+                  </button>
+                </nav>
+
+                {/* Language switcher at bottom */}
+                <div className="px-6 py-4 border-t border-border">
+                  <p className="text-[11px] text-muted-foreground mb-2.5 uppercase tracking-wider">Language</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => { i18n.changeLanguage("bn"); localStorage.setItem("sailor-language", "bn"); setIsMobileMenuOpen(false); }}
+                      className={`text-xs font-medium px-4 py-2 rounded-full border transition-colors ${
+                        i18n.language === "bn" ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-foreground/30"
+                      }`}
+                    >
+                      বাংলা
+                    </button>
+                    <button
+                      onClick={() => { i18n.changeLanguage("en"); localStorage.setItem("sailor-language", "en"); setIsMobileMenuOpen(false); }}
+                      className={`text-xs font-medium px-4 py-2 rounded-full border transition-colors ${
+                        i18n.language === "en" ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-foreground/30"
+                      }`}
+                    >
+                      English
+                    </button>
+                  </div>
+                </div>
+              </motion.aside>
+            </>
           )}
         </AnimatePresence>
       </header>
