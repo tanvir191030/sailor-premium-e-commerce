@@ -34,6 +34,7 @@ const ProductDetail = () => {
   const [zoomed, setZoomed] = useState(false);
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
+  const [sizeError, setSizeError] = useState(false);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const { toast } = useToast();
 
@@ -76,10 +77,31 @@ const ProductDetail = () => {
     .filter((p) => p.id !== id && p.category === product?.category)
     .slice(0, 6);
 
-  const cartPayload = product ? { id: product.id, name: product.name, price: product.price, image: galleryImages[0] || "/placeholder.svg", category: product.category || undefined } : null;
+  const cartPayload = product
+    ? {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: galleryImages[0] || "/placeholder.svg",
+      category: product.category || undefined,
+      size: selectedSize || undefined,
+    }
+    : null;
 
   const handleAddToCart = () => {
     if (!cartPayload) return;
+
+    // Check mandatory size selection
+    if (!selectedSize) {
+      setSizeError(true);
+      toast({
+        title: "সাইজ প্রয়োজন",
+        description: "অনুগ্রহ করে একটি সাইজ সিলেক্ট করুন",
+        variant: "destructive",
+      });
+      return;
+    }
+
     addItem(cartPayload, quantity);
     setIsOpen(true);
     toast({ title: "✓ কার্টে যোগ হয়েছে", description: `${product!.name} × ${quantity}` });
@@ -87,6 +109,18 @@ const ProductDetail = () => {
 
   const handleBuyNow = () => {
     if (!cartPayload) return;
+
+    // Check mandatory size selection
+    if (!selectedSize) {
+      setSizeError(true);
+      toast({
+        title: "সাইজ প্রয়োজন",
+        description: "অনুগ্রহ করে একটি সাইজ সিলেক্ট করুন",
+        variant: "destructive",
+      });
+      return;
+    }
+
     addItem(cartPayload, quantity);
     setIsOpen(false);
     navigate("/checkout");
@@ -221,10 +255,10 @@ const ProductDetail = () => {
                         style={
                           zoomed
                             ? {
-                                transform: "scale(2)",
-                                transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
-                                transition: "transform-origin 0.1s ease",
-                              }
+                              transform: "scale(2)",
+                              transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
+                              transition: "transform-origin 0.1s ease",
+                            }
                             : {}
                         }
                       />
@@ -287,9 +321,8 @@ const ProductDetail = () => {
                       <button
                         key={i}
                         onClick={() => setActiveIndex(i)}
-                        className={`flex-shrink-0 w-16 h-20 overflow-hidden border-2 transition-colors ${
-                          i === activeIndex ? "border-primary" : "border-transparent hover:border-muted-foreground"
-                        }`}
+                        className={`flex-shrink-0 w-16 h-20 overflow-hidden border-2 transition-colors ${i === activeIndex ? "border-primary" : "border-transparent hover:border-muted-foreground"
+                          }`}
                       >
                         <img src={img} alt={`${product.name} ${i + 1}`} className="w-full h-full object-cover" />
                       </button>
@@ -346,9 +379,12 @@ const ProductDetail = () => {
                 </div>
 
                 {/* Size Selection */}
-                <div>
+                <div className={`transition-all duration-300 ${sizeError ? "animate-[shake_0.5s_ease-in-out] rounded-xl p-3 -mx-3 border border-destructive/50 bg-destructive/5" : ""}`}>
                   <div className="flex items-center justify-between mb-2.5">
-                    <span className="text-sm font-medium">সাইজ বেছে নিন</span>
+                    <span className="text-sm font-medium">
+                      সাইজ বেছে নিন
+                      {sizeError && <span className="text-destructive text-xs ml-2 font-normal animate-pulse">অনুগ্রহ করে একটি সাইজ সিলেক্ট করুন</span>}
+                    </span>
                     <button
                       onClick={() => setSizeChartOpen(true)}
                       className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors min-h-[44px] px-2"
@@ -360,12 +396,16 @@ const ProductDetail = () => {
                     {SIZES.map((size) => (
                       <button
                         key={size}
-                        onClick={() => setSelectedSize(size === selectedSize ? null : size)}
-                        className={`min-w-[44px] min-h-[44px] px-3 text-sm font-medium border transition-colors ${
-                          selectedSize === size
+                        onClick={() => {
+                          setSelectedSize(size === selectedSize ? null : size);
+                          setSizeError(false);
+                        }}
+                        className={`min-w-[44px] min-h-[44px] px-3 text-sm font-medium border transition-colors ${selectedSize === size
                             ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-background text-foreground border-border hover:border-primary"
-                        }`}
+                            : sizeError
+                              ? "bg-background text-destructive border-destructive hover:border-destructive/80"
+                              : "bg-background text-foreground border-border hover:border-primary"
+                          }`}
                       >
                         {size}
                       </button>

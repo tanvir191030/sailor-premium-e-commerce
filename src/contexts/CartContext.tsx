@@ -6,6 +6,7 @@ export interface CartItem {
   price: number;
   image: string;
   category?: string;
+  size?: string;
   quantity: number;
 }
 
@@ -25,14 +26,14 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType>({
   items: [],
-  addItem: () => {},
-  removeItem: () => {},
-  updateQuantity: () => {},
-  clearCart: () => {},
+  addItem: () => { },
+  removeItem: () => { },
+  updateQuantity: () => { },
+  clearCart: () => { },
   isOpen: false,
-  setIsOpen: () => {},
+  setIsOpen: () => { },
   isBuyNowOpen: false,
-  setIsBuyNowOpen: () => {},
+  setIsBuyNowOpen: () => { },
   totalItems: 0,
   totalPrice: 0,
 });
@@ -44,11 +45,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const addItem = useCallback((item: Omit<CartItem, "quantity">, qty: number = 1) => {
     setItems((prev) => {
-      const existing = prev.find((i) => i.id === item.id);
+      // Create a unique cart item ID by appending size if it exists.
+      const cartItemId = item.size ? `${item.id}-${item.size}` : item.id;
+      const existing = prev.find((i) => i.id === cartItemId);
+
       if (existing) {
-        return prev.map((i) => (i.id === item.id ? { ...i, quantity: i.quantity + qty } : i));
+        return prev.map((i) => (i.id === cartItemId ? { ...i, quantity: i.quantity + qty } : i));
       }
-      return [...prev, { ...item, quantity: qty }];
+      return [...prev, { ...item, id: cartItemId, quantity: qty }];
     });
   }, []);
 
