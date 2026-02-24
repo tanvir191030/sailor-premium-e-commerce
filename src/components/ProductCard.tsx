@@ -117,32 +117,22 @@ const ProductCard = ({
             <Ruler size={14} />
           </button>
 
-          {/* Hover Buttons — unified for mobile and desktop */}
-          <div className="absolute inset-x-0 bottom-0 p-0 lg:p-3 flex justify-between items-end z-[2] opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300 pointer-events-none lg:pointer-events-none">
-            {/* Desktop variant: flex row, Mobile variant: absolute cart + full width bottom glass buy now */}
-            <div className="flex w-full pointer-events-auto flex-col lg:flex-row gap-0 lg:gap-2 lg:justify-end">
-
-              {/* Buy Now - Top full width on mobile, right on desktop */}
-              <button
-                onClick={handleBuyNow}
-                className="order-1 lg:order-2 w-full lg:w-auto bg-background/60 lg:bg-primary/90 backdrop-blur-md lg:backdrop-blur-sm text-foreground lg:text-primary-foreground border-t border-white/20 lg:border-none hover:bg-background/80 lg:hover:bg-primary transition-colors px-3 py-3 lg:px-4 lg:py-2.5 lg:rounded shadow-sm flex items-center justify-center min-h-[44px] lg:min-h-[36px] text-sm lg:text-xs font-medium gap-1.5"
-                title="Buy Now"
-              >
-                <Zap size={16} className="lg:w-3.5 lg:h-3.5 text-primary lg:text-current" />
-                <span>Buy Now</span>
-              </button>
-
-              {/* Add to Cart - Bottom full width on mobile, left on desktop */}
-              <button
-                onClick={handleAddToCart}
-                className="order-2 lg:order-1 w-full lg:w-auto bg-primary/90 lg:bg-background/80 backdrop-blur-md lg:backdrop-blur-sm text-primary-foreground lg:text-foreground border-t border-white/20 lg:border-none hover:bg-primary/80 lg:hover:bg-background transition-colors px-3 py-3 lg:px-4 lg:py-2.5 lg:rounded shadow-sm flex items-center justify-center min-h-[44px] lg:min-h-[36px] text-sm lg:text-xs font-medium gap-1.5"
-                aria-label="Add to cart"
-                title="Add to Cart"
-              >
-                <ShoppingCart size={18} className="lg:w-4 lg:h-4" />
-                <span className="lg:hidden">Add to Cart</span>
-              </button>
-            </div>
+          {/* Hover Buttons — desktop only */}
+          <div className="absolute inset-x-0 bottom-0 p-2 md:p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300 gap-1.5 md:gap-2 z-[2] hidden lg:flex">
+            <button
+              onClick={handleAddToCart}
+              className="flex-1 bg-primary text-primary-foreground py-2 md:py-2.5 text-[9px] md:text-[10px] uppercase tracking-[0.12em] font-medium hover:bg-primary/80 transition-colors flex items-center justify-center gap-1 md:gap-1.5"
+            >
+              <ShoppingCart size={12} />
+              Add to Cart
+            </button>
+            <button
+              onClick={handleBuyNow}
+              className="flex-1 bg-background text-foreground border border-primary py-2 md:py-2.5 text-[9px] md:text-[10px] uppercase tracking-[0.12em] font-medium hover:bg-secondary transition-colors flex items-center justify-center gap-1 md:gap-1.5"
+            >
+              <Zap size={12} />
+              Buy Now
+            </button>
           </div>
         </div>
 
@@ -165,6 +155,25 @@ const ProductCard = ({
                 </span>
               )}
             </div>
+          </div>
+
+          {/* Mobile Action Buttons - Below Image */}
+          <div className="flex lg:hidden items-center gap-2 pt-2">
+            <button
+              onClick={handleBuyNow}
+              className="flex-1 bg-primary text-primary-foreground py-2 md:py-2.5 text-xs md:text-sm font-medium rounded shadow-sm hover:bg-primary/90 transition-colors flex items-center justify-center gap-1 min-h-[40px] md:min-h-[44px]"
+            >
+              <Zap size={14} />
+              Buy Now
+            </button>
+            <button
+              onClick={handleAddToCart}
+              className="flex-1 bg-background text-foreground border border-primary py-2 md:py-2.5 text-xs md:text-sm font-medium rounded shadow-sm hover:bg-secondary transition-colors flex items-center justify-center gap-1 min-h-[40px] md:min-h-[44px]"
+              aria-label="Add to cart"
+            >
+              <ShoppingCart size={14} />
+              Add to Cart
+            </button>
           </div>
         </div>
       </motion.div>
