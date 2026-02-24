@@ -32,7 +32,7 @@ const TrackOrder = () => {
 
     try {
       let result;
-      if (q.toUpperCase().startsWith("SN-")) {
+      if (q.toUpperCase().startsWith("MM-") || q.toUpperCase().startsWith("SN-")) {
         result = await supabase.from("orders").select("*").eq("tracking_id", q.toUpperCase()).maybeSingle();
       } else {
         result = await supabase.from("orders").select("*").eq("phone", q).order("created_at", { ascending: false }).limit(1).maybeSingle();
