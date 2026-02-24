@@ -31,6 +31,8 @@ export interface SiteSettings {
   facebook_pixel_id: string;
   facebook: string;
   instagram: string;
+  whatsapp_number: string;
+  messenger_url: string;
 }
 
 const DEFAULTS: SiteSettings = {
@@ -62,6 +64,8 @@ const DEFAULTS: SiteSettings = {
   facebook_pixel_id: "",
   facebook: "",
   instagram: "",
+  whatsapp_number: "",
+  messenger_url: "",
 };
 
 export const useSiteSettings = () => {
