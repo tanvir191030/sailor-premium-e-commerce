@@ -4,8 +4,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, ShoppingCart, Zap, Heart, Share2, Facebook,
   MessageCircle, ZoomIn, ChevronLeft, ChevronRight, Ruler,
-  Package, Tag, CheckCircle, XCircle
+  Package, Tag, CheckCircle, XCircle, Plus, Minus
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PageTransition from "@/components/PageTransition";
@@ -28,11 +29,13 @@ const ProductDetail = () => {
   const { toggle, isWishlisted } = useWishlist();
 
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [quantity, setQuantity] = useState(1);
   const [activeIndex, setActiveIndex] = useState(0);
   const [zoomed, setZoomed] = useState(false);
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const { toast } = useToast();
 
   // Touch swipe state
   const touchStartX = useRef(0);
@@ -73,17 +76,20 @@ const ProductDetail = () => {
     .filter((p) => p.id !== id && p.category === product?.category)
     .slice(0, 6);
 
+  const cartPayload = product ? { id: product.id, name: product.name, price: product.price, image: galleryImages[0] || "/placeholder.svg", category: product.category || undefined } : null;
+
   const handleAddToCart = () => {
-    if (!product) return;
-    addItem({ id: product.id, name: product.name, price: product.price, image: galleryImages[0] || "/placeholder.svg", category: product.category || undefined });
+    if (!cartPayload) return;
+    addItem(cartPayload, quantity);
     setIsOpen(true);
+    toast({ title: "✓ কার্টে যোগ হয়েছে", description: `${product!.name} × ${quantity}` });
   };
 
   const handleBuyNow = () => {
-    if (!product) return;
-    addItem({ id: product.id, name: product.name, price: product.price, image: galleryImages[0] || "/placeholder.svg", category: product.category || undefined });
+    if (!cartPayload) return;
+    addItem(cartPayload, quantity);
     setIsOpen(false);
-    setIsBuyNowOpen(true);
+    navigate("/checkout");
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -367,25 +373,50 @@ const ProductDetail = () => {
                   </div>
                 </div>
 
-                {/* CTA Buttons */}
-                <div className="hidden md:flex gap-3 pt-1">
-                  <button
-                    onClick={handleAddToCart}
-                    disabled={!isInStock}
-                    className="flex-1 bg-primary text-primary-foreground py-3.5 text-xs uppercase tracking-[0.12em] font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <ShoppingCart size={15} /> কার্টে যোগ করুন
-                  </button>
-                  <button
-                    onClick={handleBuyNow}
-                    disabled={!isInStock}
-                    className="flex-1 bg-background text-foreground border border-primary py-3.5 text-xs uppercase tracking-[0.12em] font-semibold hover:bg-secondary transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Zap size={15} /> এখনই কিনুন
-                  </button>
-                </div>
+                {/* Quantity Selector + CTA Buttons */}
+                <div className="space-y-3 pt-1">
+                  {/* Quantity */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium">পরিমাণ</span>
+                    <div className="flex items-center border border-border">
+                      <button
+                        onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                        className="w-10 h-10 flex items-center justify-center hover:bg-secondary transition-colors"
+                        disabled={!isInStock}
+                      >
+                        <Minus size={14} />
+                      </button>
+                      <span className="w-12 h-10 flex items-center justify-center text-sm font-medium border-x border-border">
+                        {quantity}
+                      </span>
+                      <button
+                        onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))}
+                        className="w-10 h-10 flex items-center justify-center hover:bg-secondary transition-colors"
+                        disabled={!isInStock}
+                      >
+                        <Plus size={14} />
+                      </button>
+                    </div>
+                  </div>
 
-                {/* Description */}
+                  {/* Buttons */}
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleAddToCart}
+                      disabled={!isInStock}
+                      className="flex-1 bg-primary text-primary-foreground py-3.5 text-xs uppercase tracking-[0.12em] font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ShoppingCart size={15} /> {isInStock ? "কার্টে যোগ করুন" : "স্টক নেই"}
+                    </button>
+                    <button
+                      onClick={handleBuyNow}
+                      disabled={!isInStock}
+                      className="flex-1 bg-background text-foreground border border-primary py-3.5 text-xs uppercase tracking-[0.12em] font-semibold hover:bg-secondary transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Zap size={15} /> {isInStock ? "এখনই কিনুন" : "স্টক নেই"}
+                    </button>
+                  </div>
+                </div>
                 {product.description && (
                   <div className="border-t border-border pt-4 md:pt-5">
                     <h3 className="text-sm font-semibold uppercase tracking-wide mb-2.5">পণ্যের বিবরণ</h3>
@@ -475,21 +506,33 @@ const ProductDetail = () => {
         </main>
 
         {/* Sticky CTA Bar — mobile only, above bottom nav */}
-        <div className="fixed bottom-[52px] left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-t border-border p-3 flex gap-2 md:hidden safe-bottom">
-          <button
-            onClick={handleAddToCart}
-            disabled={!isInStock}
-            className="flex-1 bg-primary text-primary-foreground py-3 text-xs uppercase tracking-[0.12em] font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
-          >
-            <ShoppingCart size={15} /> কার্টে যোগ করুন
-          </button>
-          <button
-            onClick={handleBuyNow}
-            disabled={!isInStock}
-            className="flex-1 bg-background text-foreground border border-primary py-3 text-xs uppercase tracking-[0.12em] font-semibold hover:bg-secondary transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
-          >
-            <Zap size={15} /> এখনই কিনুন
-          </button>
+        <div className="fixed bottom-[52px] left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-t border-border px-3 py-2 md:hidden safe-bottom">
+          <div className="flex items-center gap-2">
+            {/* Mini quantity selector */}
+            <div className="flex items-center border border-border flex-shrink-0">
+              <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="w-8 h-9 flex items-center justify-center" disabled={!isInStock}>
+                <Minus size={12} />
+              </button>
+              <span className="w-8 h-9 flex items-center justify-center text-xs font-medium border-x border-border">{quantity}</span>
+              <button onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))} className="w-8 h-9 flex items-center justify-center" disabled={!isInStock}>
+                <Plus size={12} />
+              </button>
+            </div>
+            <button
+              onClick={handleAddToCart}
+              disabled={!isInStock}
+              className="flex-1 bg-primary text-primary-foreground py-2.5 text-[11px] uppercase tracking-[0.1em] font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed min-h-[40px]"
+            >
+              <ShoppingCart size={14} /> {isInStock ? "কার্ট" : "স্টক নেই"}
+            </button>
+            <button
+              onClick={handleBuyNow}
+              disabled={!isInStock}
+              className="flex-1 bg-background text-foreground border border-primary py-2.5 text-[11px] uppercase tracking-[0.1em] font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed min-h-[40px]"
+            >
+              <Zap size={14} /> {isInStock ? "কিনুন" : "স্টক নেই"}
+            </button>
+          </div>
         </div>
 
         <Footer />
