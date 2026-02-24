@@ -12,6 +12,7 @@ import SiteMetaUpdater from "./components/SiteMetaUpdater";
 import CartDrawer from "./components/CartDrawer";
 import BuyNowDrawer from "./components/BuyNowDrawer";
 import MobileBottomNav from "./components/MobileBottomNav";
+import FloatingChatWidget from "./components/FloatingChatWidget";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -72,6 +73,7 @@ const App = () => (
               <BuyNowDrawer />
               <AnimatedRoutes />
               <MobileBottomNav />
+              <FloatingChatWidget />
             </BrowserRouter>
           </CartProvider>
         </WishlistProvider>
