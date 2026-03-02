@@ -165,12 +165,15 @@ const Checkout = () => {
           return;
         }
 
-        const productSizes = productData.sizes as Record<string, number> | null;
-        const hasSpecificSizes = productSizes && Object.keys(productSizes).length > 0;
+        const rawSizes = productData.sizes as any;
+        const isComplexSize = rawSizes && rawSizes.variants !== undefined;
+        const hasSpecificSizes = isComplexSize || (rawSizes && typeof rawSizes === 'object' && !Array.isArray(rawSizes) && Object.keys(rawSizes).length > 0);
 
         let availableStock = productData.stock;
-        if (hasSpecificSizes && item.size) {
-          availableStock = productSizes[item.size] || 0;
+        if (isComplexSize && item.size) {
+          availableStock = rawSizes.variants[item.size]?.stock || 0;
+        } else if (!isComplexSize && rawSizes && typeof rawSizes === 'object' && Object.keys(rawSizes).length > 0 && item.size) {
+          availableStock = rawSizes[item.size] || 0;
         }
 
         if (availableStock < item.quantity) {
@@ -232,13 +235,31 @@ const Checkout = () => {
           let newStock = Math.max(0, currentProduct.stock - item.quantity);
           let newSizes = currentProduct.sizes as Record<string, number> | null;
 
-          if (newSizes && Object.keys(newSizes).length > 0 && item.size) {
+          let rawSizes = currentProduct.sizes as any;
+          const isComplexSize = rawSizes && rawSizes.variants !== undefined;
+
+          if (isComplexSize && item.size) {
+            const currentSizeStock = rawSizes.variants[item.size]?.stock || 0;
+            if (rawSizes.variants[item.size]) {
+              rawSizes.variants[item.size] = {
+                ...rawSizes.variants[item.size],
+                stock: Math.max(0, currentSizeStock - item.quantity)
+              };
+            }
+
+            let totalStock = 0;
+            Object.values(rawSizes.variants).forEach((v: any) => {
+              if (v && typeof v.stock === 'number') totalStock += v.stock;
+            });
+            newStock = totalStock > 0 ? totalStock : 0;
+            newSizes = rawSizes;
+          } else if (!isComplexSize && newSizes && Object.keys(newSizes).length > 0 && item.size) {
             const currentSizeStock = newSizes[item.size] || 0;
             newSizes = {
               ...newSizes,
               [item.size]: Math.max(0, currentSizeStock - item.quantity)
             };
-            newStock = Object.values(newSizes).reduce((a, b) => a + b, 0);
+            newStock = Object.values(newSizes).reduce((a: any, b: any) => a + b, 0);
           }
 
           await supabase

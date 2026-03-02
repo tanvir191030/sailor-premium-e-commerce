@@ -15,7 +15,8 @@ const AdminProducts = () => {
   const [form, setForm] = useState({
     name: "", name_bn: "", price: "", category: "", brand: "",
     stock: "", description: "", description_bn: "", is_featured: false,
-    sizes: {} as Record<string, string>,
+    sub_category: "",
+    sizes: {} as any,
   });
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -54,22 +55,46 @@ const AdminProducts = () => {
     mutationFn: async () => {
       let image_url = undefined;
       if (imageFiles.length > 0) image_url = await uploadProductImage(imageFiles[0]);
-      const parsedSizes = Object.entries(form.sizes).reduce((acc, [size, qtyStr]) => {
-        const qty = parseInt(qtyStr);
-        if (!isNaN(qty) && qty > 0) acc[size] = qty;
-        return acc;
-      }, {} as Record<string, number>);
+      let finalSizes: any = null;
+      let totalStockFromSizes = 0;
 
-      const totalStockFromSizes = Object.values(parsedSizes).reduce((a, b) => a + b, 0);
-      const finalStock = Object.keys(parsedSizes).length > 0 ? totalStockFromSizes : (parseInt(form.stock) || 0);
+      if ((form.category === "Women" || form.category === "women") && form.sub_category) {
+        const variants: any = {};
+        Object.entries(form.sizes).forEach(([size, data]: any) => {
+          if (data && data.stock && parseInt(data.stock) > 0) {
+            variants[size] = {
+              stock: parseInt(data.stock),
+              measurements: data.measurements || {}
+            };
+            totalStockFromSizes += parseInt(data.stock);
+          }
+        });
+        if (Object.keys(variants).length > 0) {
+          finalSizes = { sub_category: form.sub_category, variants };
+        }
+      } else {
+        const parsed = Object.entries(form.sizes).reduce((acc, [size, val]: any) => {
+          const qty = parseInt(val);
+          if (!isNaN(qty) && qty > 0) acc[size] = qty;
+          return acc;
+        }, {} as Record<string, number>);
+
+        if (Object.keys(parsed).length > 0) {
+          finalSizes = parsed;
+          totalStockFromSizes = Object.values(parsed).reduce((a: number, b: unknown) => a + (b as number), 0);
+        }
+      }
+
+      const finalStock = finalSizes ? totalStockFromSizes : (parseInt(form.stock) || 0);
 
       const payload: any = {
         name: form.name,
         price: parseFloat(form.price),
         category: form.category || null,
+        sub_category: form.sub_category || null,
         brand: form.brand || null,
         stock: finalStock,
-        sizes: Object.keys(parsedSizes).length > 0 ? parsedSizes : null,
+        sizes: finalSizes,
         description: form.description || null,
         is_featured: form.is_featured,
         ...(image_url && { image_url }),
@@ -128,17 +153,30 @@ const AdminProducts = () => {
   });
 
   const resetForm = () => {
-    setForm({ name: "", name_bn: "", price: "", category: "", brand: "", stock: "", description: "", description_bn: "", is_featured: false, sizes: {} });
+    setForm({ name: "", name_bn: "", price: "", category: "", brand: "", stock: "", description: "", description_bn: "", is_featured: false, sub_category: "", sizes: {} });
     setImageFiles([]); setImagePreviews([]); setEditingId(null); setShowForm(false);
   };
 
   const startEdit = (p: any) => {
+    let initialSizes: any = {};
+    if (p.sizes) {
+      if (p.sizes.variants) {
+        Object.entries(p.sizes.variants).forEach(([k, v]: any) => {
+          initialSizes[k] = { stock: String(v.stock), measurements: v.measurements || {} };
+        });
+      } else {
+        Object.entries(p.sizes).forEach(([k, v]) => {
+          initialSizes[k] = String(v);
+        });
+      }
+    }
+
     setForm({
       name: p.name, name_bn: p.name_bn || "", price: String(p.price),
-      category: p.category || "", brand: p.brand || "", stock: String(p.stock ?? 0),
+      category: p.category || "", sub_category: p.sub_category || p.sizes?.sub_category || "", brand: p.brand || "", stock: String(p.stock ?? 0),
       description: p.description || "", description_bn: p.description_bn || "",
       is_featured: p.is_featured || false,
-      sizes: p.sizes ? Object.entries(p.sizes).reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {}) : {},
+      sizes: initialSizes,
     });
     setEditingId(p.id); setImageFiles([]); setImagePreviews([]); setShowForm(true);
   };
@@ -185,7 +223,7 @@ const AdminProducts = () => {
               <div className="grid grid-cols-2 gap-3">
                 <input value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder={t("admin.price")} type="number" className={inputCls} />
                 <input
-                  value={Object.keys(form.sizes).length > 0 ? Object.values(form.sizes).reduce((acc, curr) => acc + (parseInt(curr as string) || 0), 0) : form.stock}
+                  value={Object.keys(form.sizes).length > 0 ? String(Object.values(form.sizes).reduce((acc: number, curr: any) => acc + (parseInt(curr?.stock ?? curr) || 0), 0)) : form.stock}
                   onChange={(e) => setForm({ ...form, stock: e.target.value })}
                   disabled={Object.keys(form.sizes).length > 0}
                   placeholder={t("admin.stock")}
@@ -194,33 +232,96 @@ const AdminProducts = () => {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1">Size-Specific Stock (Optional)</label>
-                <div className="grid grid-cols-5 gap-2">
-                  {["S", "M", "L", "XL", "XXL"].map((sz) => (
-                    <div key={sz}>
-                      <span className="block text-center text-[10px] text-muted-foreground mb-1">{sz}</span>
-                      <input
-                        type="number"
-                        value={form.sizes[sz] || ""}
-                        onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, [sz]: e.target.value } })}
-                        className={`text-center px-1 py-2 border border-border rounded-lg text-sm focus:outline-none bg-transparent text-foreground placeholder:text-muted-foreground`}
-                        placeholder="0"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
               <div className="grid grid-cols-2 gap-3">
-                <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none bg-card text-foreground">
+                <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value, sizes: {} })} className="px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none bg-card text-foreground">
                   <option value="">{t("admin.selectCategory")}</option>
                   {categories.map((c: any) => <option key={c.id} value={c.name}>{c.name}</option>)}
                 </select>
-                <select value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} className="px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none bg-card text-foreground">
-                  <option value="">{t("admin.selectBrand")}</option>
-                  {brands.map((b: any) => <option key={b.id} value={b.name}>{b.name}</option>)}
-                </select>
+                {form.category === "Women" || form.category === "women" ? (
+                  <select value={form.sub_category} onChange={(e) => setForm({ ...form, sub_category: e.target.value, sizes: {} })} className="px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none bg-card text-foreground">
+                    <option value="">Select Sub-category</option>
+                    {["Borkha", "Hijab", "Orna", "Bags", "Shoes", "Others"].map((sc) => <option key={sc} value={sc}>{sc}</option>)}
+                  </select>
+                ) : (
+                  <select value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} className="px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none bg-card text-foreground">
+                    <option value="">{t("admin.selectBrand")}</option>
+                    {brands.map((b: any) => <option key={b.id} value={b.name}>{b.name}</option>)}
+                  </select>
+                )}
+              </div>
+
+              {(form.category === "Women" || form.category === "women") && (
+                <div className="grid grid-cols-1 gap-3">
+                  <select value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} className="px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none bg-card text-foreground">
+                    <option value="">{t("admin.selectBrand")}</option>
+                    {brands.map((b: any) => <option key={b.id} value={b.name}>{b.name}</option>)}
+                  </select>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Sizes & Measurements (Optional)</label>
+                {(form.category === "Women" || form.category === "women") && (form.sub_category === "Hijab" || form.sub_category === "Orna") ? (
+                  <div className="space-y-4 border border-border p-3 rounded-lg bg-secondary/20">
+                    <div className="flex flex-col gap-2">
+                      <span className="text-sm font-medium">Free Size</span>
+                      <div className="grid grid-cols-3 gap-2">
+                        <input
+                          type="number"
+                          value={form.sizes["Free Size"]?.stock || ""}
+                          onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, "Free Size": { ...form.sizes["Free Size"], stock: e.target.value } } })}
+                          className={inputCls} placeholder="Stock" />
+                        <input
+                          type="text"
+                          value={form.sizes["Free Size"]?.measurements?.width || ""}
+                          onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, "Free Size": { ...form.sizes["Free Size"], measurements: { ...form.sizes["Free Size"]?.measurements, width: e.target.value } } } })}
+                          className={inputCls} placeholder="Width (চওড়া)" />
+                        <input
+                          type="text"
+                          value={form.sizes["Free Size"]?.measurements?.length || ""}
+                          onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, "Free Size": { ...form.sizes["Free Size"], measurements: { ...form.sizes["Free Size"]?.measurements, length: e.target.value } } } })}
+                          className={inputCls} placeholder="Length (লম্বা)" />
+                      </div>
+                    </div>
+                  </div>
+                ) : (form.category === "Women" || form.category === "women") ? (
+                  <div className="space-y-3">
+                    {["S", "M", "L", "XL", "XXL"].map((sz) => (
+                      <div key={sz} className="border border-border p-3 rounded-lg flex flex-col gap-2 bg-secondary/10">
+                        <div className="flex justify-between items-center">
+                          <span className="font-semibold text-sm w-12">{sz}</span>
+                          <input
+                            type="number"
+                            value={form.sizes[sz]?.stock || ""}
+                            onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, [sz]: { ...form.sizes[sz], stock: e.target.value } } })}
+                            className={`${inputCls} w-24 py-1.5 px-2 text-center text-sm min-h-0`} placeholder="Stock" />
+                        </div>
+                        <div className="grid grid-cols-5 gap-1.5 mt-1">
+                          <input type="text" value={form.sizes[sz]?.measurements?.bust || ""} onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, [sz]: { ...form.sizes[sz], measurements: { ...form.sizes[sz]?.measurements, bust: e.target.value } } } })} className={`${inputCls} text-[10px] px-1 py-1.5 h-auto text-center`} placeholder="Bust" title="Bust (বডি)" />
+                          <input type="text" value={form.sizes[sz]?.measurements?.waist || ""} onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, [sz]: { ...form.sizes[sz], measurements: { ...form.sizes[sz]?.measurements, waist: e.target.value } } } })} className={`${inputCls} text-[10px] px-1 py-1.5 h-auto text-center`} placeholder="Waist" title="Waist (কোমর)" />
+                          <input type="text" value={form.sizes[sz]?.measurements?.hip || ""} onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, [sz]: { ...form.sizes[sz], measurements: { ...form.sizes[sz]?.measurements, hip: e.target.value } } } })} className={`${inputCls} text-[10px] px-1 py-1.5 h-auto text-center`} placeholder="Hip" title="Hip (হিপ)" />
+                          <input type="text" value={form.sizes[sz]?.measurements?.length || ""} onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, [sz]: { ...form.sizes[sz], measurements: { ...form.sizes[sz]?.measurements, length: e.target.value } } } })} className={`${inputCls} text-[10px] px-1 py-1.5 h-auto text-center`} placeholder="Length" title="Length (লম্বা)" />
+                          <input type="text" value={form.sizes[sz]?.measurements?.shoulder || ""} onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, [sz]: { ...form.sizes[sz], measurements: { ...form.sizes[sz]?.measurements, shoulder: e.target.value } } } })} className={`${inputCls} text-[10px] px-1 py-1.5 h-auto text-center`} placeholder="Shoulder" title="Shoulder (পুঁট)" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-5 gap-2">
+                    {["S", "M", "L", "XL", "XXL"].map((sz) => (
+                      <div key={sz}>
+                        <span className="block text-center text-[10px] text-muted-foreground mb-1">{sz}</span>
+                        <input
+                          type="number"
+                          value={form.sizes[sz] || ""}
+                          onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, [sz]: e.target.value } })}
+                          className={`text-center px-1 py-2 border border-border rounded-lg text-sm focus:outline-none bg-transparent text-foreground placeholder:text-muted-foreground w-full`}
+                          placeholder="0"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* English description */}

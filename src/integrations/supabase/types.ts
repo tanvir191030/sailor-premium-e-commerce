@@ -225,6 +225,7 @@ export type Database = {
           is_featured: boolean | null
           name: string
           price: number
+          sub_category: string | null
           sizes: Json | null
           stock: number
         }
@@ -238,6 +239,7 @@ export type Database = {
           is_featured?: boolean | null
           name: string
           price: number
+          sub_category?: string | null
           sizes?: Json | null
           stock?: number
         }
@@ -251,6 +253,7 @@ export type Database = {
           is_featured?: boolean | null
           name?: string
           price?: number
+          sub_category?: string | null
           sizes?: Json | null
           stock?: number
         }

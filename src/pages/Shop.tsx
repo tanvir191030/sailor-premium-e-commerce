@@ -9,7 +9,7 @@ import FilterSidebar, { FilterState, PRICE_MAX } from "@/components/FilterSideba
 import { useProducts } from "@/hooks/useProducts";
 import { useTranslation } from "react-i18next";
 
-const DEFAULT_FILTERS: FilterState = { sizes: [], colors: [], priceMin: 0, priceMax: PRICE_MAX };
+const DEFAULT_FILTERS: FilterState = { sizes: [], colors: [], subCategories: [], priceMin: 0, priceMax: PRICE_MAX };
 
 const Shop = () => {
   const { data: products = [], isLoading } = useProducts();
@@ -19,11 +19,18 @@ const Shop = () => {
 
   const filtered = products.filter((p) => {
     const inPrice = p.price >= filters.priceMin && (filters.priceMax >= PRICE_MAX || p.price <= filters.priceMax);
-    return inPrice;
+
+    let productSub = p.sub_category;
+    if (!productSub && p.sizes && typeof p.sizes === 'object' && !Array.isArray(p.sizes) && (p.sizes as any).sub_category) {
+      productSub = (p.sizes as any).sub_category;
+    }
+    const inSubCategory = !filters.subCategories || filters.subCategories.length === 0 || (productSub && filters.subCategories.includes(productSub));
+
+    return inPrice && inSubCategory;
   });
 
   const activeCount =
-    filters.sizes.length + filters.colors.length +
+    filters.sizes.length + filters.colors.length + (filters.subCategories?.length || 0) +
     (filters.priceMin > 0 ? 1 : 0) + (filters.priceMax < PRICE_MAX ? 1 : 0);
 
   if (isLoading) {

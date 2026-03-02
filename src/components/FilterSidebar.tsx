@@ -4,9 +4,12 @@ import { X, SlidersHorizontal, ChevronDown, ChevronUp } from "lucide-react";
 export interface FilterState {
   sizes: string[];
   colors: string[];
+  subCategories: string[];
   priceMin: number;
   priceMax: number;
 }
+
+const SUB_CATEGORIES = ["Borkha", "Hijab", "Bags", "Shoes", "Others"];
 
 const SIZES = ["XS", "S", "M", "L", "XL", "XXL", "3XL", "ফ্রি সাইজ"];
 const COLORS = [
@@ -49,6 +52,13 @@ const Accordion = ({ title, children }: { title: string; children: React.ReactNo
 };
 
 const FilterSidebar = ({ filters, onChange, mobileOpen, onClose }: Props) => {
+  const toggleSubCategory = (s: string) => {
+    const next = filters.subCategories?.includes(s)
+      ? filters.subCategories.filter((x) => x !== s)
+      : [...(filters.subCategories || []), s];
+    onChange({ ...filters, subCategories: next });
+  };
+
   const toggleSize = (s: string) => {
     const next = filters.sizes.includes(s)
       ? filters.sizes.filter((x) => x !== s)
@@ -66,11 +76,12 @@ const FilterSidebar = ({ filters, onChange, mobileOpen, onClose }: Props) => {
   const hasFilters =
     filters.sizes.length > 0 ||
     filters.colors.length > 0 ||
+    (filters.subCategories && filters.subCategories.length > 0) ||
     filters.priceMin > 0 ||
     filters.priceMax < PRICE_MAX;
 
   const clearAll = () =>
-    onChange({ sizes: [], colors: [], priceMin: 0, priceMax: PRICE_MAX });
+    onChange({ sizes: [], colors: [], subCategories: [], priceMin: 0, priceMax: PRICE_MAX });
 
   const content = (
     <div className="space-y-0">
@@ -124,6 +135,23 @@ const FilterSidebar = ({ filters, onChange, mobileOpen, onClose }: Props) => {
         </div>
       </Accordion>
 
+      {/* Sub Categories */}
+      <Accordion title="ক্যাটাগরি (Women)">
+        <div className="flex flex-col gap-2">
+          {SUB_CATEGORIES.map((s) => (
+            <label key={s} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground cursor-pointer transition-colors">
+              <input
+                type="checkbox"
+                checked={filters.subCategories?.includes(s) || false}
+                onChange={() => toggleSubCategory(s)}
+                className="rounded border-border text-primary focus:ring-primary/30"
+              />
+              {s}
+            </label>
+          ))}
+        </div>
+      </Accordion>
+
       {/* Sizes */}
       <Accordion title="সাইজ">
         <div className="flex flex-wrap gap-2">
@@ -131,11 +159,10 @@ const FilterSidebar = ({ filters, onChange, mobileOpen, onClose }: Props) => {
             <button
               key={s}
               onClick={() => toggleSize(s)}
-              className={`px-3 py-1.5 text-xs rounded-lg border font-medium transition-colors ${
-                filters.sizes.includes(s)
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "border-border text-muted-foreground hover:border-primary/50"
-              }`}
+              className={`px-3 py-1.5 text-xs rounded-lg border font-medium transition-colors ${filters.sizes.includes(s)
+                ? "bg-primary text-primary-foreground border-primary"
+                : "border-border text-muted-foreground hover:border-primary/50"
+                }`}
             >
               {s}
             </button>
@@ -153,9 +180,8 @@ const FilterSidebar = ({ filters, onChange, mobileOpen, onClose }: Props) => {
                 key={c.value}
                 onClick={() => toggleColor(c.value)}
                 title={c.name}
-                className={`relative w-7 h-7 rounded-full border-2 transition-all ${
-                  active ? "border-primary scale-110 shadow-md" : "border-transparent hover:border-border"
-                }`}
+                className={`relative w-7 h-7 rounded-full border-2 transition-all ${active ? "border-primary scale-110 shadow-md" : "border-transparent hover:border-border"
+                  }`}
                 style={{ backgroundColor: c.hex }}
               >
                 {active && (
@@ -196,9 +222,8 @@ const FilterSidebar = ({ filters, onChange, mobileOpen, onClose }: Props) => {
 
       {/* Mobile drawer */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-72 bg-card border-r border-border p-5 overflow-y-auto transition-transform duration-300 lg:hidden ${
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 w-72 bg-card border-r border-border p-5 overflow-y-auto transition-transform duration-300 lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
         <div className="flex items-center justify-between mb-4">
           <span className="font-serif text-base">ফিল্টার</span>

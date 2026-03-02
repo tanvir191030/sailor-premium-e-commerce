@@ -193,8 +193,14 @@ const ProductDetail = () => {
     );
   }
 
-  const productSizes = product.sizes as Record<string, number> | undefined;
-  const hasSpecificSizes = productSizes && Object.keys(productSizes).length > 0;
+  const rawSizes = product.sizes as any;
+  const isComplexSize = rawSizes && rawSizes.variants !== undefined;
+  const productSubCategory = isComplexSize ? (rawSizes.sub_category || product.sub_category) : product.sub_category;
+  const sizeVariants = isComplexSize ? rawSizes.variants : (rawSizes || {});
+
+  const hasSpecificSizes = sizeVariants && Object.keys(sizeVariants).length > 0;
+
+  const displaySizes = hasSpecificSizes ? Object.keys(sizeVariants) : SIZES;
 
   const isInStock = product.stock > 0;
   const wishlisted = isWishlisted(product.id);
@@ -202,7 +208,7 @@ const ProductDetail = () => {
 
   return (
     <PageTransition>
-      <SizeChartModal open={sizeChartOpen} onClose={() => setSizeChartOpen(false)} />
+      <SizeChartModal open={sizeChartOpen} onClose={() => setSizeChartOpen(false)} product={product} />
       <div className="min-h-screen bg-background">
         <Header />
         <main className="pb-20 lg:pb-0">
@@ -396,8 +402,11 @@ const ProductDetail = () => {
                     </button>
                   </div>
                   <div className="flex gap-2 flex-wrap">
-                    {SIZES.map((size) => {
-                      const stockCount = hasSpecificSizes ? (productSizes?.[size] || 0) : null;
+                    {displaySizes.map((size) => {
+                      const sizeData = sizeVariants[size];
+                      const stockCount = hasSpecificSizes
+                        ? (typeof sizeData === 'object' && sizeData !== null ? Number(sizeData.stock) : Number(sizeData) || 0)
+                        : null;
                       const isOutOfStock = hasSpecificSizes && stockCount === 0;
 
                       return (
@@ -411,12 +420,12 @@ const ProductDetail = () => {
                             }}
                             disabled={isOutOfStock}
                             className={`min-w-[44px] min-h-[44px] px-3 text-sm font-medium border transition-colors ${isOutOfStock
-                                ? "bg-secondary text-muted-foreground border-border cursor-not-allowed opacity-50"
-                                : selectedSize === size
-                                  ? "bg-primary text-primary-foreground border-primary"
-                                  : sizeError
-                                    ? "bg-background text-destructive border-destructive hover:border-destructive/80"
-                                    : "bg-background text-foreground border-border hover:border-primary"
+                              ? "bg-secondary text-muted-foreground border-border cursor-not-allowed opacity-50"
+                              : selectedSize === size
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : sizeError
+                                  ? "bg-background text-destructive border-destructive hover:border-destructive/80"
+                                  : "bg-background text-foreground border-border hover:border-primary"
                               }`}
                           >
                             {size}
@@ -430,6 +439,20 @@ const ProductDetail = () => {
                       );
                     })}
                   </div>
+                  {/* Display measurements if selected size has any */}
+                  {selectedSize && hasSpecificSizes && typeof sizeVariants[selectedSize] === 'object' && sizeVariants[selectedSize].measurements && Object.keys(sizeVariants[selectedSize].measurements).length > 0 && (
+                    <div className="mt-4 p-3 bg-secondary/30 rounded-lg border border-border/50 transition-all text-xs text-muted-foreground">
+                      <p className="font-medium text-foreground mb-1.5 uppercase tracking-wide text-[10px]">Measurements for {selectedSize}</p>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        {Object.entries(sizeVariants[selectedSize].measurements).map(([key, val]) => (
+                          <div key={key} className="flex flex-col">
+                            <span className="capitalize text-[10px]">{key}</span>
+                            <span className="font-semibold text-foreground">{String(val)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Quantity Selector + CTA Buttons */}
@@ -450,11 +473,17 @@ const ProductDetail = () => {
                       </span>
                       <button
                         onClick={() => {
-                          const maxAvailableStock = hasSpecificSizes && selectedSize ? (productSizes?.[selectedSize] || 0) : product.stock;
-                          setQuantity((q) => Math.min(maxAvailableStock, q + 1));
+                          const sizeData = selectedSize ? sizeVariants[selectedSize] : null;
+                          const selStock = sizeData ? (typeof sizeData === 'object' && sizeData !== null ? Number(sizeData.stock) : Number(sizeData) || 0) : 0;
+                          const maxStock = hasSpecificSizes && selectedSize ? selStock : product.stock;
+                          setQuantity((q) => Math.min(maxStock, q + 1));
                         }}
                         className="w-10 h-10 flex items-center justify-center hover:bg-secondary transition-colors"
-                        disabled={!isInStock || (hasSpecificSizes && selectedSize ? quantity >= (productSizes?.[selectedSize] || 0) : quantity >= product.stock)}
+                        disabled={!isInStock || (() => {
+                          const sizeData = selectedSize ? sizeVariants[selectedSize] : null;
+                          const selStock = sizeData ? (typeof sizeData === 'object' && sizeData !== null ? Number(sizeData.stock) : Number(sizeData) || 0) : 0;
+                          return hasSpecificSizes && selectedSize ? quantity >= selStock : quantity >= product.stock;
+                        })()}
                       >
                         <Plus size={14} />
                       </button>
@@ -599,7 +628,7 @@ const ProductDetail = () => {
 
         <Footer />
       </div>
-    </PageTransition>
+    </PageTransition >
   );
 };
 
