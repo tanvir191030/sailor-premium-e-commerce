@@ -5,16 +5,39 @@ import CategorySection from "@/components/CategorySection";
 import Footer from "@/components/Footer";
 import PageTransition from "@/components/PageTransition";
 import { useProducts, useFeaturedProducts } from "@/hooks/useProducts";
-import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const { data: products = [], isLoading: productsLoading } = useProducts();
   const { data: featuredProducts = [], isLoading: featuredLoading } = useFeaturedProducts();
-  const { settings, isLoading: settingsLoading } = useSiteSettings();
 
-  const hasAdminHero = !!settings.hero_image_url;
+  // Fetch hero banners from banners table
+  const { data: banners = [], isLoading: bannersLoading } = useQuery({
+    queryKey: ["hero-banners-public"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("banners")
+        .select("*")
+        .eq("is_active", true)
+        .order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+  });
 
-  const heroSlides = featuredProducts.map((product) => ({
+  // Convert banners to slide format
+  const bannerSlides = banners.map((b: any) => ({
+    id: b.id,
+    image: b.image_url,
+    label: "",
+    title: b.title || "",
+    description: b.subtitle || "",
+    ctaText: "Shop Now",
+    ctaLink: b.link || "/shop",
+  }));
+
+  const featuredSlides = featuredProducts.map((product) => ({
     id: product.id,
     image: product.image_url || "https://images.unsplash.com/photo-1445205170230-053b83016050?w=1920&h=1080&fit=crop",
     label: product.category || "Featured",
@@ -24,18 +47,6 @@ const Index = () => {
     ctaLink: `/category/${(product.category || "new").toLowerCase()}`,
   }));
 
-  const adminSlides = hasAdminHero
-    ? [{
-        id: "admin-hero",
-        image: settings.hero_image_url,
-        label: "",
-        title: settings.hero_title || "Modest Mart",
-        description: settings.hero_subtitle || "",
-        ctaText: "Shop Now",
-        ctaLink: "/shop",
-      }]
-    : [];
-
   const defaultSlides = [
     {
       id: "1",
@@ -44,7 +55,7 @@ const Index = () => {
       title: "Timeless Elegance",
       description: "Discover our curated selection of contemporary pieces designed for the modern wardrobe.",
       ctaText: "Shop Now",
-      ctaLink: "/",
+      ctaLink: "/shop",
     },
     {
       id: "2",
@@ -53,7 +64,7 @@ const Index = () => {
       title: "Refined Simplicity",
       description: "Explore minimalist designs that speak to your personal style.",
       ctaText: "Explore Collection",
-      ctaLink: "/",
+      ctaLink: "/shop",
     },
     {
       id: "3",
@@ -62,14 +73,14 @@ const Index = () => {
       title: "Artisan Craft",
       description: "Handcrafted pieces that blend tradition with modern aesthetics.",
       ctaText: "Discover More",
-      ctaLink: "/",
+      ctaLink: "/shop",
     },
   ];
 
-  // Priority: Admin hero > Featured products > Default slides
-  const slides = hasAdminHero ? adminSlides : featuredProducts.length > 0 ? heroSlides : defaultSlides;
+  // Priority: Admin banners > Featured products > Default slides
+  const slides = bannerSlides.length > 0 ? bannerSlides : featuredProducts.length > 0 ? featuredSlides : defaultSlides;
 
-  if (productsLoading || featuredLoading || settingsLoading) {
+  if (productsLoading || featuredLoading || bannersLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent animate-spin" />
