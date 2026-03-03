@@ -844,31 +844,31 @@ const ProductDetail = () => {
         </main>
 
         {/* Sticky CTA Bar — mobile only, above bottom nav */}
-        <div className="fixed bottom-[52px] left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-t border-border px-3 py-2 md:hidden safe-bottom">
-          <div className="flex items-center gap-2">
+        <div className="fixed bottom-[52px] left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-t border-border px-4 py-2.5 md:hidden safe-bottom">
+          <div className="flex items-center gap-2.5">
             {/* Mini quantity selector */}
-            <div className="flex items-center border border-border flex-shrink-0">
-              <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="w-8 h-9 flex items-center justify-center" disabled={!isInStock}>
-                <Minus size={12} />
+            <div className="flex items-center border border-border rounded-lg flex-shrink-0 overflow-hidden">
+              <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="w-9 h-11 flex items-center justify-center hover:bg-muted active:bg-muted/80 transition-colors" disabled={!isInStock}>
+                <Minus size={14} />
               </button>
-              <span className="w-8 h-9 flex items-center justify-center text-xs font-medium border-x border-border">{quantity}</span>
-              <button onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))} className="w-8 h-9 flex items-center justify-center" disabled={!isInStock}>
-                <Plus size={12} />
+              <span className="w-9 h-11 flex items-center justify-center text-sm font-semibold border-x border-border">{quantity}</span>
+              <button onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))} className="w-9 h-11 flex items-center justify-center hover:bg-muted active:bg-muted/80 transition-colors" disabled={!isInStock}>
+                <Plus size={14} />
               </button>
             </div>
             <button
-              onClick={handleAddToCart}
-              disabled={!isInStock}
-              className="flex-1 bg-primary text-primary-foreground py-2.5 text-[11px] uppercase tracking-[0.1em] font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed min-h-[40px]"
-            >
-              <ShoppingCart size={14} /> {isInStock ? "কার্ট" : "স্টক নেই"}
-            </button>
-            <button
               onClick={handleBuyNow}
               disabled={!isInStock}
-              className="flex-1 bg-background text-foreground border border-primary py-2.5 text-[11px] uppercase tracking-[0.1em] font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed min-h-[40px]"
+              className="flex-1 bg-background text-foreground border-2 border-foreground rounded-lg py-3 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97] transition-transform"
             >
-              <Zap size={14} /> {isInStock ? "কিনুন" : "স্টক নেই"}
+              <Zap size={16} /> {isInStock ? "Buy Now" : "স্টক নেই"}
+            </button>
+            <button
+              onClick={handleAddToCart}
+              disabled={!isInStock}
+              className="flex-1 bg-primary text-primary-foreground rounded-lg py-3 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97] transition-transform"
+            >
+              <ShoppingCart size={16} /> {isInStock ? "Add to Cart" : "স্টক নেই"}
             </button>
           </div>
         </div>
