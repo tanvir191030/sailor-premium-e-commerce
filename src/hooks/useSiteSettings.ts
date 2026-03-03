@@ -33,6 +33,7 @@ export interface SiteSettings {
   instagram: string;
   whatsapp_number: string;
   messenger_id: string;
+  website_url: string;
   hero_image_url: string;
   hero_title: string;
   hero_subtitle: string;
@@ -69,6 +70,7 @@ const DEFAULTS: SiteSettings = {
   instagram: "",
   whatsapp_number: "",
   messenger_id: "",
+  website_url: "",
   hero_image_url: "",
   hero_title: "",
   hero_subtitle: "",
