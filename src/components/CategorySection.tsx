@@ -56,12 +56,12 @@ const CategorySection = () => {
                   alt={category.name}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                <div className="absolute inset-0 flex flex-col items-center justify-end p-8">
-                  <h3 className="font-serif text-2xl md:text-3xl text-primary-foreground mb-2">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-8">
+                  <h3 className="font-serif text-3xl md:text-4xl text-white font-semibold drop-shadow-lg mb-2">
                     {category.name}
                   </h3>
-                  <span className="text-sm uppercase tracking-[0.15em] text-primary-foreground/80 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 border-b border-primary-foreground/50">
+                  <span className="text-sm uppercase tracking-[0.15em] text-white/90 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 border-b border-white/60 drop-shadow-md">
                     {t("home.explore")}
                   </span>
                 </div>
