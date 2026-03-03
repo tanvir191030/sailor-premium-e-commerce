@@ -5,12 +5,15 @@ import CategorySection from "@/components/CategorySection";
 import Footer from "@/components/Footer";
 import PageTransition from "@/components/PageTransition";
 import { useProducts, useFeaturedProducts } from "@/hooks/useProducts";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const Index = () => {
   const { data: products = [], isLoading: productsLoading } = useProducts();
   const { data: featuredProducts = [], isLoading: featuredLoading } = useFeaturedProducts();
+  const { settings, isLoading: settingsLoading } = useSiteSettings();
 
-  // Transform featured products into hero slides
+  const hasAdminHero = !!settings.hero_image_url;
+
   const heroSlides = featuredProducts.map((product) => ({
     id: product.id,
     image: product.image_url || "https://images.unsplash.com/photo-1445205170230-053b83016050?w=1920&h=1080&fit=crop",
@@ -21,7 +24,18 @@ const Index = () => {
     ctaLink: `/category/${(product.category || "new").toLowerCase()}`,
   }));
 
-  // Default slides if no featured products
+  const adminSlides = hasAdminHero
+    ? [{
+        id: "admin-hero",
+        image: settings.hero_image_url,
+        label: "",
+        title: settings.hero_title || "Modest Mart",
+        description: settings.hero_subtitle || "",
+        ctaText: "Shop Now",
+        ctaLink: "/shop",
+      }]
+    : [];
+
   const defaultSlides = [
     {
       id: "1",
@@ -52,9 +66,10 @@ const Index = () => {
     },
   ];
 
-  const slides = featuredProducts.length > 0 ? heroSlides : defaultSlides;
+  // Priority: Admin hero > Featured products > Default slides
+  const slides = hasAdminHero ? adminSlides : featuredProducts.length > 0 ? heroSlides : defaultSlides;
 
-  if (productsLoading || featuredLoading) {
+  if (productsLoading || featuredLoading || settingsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent animate-spin" />

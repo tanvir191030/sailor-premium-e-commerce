@@ -77,12 +77,17 @@ const AdminSettings = () => {
   // Chat Widget
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [messengerId, setMessengerId] = useState("");
+  // Hero Section
+  const [heroImageUrl, setHeroImageUrl] = useState("");
+  const [heroTitle, setHeroTitle] = useState("");
+  const [heroSubtitle, setHeroSubtitle] = useState("");
   // Pages
   const [privacyPolicy, setPrivacyPolicy] = useState("");
   const [termsConditions, setTermsConditions] = useState("");
 
   const [loaded, setLoaded] = useState(false);
-  const [uploading, setUploading] = useState<"logo" | "favicon" | null>(null);
+  const [uploading, setUploading] = useState<"logo" | "favicon" | "hero" | null>(null);
+  const heroInputRef = useRef<HTMLInputElement>(null);
 
   if (settings.length > 0 && !loaded) {
     setStoreName(getSetting("store_name", "SAILOR"));
@@ -110,6 +115,9 @@ const AdminSettings = () => {
     setMessengerId(getSetting("messenger_id", ""));
     setPrivacyPolicy(getSetting("privacy_policy", ""));
     setTermsConditions(getSetting("terms_conditions", ""));
+    setHeroImageUrl(getSetting("hero_image_url", ""));
+    setHeroTitle(getSetting("hero_title", ""));
+    setHeroSubtitle(getSetting("hero_subtitle", ""));
     setLoaded(true);
   }
 
@@ -206,6 +214,15 @@ const AdminSettings = () => {
       { key: "terms_conditions", value: termsConditions },
     ]);
     toast({ title: "✓ পেজ কন্টেন্ট সেভ হয়েছে" });
+  };
+
+  const handleSaveHero = async () => {
+    await saveAll([
+      { key: "hero_image_url", value: heroImageUrl },
+      { key: "hero_title", value: heroTitle },
+      { key: "hero_subtitle", value: heroSubtitle },
+    ]);
+    toast({ title: "✓ হিরো সেকশন সেভ হয়েছে" });
   };
 
   // File upload helper
@@ -359,6 +376,57 @@ const AdminSettings = () => {
           </div>
         </div>
         <SaveBtn onClick={handleSaveBrand} />
+      </Section>
+
+      {/* ── Hero Section ── */}
+      <Section icon={Image} title="হিরো সেকশন (হোমপেজ ব্যানার)">
+        <div className="space-y-4 max-w-2xl">
+          <p className="text-xs text-muted-foreground">হোমপেজের প্রধান ব্যানার ইমেজ, শিরোনাম ও সাব-টাইটেল এখান থেকে পরিবর্তন করুন। খালি রাখলে ডিফল্ট স্লাইডার দেখাবে।</p>
+
+          {/* Hero Image Preview & Upload */}
+          <div className="border border-dashed border-border rounded-xl p-4 space-y-3">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">হিরো ইমেজ (1920×1080 recommended)</p>
+            {heroImageUrl ? (
+              <img src={heroImageUrl} alt="Hero" className="w-full h-48 object-cover rounded-lg" />
+            ) : (
+              <div className="w-full h-48 bg-secondary rounded-lg flex items-center justify-center">
+                <Image size={40} className="text-muted-foreground/30" />
+              </div>
+            )}
+            <input
+              type="url"
+              value={heroImageUrl}
+              onChange={(e) => setHeroImageUrl(e.target.value)}
+              placeholder="ইমেজ URL পেস্ট করুন অথবা নিচে আপলোড করুন"
+              className={`${inputCls} text-xs`}
+            />
+            <input
+              ref={heroInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleFileUpload(f, "hero" as any, setHeroImageUrl);
+              }}
+            />
+            <button
+              onClick={() => heroInputRef.current?.click()}
+              disabled={uploading === "hero"}
+              className="w-full flex items-center justify-center gap-2 border border-border rounded-lg py-2 text-xs hover:bg-secondary transition-colors disabled:opacity-50"
+            >
+              <Upload size={13} /> {uploading === "hero" ? "আপলোড হচ্ছে..." : "ইমেজ আপলোড"}
+            </button>
+          </div>
+
+          <Field label="হিরো শিরোনাম (Title)">
+            <input value={heroTitle} onChange={(e) => setHeroTitle(e.target.value)} placeholder="Timeless Elegance" className={inputCls} />
+          </Field>
+          <Field label="হিরো সাব-টাইটেল (Subtitle)">
+            <textarea rows={2} value={heroSubtitle} onChange={(e) => setHeroSubtitle(e.target.value)} placeholder="Discover our curated selection of contemporary pieces..." className={textareaCls} />
+          </Field>
+        </div>
+        <SaveBtn onClick={handleSaveHero} />
       </Section>
 
       {/* ── Footer Info ── */}
