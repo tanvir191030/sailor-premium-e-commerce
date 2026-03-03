@@ -231,9 +231,9 @@ const AdminProducts = () => {
         <div className="space-y-4 border border-border p-3 rounded-lg bg-secondary/20">
           <p className="text-xs font-medium text-muted-foreground">হিজাব/ওড়না — কাস্টম সাইজ যোগ করুন (Width × Length ইঞ্চি)</p>
           
-          {/* Existing sizes */}
-          {Object.entries(form.sizes).map(([sizeKey, data]: [string, any]) => (
-            <div key={sizeKey} className="flex flex-col gap-2 p-2 bg-secondary/30 rounded-lg border border-border/50">
+          {/* Existing sizes — use stable index-based keys */}
+          {Object.entries(form.sizes).map(([sizeKey, data]: [string, any], idx) => (
+            <div key={`hijab-size-${idx}`} className="flex flex-col gap-2 p-2 bg-secondary/30 rounded-lg border border-border/50">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold text-foreground">{data?.measurements?.width || "?"}" × {data?.measurements?.length || "?"}"</span>
                 <button type="button" onClick={() => {
@@ -245,22 +245,34 @@ const AdminProducts = () => {
               <div className="grid grid-cols-3 gap-2">
                 <input type="number" value={data?.stock || ""} onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, [sizeKey]: { ...data, stock: e.target.value } } })} className={inputCls} placeholder="Stock" />
                 <input type="text" value={data?.measurements?.width || ""} onChange={(e) => {
-                  const newWidth = e.target.value;
-                  const newLength = data?.measurements?.length || "";
-                  const newKey = `${newWidth}x${newLength}`;
-                  const newSizes = { ...form.sizes };
-                  delete newSizes[sizeKey];
-                  newSizes[newKey] = { ...data, measurements: { ...data?.measurements, width: newWidth } };
-                  setForm({ ...form, sizes: newSizes });
+                  // Update measurement only, don't change key during typing
+                  setForm({ ...form, sizes: { ...form.sizes, [sizeKey]: { ...data, measurements: { ...data?.measurements, width: e.target.value } } } });
+                }} onBlur={() => {
+                  // Rebuild key on blur
+                  const w = data?.measurements?.width || "";
+                  const l = data?.measurements?.length || "";
+                  const newKey = `${w}x${l}`;
+                  if (newKey !== sizeKey && w && l) {
+                    const newSizes = { ...form.sizes };
+                    const val = newSizes[sizeKey];
+                    delete newSizes[sizeKey];
+                    newSizes[newKey] = val;
+                    setForm({ ...form, sizes: newSizes });
+                  }
                 }} className={inputCls} placeholder='Width (চওড়া)"' />
                 <input type="text" value={data?.measurements?.length || ""} onChange={(e) => {
-                  const newLength = e.target.value;
-                  const newWidth = data?.measurements?.width || "";
-                  const newKey = `${newWidth}x${newLength}`;
-                  const newSizes = { ...form.sizes };
-                  delete newSizes[sizeKey];
-                  newSizes[newKey] = { ...data, measurements: { ...data?.measurements, length: newLength } };
-                  setForm({ ...form, sizes: newSizes });
+                  setForm({ ...form, sizes: { ...form.sizes, [sizeKey]: { ...data, measurements: { ...data?.measurements, length: e.target.value } } } });
+                }} onBlur={() => {
+                  const w = data?.measurements?.width || "";
+                  const l = data?.measurements?.length || "";
+                  const newKey = `${w}x${l}`;
+                  if (newKey !== sizeKey && w && l) {
+                    const newSizes = { ...form.sizes };
+                    const val = newSizes[sizeKey];
+                    delete newSizes[sizeKey];
+                    newSizes[newKey] = val;
+                    setForm({ ...form, sizes: newSizes });
+                  }
                 }} className={inputCls} placeholder='Length (লম্বা)"' />
               </div>
             </div>
