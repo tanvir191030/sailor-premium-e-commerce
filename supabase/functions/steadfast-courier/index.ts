@@ -64,11 +64,11 @@ Deno.serve(async (req) => {
       }
 
       const body = {
-        invoice: order_id,
-        recipient_name,
+        invoice: note || order_id.slice(0, 20),
+        recipient_name: recipient_name.slice(0, 100),
         recipient_phone: cleanPhone,
         recipient_address,
-        cod_amount: Number(cod_amount),
+        cod_amount: Math.round(Number(cod_amount)),
         note: note || "",
       };
 
