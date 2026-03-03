@@ -5,7 +5,7 @@ import {
   ArrowLeft, ShoppingCart, Zap, Heart, Share2, Facebook,
   MessageCircle, ZoomIn, ChevronLeft, ChevronRight, Ruler,
   Package, Tag, CheckCircle, XCircle, Plus, Minus,
-  Truck, RotateCcw, Banknote, Star, Send, Camera
+  Star, Send, Camera
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
@@ -634,22 +634,6 @@ const ProductDetail = () => {
                     >
                       <Zap size={15} /> {isInStock ? "এখনই কিনুন" : "স্টক নেই"}
                     </button>
-                  </div>
-                </div>
-
-                {/* Trust Badges */}
-                <div className="grid grid-cols-3 gap-2 pt-1">
-                  <div className="flex flex-col items-center gap-1.5 p-3 bg-secondary/30 rounded-lg border border-border/50 text-center">
-                    <Truck size={18} className="text-primary" />
-                    <span className="text-[10px] font-medium leading-tight">ফ্রি শিপিং</span>
-                  </div>
-                  <div className="flex flex-col items-center gap-1.5 p-3 bg-secondary/30 rounded-lg border border-border/50 text-center">
-                    <RotateCcw size={18} className="text-primary" />
-                    <span className="text-[10px] font-medium leading-tight">৭ দিন রিটার্ন</span>
-                  </div>
-                  <div className="flex flex-col items-center gap-1.5 p-3 bg-secondary/30 rounded-lg border border-border/50 text-center">
-                    <Banknote size={18} className="text-primary" />
-                    <span className="text-[10px] font-medium leading-tight">ক্যাশ অন ডেলিভারি</span>
                   </div>
                 </div>
 
