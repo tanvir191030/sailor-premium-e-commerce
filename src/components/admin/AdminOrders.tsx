@@ -22,6 +22,7 @@ const AdminOrders = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [sendingOrderId, setSendingOrderId] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { settings: siteSettings } = useSiteSettings();
@@ -66,6 +67,7 @@ const AdminOrders = () => {
 
   const sendToCourier = useMutation({
     mutationFn: async (order: any) => {
+      setSendingOrderId(order.id);
       const res = await supabase.functions.invoke("steadfast-courier", {
         body: {
           action: "create_order",
@@ -82,10 +84,14 @@ const AdminOrders = () => {
       return res.data;
     },
     onSuccess: (data) => {
+      setSendingOrderId(null);
       queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
       toast({ title: "কুরিয়ারে পাঠানো হয়েছে", description: `Consignment ID: ${data.consignment?.consignment_id}` });
     },
-    onError: (e: any) => toast({ title: "কুরিয়ারে পাঠাতে সমস্যা", description: e.message, variant: "destructive" }),
+    onError: (e: any) => {
+      setSendingOrderId(null);
+      toast({ title: "কুরিয়ারে পাঠাতে সমস্যা", description: e.message, variant: "destructive" });
+    },
   });
 
   const handleGenerateInvoice = (order: any) => {
@@ -181,20 +187,20 @@ const AdminOrders = () => {
               <button onClick={() => handleGenerateInvoice(o)} className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary hover:bg-muted rounded-lg text-xs font-medium transition-colors text-foreground">
                 <FileDown size={13} /> ইনভয়েস
               </button>
-              {!o.courier_tracking_id && (
-                <button
-                  onClick={() => sendToCourier.mutate(o)}
-                  disabled={sendToCourier.isPending}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
-                >
-                  <Send size={13} /> {sendToCourier.isPending ? "পাঠানো হচ্ছে..." : "কুরিয়ারে পাঠান"}
-                </button>
-              )}
-              {o.courier_tracking_id && (
-                <span className="px-3 py-1.5 bg-emerald-500/10 text-emerald-500 rounded-lg text-xs font-medium">
-                  ✅ CID: {o.courier_tracking_id}
-                </span>
-              )}
+               {!o.courier_tracking_id && (
+                 <button
+                   onClick={() => sendToCourier.mutate(o)}
+                   disabled={sendingOrderId === o.id}
+                   className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                 >
+                   <Send size={13} /> {sendingOrderId === o.id ? "পাঠানো হচ্ছে..." : "কুরিয়ারে পাঠান"}
+                 </button>
+               )}
+               {o.courier_tracking_id && (
+                 <span className="px-3 py-1.5 bg-emerald-500/10 text-emerald-500 rounded-lg text-xs font-medium">
+                   ✅ CID: {o.courier_tracking_id}
+                 </span>
+               )}
               <button onClick={() => setDeleteTarget(o)} className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-destructive/10 text-destructive rounded-lg text-xs font-medium transition-colors">
                 <Trash2 size={13} /> ডিলিট
               </button>
