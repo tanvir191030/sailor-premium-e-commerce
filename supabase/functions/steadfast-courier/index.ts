@@ -28,6 +28,7 @@ Deno.serve(async (req) => {
     "Api-Key": STEADFAST_API_KEY,
     "Secret-Key": STEADFAST_SECRET_KEY,
     "Content-Type": "application/json",
+    "Accept": "application/json",
   };
 
   try {
@@ -79,8 +80,19 @@ Deno.serve(async (req) => {
         body: JSON.stringify(body),
       });
 
-      const data = await res.json();
-      console.log("Steadfast response:", res.status, JSON.stringify(data));
+      const resText = await res.text();
+      console.log("Steadfast raw response:", res.status, resText);
+
+      let data: any;
+      try {
+        data = JSON.parse(resText);
+      } catch {
+        console.error("Steadfast returned non-JSON:", resText.substring(0, 500));
+        return new Response(JSON.stringify({ error: "Steadfast API returned invalid response. Check API credentials." }), {
+          status: 502,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
 
       if (res.ok && data.status === 200) {
         const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
