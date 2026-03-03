@@ -406,21 +406,49 @@ const ProductDetail = () => {
                     <span className="text-sm text-muted-foreground">ফ্রি সাইজ — সাইজ নির্বাচনের প্রয়োজন নেই</span>
                   </div>
                 ) : sizeType === "hijab" && hasSpecificSizes ? (
-                  /* Hijab/Orna: show dimensions */
-                  <div className="space-y-2">
-                    <span className="text-sm font-medium">সাইজ</span>
-                    {Object.entries(sizeVariants).map(([size, data]: [string, any]) => {
-                      const m = data?.measurements || {};
-                      return (
-                        <div key={size} className="p-3 bg-secondary/20 rounded-lg border border-border/50">
-                          <span className="text-sm font-medium">{size}</span>
-                          {m.width && m.length && (
-                            <span className="ml-2 text-sm text-muted-foreground">— {m.width}" × {m.length}"</span>
-                          )}
-                          <span className="ml-2 text-xs text-muted-foreground">({data.stock} pcs)</span>
-                        </div>
-                      );
-                    })}
+                  /* Hijab/Orna: show selectable dimension buttons */
+                  <div className={`transition-all duration-300 ${sizeError ? "animate-[shake_0.5s_ease-in-out] rounded-xl p-3 -mx-3 border border-destructive/50 bg-destructive/5" : ""}`}>
+                    <div className="flex items-center justify-between mb-2.5">
+                      <span className="text-sm font-medium">
+                        সাইজ বেছে নিন
+                        {sizeError && <span className="text-destructive text-xs ml-2 font-normal animate-pulse">অনুগ্রহ করে একটি সাইজ সিলেক্ট করুন</span>}
+                      </span>
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                      {Object.entries(sizeVariants).map(([sizeKey, data]: [string, any]) => {
+                        const m = data?.measurements || {};
+                        const stockCount = Number(data?.stock) || 0;
+                        const isOutOfStock = stockCount === 0;
+                        const label = m.width && m.length ? `${m.width}×${m.length}"` : sizeKey;
+
+                        return (
+                          <div key={sizeKey} className="flex flex-col items-center gap-1">
+                            <button
+                              onClick={() => {
+                                if (isOutOfStock) return;
+                                setSelectedSize(sizeKey === selectedSize ? null : sizeKey);
+                                setSizeError(false);
+                                setQuantity(1);
+                              }}
+                              disabled={isOutOfStock}
+                              className={`min-w-[60px] min-h-[44px] px-3 py-2 text-sm font-medium border transition-colors ${isOutOfStock
+                                ? "bg-secondary text-muted-foreground border-border cursor-not-allowed opacity-50"
+                                : selectedSize === sizeKey
+                                  ? "bg-primary text-primary-foreground border-primary"
+                                  : sizeError
+                                    ? "bg-background text-destructive border-destructive hover:border-destructive/80"
+                                    : "bg-background text-foreground border-border hover:border-primary"
+                                }`}
+                            >
+                              {label}
+                            </button>
+                            <span className={`text-[10px] ${stockCount > 0 ? "text-muted-foreground" : "text-destructive font-medium"}`}>
+                              {stockCount > 0 ? `${stockCount} pcs` : "Out"}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 ) : (
                   /* Clothing / Shoes: show size buttons */
