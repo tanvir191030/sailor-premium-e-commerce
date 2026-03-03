@@ -91,7 +91,13 @@ const AdminOrders = () => {
     },
     onError: (e: any) => {
       setSendingOrderId(null);
-      toast({ title: "কুরিয়ারে পাঠাতে সমস্যা", description: e.message, variant: "destructive" });
+      const msg = e.message || "";
+      const isPending = msg.includes("অ্যাক্টিভ") || msg.includes("not active") || msg.includes("Pending");
+      toast({
+        title: isPending ? "⚠️ Steadfast অ্যাকাউন্ট Pending" : "কুরিয়ারে পাঠাতে সমস্যা",
+        description: isPending ? "আপনার Steadfast অ্যাকাউন্ট এখনো অ্যাক্টিভ হয়নি। প্রোভাইডারের সাথে যোগাযোগ করুন।" : msg,
+        variant: "destructive",
+      });
     },
   });
 
