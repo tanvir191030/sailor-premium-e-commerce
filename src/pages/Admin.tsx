@@ -6,7 +6,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard, Package, ShoppingCart, Users, CreditCard,
-  Megaphone, Settings, ArrowLeft, Menu, X, LogOut, Moon, Sun, Tag, Award, Ticket,
+  Megaphone, Settings, ArrowLeft, Menu, X, LogOut, Moon, Sun, Tag, Award, Ticket, MessageSquare,
 } from "lucide-react";
 import AdminDashboard from "@/components/admin/AdminDashboard";
 import AdminProducts from "@/components/admin/AdminProducts";
@@ -18,6 +18,7 @@ import AdminSettings from "@/components/admin/AdminSettings";
 import AdminCategories from "@/components/admin/AdminCategories";
 import AdminBrands from "@/components/admin/AdminBrands";
 import AdminCoupons from "@/components/admin/AdminCoupons";
+import AdminReviews from "@/components/admin/AdminReviews";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n/index";
 
@@ -50,6 +51,7 @@ const Admin = () => {
     { id: "customers", label: t("admin.customers"), icon: Users },
     { id: "payments", label: t("admin.payments"), icon: CreditCard },
     { id: "coupons", label: "কুপন", icon: Ticket },
+    { id: "reviews", label: "রিভিউ", icon: MessageSquare },
     { id: "marketing", label: t("admin.marketing"), icon: Megaphone },
     { id: "settings", label: t("admin.settings"), icon: Settings },
   ];
@@ -91,6 +93,7 @@ const Admin = () => {
       case "customers": return <AdminCustomers />;
       case "payments": return <AdminPayments />;
       case "coupons": return <AdminCoupons />;
+      case "reviews": return <AdminReviews />;
       case "marketing": return <AdminMarketing />;
       case "settings": return <AdminSettings />;
       default: return <AdminDashboard />;

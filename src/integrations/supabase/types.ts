@@ -299,6 +299,7 @@ export type Database = {
           customer_name: string
           id: string
           image_url: string | null
+          is_approved: boolean
           product_id: string
           rating: number
           user_id: string | null
@@ -309,6 +310,7 @@ export type Database = {
           customer_name: string
           id?: string
           image_url?: string | null
+          is_approved?: boolean
           product_id: string
           rating: number
           user_id?: string | null
@@ -319,6 +321,7 @@ export type Database = {
           customer_name?: string
           id?: string
           image_url?: string | null
+          is_approved?: boolean
           product_id?: string
           rating?: number
           user_id?: string | null

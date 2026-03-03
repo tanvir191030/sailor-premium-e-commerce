@@ -5,7 +5,7 @@ import {
   ArrowLeft, ShoppingCart, Zap, Heart, Share2, Facebook,
   MessageCircle, ZoomIn, ChevronLeft, ChevronRight, Ruler,
   Package, Tag, CheckCircle, XCircle, Plus, Minus,
-  Star, Send, Camera
+  Star, Send, Camera, BadgeCheck
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
@@ -63,10 +63,33 @@ const ProductDetail = () => {
         .eq("product_id", id!)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data;
+      // Only show approved reviews on frontend
+      return (data || []).filter((r: any) => r.is_approved === true);
     },
     enabled: !!id,
   });
+
+  // Check if current visitor has a delivered order containing this product (by phone match)
+  const [canReview, setCanReview] = useState<boolean | null>(null);
+  const [buyerPhone, setBuyerPhone] = useState("");
+
+  const checkPurchaseEligibility = async (phone: string) => {
+    if (!phone || phone.length < 10 || !id) return;
+    const { data } = await supabase
+      .from("orders")
+      .select("cart_items, status")
+      .eq("phone", phone)
+      .eq("status", "delivered");
+    if (data && data.length > 0) {
+      const hasProduct = data.some((order: any) => {
+        const items = Array.isArray(order.cart_items) ? order.cart_items : [];
+        return items.some((item: any) => item.id === id);
+      });
+      setCanReview(hasProduct);
+    } else {
+      setCanReview(false);
+    }
+  };
 
   const avgRating = reviews.length > 0
     ? (reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviews.length).toFixed(1)
@@ -95,7 +118,8 @@ const ProductDetail = () => {
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ["reviews", id] });
       setReviewName(""); setReviewComment(""); setReviewRating(5); setReviewImage(null);
-      toast({ title: "✓ আপনার রিভিউ জমা হয়েছে!" });
+      setCanReview(null); setBuyerPhone("");
+      toast({ title: "✓ আপনার রিভিউ জমা হয়েছে!", description: "অ্যাডমিন অনুমোদনের পর এটি প্রদর্শিত হবে।" });
     } catch (err: any) {
       toast({ title: "ত্রুটি", description: err.message, variant: "destructive" });
     } finally {
@@ -734,47 +758,85 @@ const ProductDetail = () => {
                 </div>
               </div>
 
-              {/* Review Form */}
+              {/* Review Form — with purchase verification */}
               <div className="bg-secondary/20 rounded-xl border border-border p-4 md:p-6 mb-8 max-w-2xl">
-                <h3 className="text-sm font-semibold mb-4">আপনার মতামত দিন</h3>
-                <div className="space-y-3">
-                  <input
-                    value={reviewName}
-                    onChange={(e) => setReviewName(e.target.value)}
-                    placeholder="আপনার নাম *"
-                    className="w-full px-3 py-2.5 border border-border rounded-lg text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary/30 placeholder:text-muted-foreground"
-                  />
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">রেটিং:</span>
-                    <div className="flex gap-0.5">
-                      {[1, 2, 3, 4, 5].map((s) => (
-                        <button key={s} onClick={() => setReviewRating(s)} className="p-0.5">
-                          <Star size={20} className={s <= reviewRating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30 hover:text-yellow-400/50"} />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <textarea
-                    value={reviewComment}
-                    onChange={(e) => setReviewComment(e.target.value)}
-                    placeholder="আপনার অভিজ্ঞতা লিখুন..."
-                    rows={3}
-                    className="w-full px-3 py-2.5 border border-border rounded-lg text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary/30 resize-none placeholder:text-muted-foreground"
-                  />
-                  <div className="flex items-center gap-3">
-                    <input ref={reviewFileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) setReviewImage(f); }} />
-                    <button onClick={() => reviewFileRef.current?.click()} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded-lg px-3 py-2 transition-colors">
-                      <Camera size={13} /> {reviewImage ? reviewImage.name.slice(0, 20) : "ছবি যোগ করুন"}
-                    </button>
+                {canReview === null ? (
+                  /* Step 1: Ask for phone to verify purchase */
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold mb-2">রিভিউ দিতে আপনার ফোন নম্বর দিন</h3>
+                    <p className="text-xs text-muted-foreground">শুধুমাত্র ডেলিভারি সম্পন্ন অর্ডারের গ্রাহকরাই রিভিউ দিতে পারবেন।</p>
+                    <input
+                      value={buyerPhone}
+                      onChange={(e) => setBuyerPhone(e.target.value)}
+                      placeholder="আপনার ফোন নম্বর (যেমন: 01XXXXXXXXX)"
+                      className="w-full px-3 py-2.5 border border-border rounded-lg text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary/30 placeholder:text-muted-foreground"
+                    />
                     <button
-                      onClick={handleSubmitReview}
-                      disabled={submittingReview}
-                      className="ml-auto flex items-center gap-1.5 bg-primary text-primary-foreground px-5 py-2.5 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                      onClick={() => checkPurchaseEligibility(buyerPhone)}
+                      disabled={buyerPhone.length < 10}
+                      className="flex items-center gap-1.5 bg-primary text-primary-foreground px-5 py-2.5 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
                     >
-                      <Send size={13} /> {submittingReview ? "জমা হচ্ছে..." : "জমা দিন"}
+                      <CheckCircle size={14} /> যাচাই করুন
                     </button>
                   </div>
-                </div>
+                ) : canReview === false ? (
+                  /* Not eligible */
+                  <div className="text-center py-6 space-y-2">
+                    <XCircle size={32} className="mx-auto text-muted-foreground/50" />
+                    <p className="text-sm font-medium text-muted-foreground">শুধুমাত্র পণ্যটি ক্রয়কারী গ্রাহকরাই রিভিউ দিতে পারবেন।</p>
+                    <p className="text-xs text-muted-foreground">এই ফোন নম্বরে এই পণ্যের কোনো ডেলিভারি সম্পন্ন অর্ডার পাওয়া যায়নি।</p>
+                    <button onClick={() => { setCanReview(null); setBuyerPhone(""); }} className="text-xs text-primary hover:underline mt-2">
+                      অন্য নম্বর দিয়ে চেষ্টা করুন
+                    </button>
+                  </div>
+                ) : (
+                  /* Eligible — show review form */
+                  <>
+                    <h3 className="text-sm font-semibold mb-4">
+                      <span className="inline-flex items-center gap-1.5">
+                        <BadgeCheck size={16} className="text-emerald-500" /> আপনার মতামত দিন (ভেরিফাইড ক্রেতা)
+                      </span>
+                    </h3>
+                    <div className="space-y-3">
+                      <input
+                        value={reviewName}
+                        onChange={(e) => setReviewName(e.target.value)}
+                        placeholder="আপনার নাম *"
+                        className="w-full px-3 py-2.5 border border-border rounded-lg text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary/30 placeholder:text-muted-foreground"
+                      />
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">রেটিং:</span>
+                        <div className="flex gap-0.5">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <button key={s} onClick={() => setReviewRating(s)} className="p-0.5">
+                              <Star size={20} className={s <= reviewRating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30 hover:text-yellow-400/50"} />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <textarea
+                        value={reviewComment}
+                        onChange={(e) => setReviewComment(e.target.value)}
+                        placeholder="আপনার অভিজ্ঞতা লিখুন..."
+                        rows={3}
+                        className="w-full px-3 py-2.5 border border-border rounded-lg text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary/30 resize-none placeholder:text-muted-foreground"
+                      />
+                      <div className="flex items-center gap-3">
+                        <input ref={reviewFileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) setReviewImage(f); }} />
+                        <button onClick={() => reviewFileRef.current?.click()} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded-lg px-3 py-2 transition-colors">
+                          <Camera size={13} /> {reviewImage ? reviewImage.name.slice(0, 20) : "ছবি যোগ করুন"}
+                        </button>
+                        <button
+                          onClick={handleSubmitReview}
+                          disabled={submittingReview}
+                          className="ml-auto flex items-center gap-1.5 bg-primary text-primary-foreground px-5 py-2.5 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                        >
+                          <Send size={13} /> {submittingReview ? "জমা হচ্ছে..." : "জমা দিন"}
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Reviews List */}
@@ -784,7 +846,12 @@ const ProductDetail = () => {
                     <div key={review.id} className="p-4 bg-card rounded-xl border border-border">
                       <div className="flex items-center justify-between mb-2">
                         <div>
-                          <span className="text-sm font-semibold">{review.customer_name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold">{review.customer_name}</span>
+                            <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-full font-medium">
+                              <BadgeCheck size={10} /> ভেরিফাইড
+                            </span>
+                          </div>
                           <div className="flex gap-0.5 mt-0.5">
                             {[1, 2, 3, 4, 5].map((s) => (
                               <Star key={s} size={11} className={s <= review.rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"} />
@@ -792,7 +859,7 @@ const ProductDetail = () => {
                           </div>
                         </div>
                         <span className="text-[10px] text-muted-foreground">
-                          {new Date(review.created_at).toLocaleDateString("bn-BD")}
+                          {new Date(review.created_at).toLocaleDateString("bn-BD", { day: "numeric", month: "numeric", year: "numeric" })}
                         </span>
                       </div>
                       {review.comment && <p className="text-sm text-muted-foreground leading-relaxed">{review.comment}</p>}
