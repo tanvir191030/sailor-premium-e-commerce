@@ -57,7 +57,7 @@ const CategorySection = () => {
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-8">
+                <div className="absolute inset-0 flex flex-col items-center justify-end pb-6 md:pb-10 p-8">
                   <h3 className="font-serif text-3xl md:text-4xl text-white font-semibold drop-shadow-lg mb-2">
                     {category.name}
                   </h3>
