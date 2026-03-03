@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/lib/currency";
+import { optimizeHeroImage } from "@/lib/imageOptimizer";
 import {
   Download, Save, Globe, Share2, Truck, Smartphone,
   Upload, Image, Search, Mail, Phone, MapPin, FileText, Palette, Zap, BookOpen, MessageCircle
@@ -228,9 +229,9 @@ const AdminSettings = () => {
     try {
       let image_url = heroForm.image_url;
       if (heroFile) {
-        const ext = heroFile.name.split(".").pop();
-        const path = `hero-${Date.now()}.${ext}`;
-        const { error: uploadError } = await supabase.storage.from("site-assets").upload(path, heroFile, { upsert: true });
+        const optimized = await optimizeHeroImage(heroFile);
+        const path = `hero-${Date.now()}.webp`;
+        const { error: uploadError } = await supabase.storage.from("site-assets").upload(path, optimized, { upsert: true, contentType: "image/webp" });
         if (uploadError) throw uploadError;
         const { data } = supabase.storage.from("site-assets").getPublicUrl(path);
         image_url = data.publicUrl;

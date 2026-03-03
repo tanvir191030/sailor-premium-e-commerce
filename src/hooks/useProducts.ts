@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import { optimizeProductImage } from "@/lib/imageOptimizer";
 
 export type Product = Tables<"products"> & { is_featured?: boolean };
 export type ProductInsert = TablesInsert<"products"> & { is_featured?: boolean };
@@ -110,13 +111,15 @@ export const useDeleteProduct = () => {
 };
 
 export const uploadProductImage = async (file: File): Promise<string> => {
-  const fileExt = file.name.split(".").pop();
-  const fileName = `${crypto.randomUUID()}.${fileExt}`;
+  // Optimize: resize to 1200px, compress to WebP ~200KB
+  const optimized = await optimizeProductImage(file);
+  
+  const fileName = `${crypto.randomUUID()}.webp`;
   const filePath = `products/${fileName}`;
 
   const { error: uploadError } = await supabase.storage
     .from("product-images")
-    .upload(filePath, file);
+    .upload(filePath, optimized, { contentType: "image/webp" });
 
   if (uploadError) throw uploadError;
 
