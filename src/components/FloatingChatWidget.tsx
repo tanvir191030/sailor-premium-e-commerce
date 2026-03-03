@@ -39,8 +39,9 @@ const FloatingChatWidget = () => {
   const hasMessenger = !!messengerId;
 
   // Show widget even with no config — it just won't have sub-icons
+  const defaultMessage = encodeURIComponent("Hello Modest Mart, I want to know more about your products.");
   const whatsappLink = hasWhatsApp
-    ? `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, "")}`
+    ? `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, "")}?text=${defaultMessage}`
     : "";
   const messengerLink = hasMessenger
     ? (messengerId.startsWith("http") ? messengerId : `https://m.me/${messengerId}`)
