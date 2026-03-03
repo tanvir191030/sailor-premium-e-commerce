@@ -75,6 +75,7 @@ const AdminOrders = () => {
           recipient_name: order.customer_name,
           recipient_phone: order.phone,
           recipient_address: order.address,
+          district: order.district || "",
           cod_amount: order.total,
           note: order.tracking_id || "",
         },

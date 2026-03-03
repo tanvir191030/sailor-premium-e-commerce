@@ -6,153 +6,165 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const STEADFAST_BASE = "https://portal.steadfast.com.bd/api/v1";
+const STEADFAST_BASES = [
+  "https://portal.steadfast.com.bd/api/v1",
+  "https://portal.packzy.com/api/v1",
+];
+
+const toJson = (payload: unknown, status = 200) =>
+  new Response(JSON.stringify(payload), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   const STEADFAST_API_KEY = Deno.env.get("STEADFAST_API_KEY");
   const STEADFAST_SECRET_KEY = Deno.env.get("STEADFAST_SECRET_KEY");
 
   if (!STEADFAST_API_KEY || !STEADFAST_SECRET_KEY) {
     console.error("Missing Steadfast credentials");
-    return new Response(
-      JSON.stringify({ error: "Steadfast API credentials not configured" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return toJson({ error: "Steadfast API credentials not configured" }, 500);
   }
 
   const steadfastHeaders = {
     "Api-Key": STEADFAST_API_KEY,
     "Secret-Key": STEADFAST_SECRET_KEY,
     "Content-Type": "application/json",
-    "Accept": "application/json",
+    Accept: "application/json",
   };
 
   try {
     const { action, ...params } = await req.json();
 
     if (action === "create_order") {
-      const { order_id, recipient_name, recipient_phone, recipient_address, cod_amount, note } = params;
+      const { order_id, recipient_name, recipient_phone, recipient_address, district, cod_amount, note } = params;
 
-      // Validate phone: must be 11 digits
-      const cleanPhone = (recipient_phone || "").replace(/[^0-9]/g, "");
-      if (cleanPhone.length !== 11) {
-        console.error("Invalid phone number:", recipient_phone, "-> cleaned:", cleanPhone);
-        return new Response(
-          JSON.stringify({ error: `Invalid phone number. Must be exactly 11 digits. Got: ${cleanPhone.length} digits.` }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+      const cleanPhone = String(recipient_phone || "").replace(/[^0-9]/g, "");
+      if (!/^\d{11}$/.test(cleanPhone)) {
+        console.error("Invalid phone number:", recipient_phone, "->", cleanPhone);
+        return toJson({ error: "Invalid customer phone number. Must be exactly 11 digits." }, 400);
       }
 
-      if (!recipient_name || !recipient_address) {
-        console.error("Missing required fields:", { recipient_name, recipient_address });
-        return new Response(
-          JSON.stringify({ error: "Missing recipient name or address." }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+      const name = String(recipient_name || "").trim().slice(0, 100);
+      if (!name) return toJson({ error: "Recipient name is required." }, 400);
 
-      if (!cod_amount || Number(cod_amount) <= 0) {
+      const rawAddress = String(recipient_address || "").trim();
+      const districtText = String(district || "").trim();
+      const mappedAddress = districtText && !rawAddress.toLowerCase().includes(districtText.toLowerCase())
+        ? `${rawAddress}, ${districtText}`
+        : rawAddress;
+      const address = mappedAddress.slice(0, 250);
+      if (!address) return toJson({ error: "Recipient address is required." }, 400);
+
+      const amount = Number(cod_amount);
+      if (!Number.isFinite(amount) || amount < 0) {
         console.error("Invalid COD amount:", cod_amount);
-        return new Response(
-          JSON.stringify({ error: "Invalid COD amount." }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return toJson({ error: "Invalid COD amount." }, 400);
       }
+
+      const invoiceBase = String(note || order_id || "").trim();
+      const invoice = invoiceBase.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 40) || `INV${Date.now().toString().slice(-10)}`;
 
       const body = {
-        invoice: note || order_id.slice(0, 20),
-        recipient_name: recipient_name.slice(0, 100),
+        invoice,
+        recipient_name: name,
         recipient_phone: cleanPhone,
-        recipient_address,
-        cod_amount: Math.round(Number(cod_amount)),
-        note: note || "",
+        recipient_address: address,
+        cod_amount: Math.round(amount),
+        note: String(note || "").slice(0, 120),
       };
 
       console.log("Sending to Steadfast:", JSON.stringify(body));
 
-      const res = await fetch(`${STEADFAST_BASE}/create_order`, {
-        method: "POST",
-        headers: steadfastHeaders,
-        body: JSON.stringify(body),
-      });
+      let lastError: { status: number; raw: string; message?: string; errors?: unknown; base: string } | null = null;
 
-      const resText = await res.text();
-      console.log("Steadfast raw response:", res.status, resText);
-
-      let data: any;
-      try {
-        data = JSON.parse(resText);
-      } catch {
-        console.error("Steadfast returned non-JSON:", resText.substring(0, 500));
-        return new Response(JSON.stringify({ error: "Steadfast API returned invalid response. Check API credentials." }), {
-          status: 502,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+      for (const base of STEADFAST_BASES) {
+        const url = `${base}/create_order`;
+        const res = await fetch(url, {
+          method: "POST",
+          headers: steadfastHeaders,
+          body: JSON.stringify(body),
         });
+
+        const raw = await res.text();
+        console.log(`Steadfast raw response [${base}]:`, res.status, raw);
+
+        let parsed: any = null;
+        try {
+          parsed = raw ? JSON.parse(raw) : null;
+        } catch {
+          parsed = null;
+        }
+
+        if (res.ok && parsed?.status === 200 && parsed?.consignment?.consignment_id) {
+          const supabase = createClient(
+            Deno.env.get("SUPABASE_URL")!,
+            Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+          );
+
+          await supabase
+            .from("orders")
+            .update({
+              courier_tracking_id: String(parsed.consignment.consignment_id),
+              status: "processing",
+            })
+            .eq("id", order_id);
+
+          return toJson({ success: true, consignment: parsed.consignment });
+        }
+
+        lastError = {
+          status: res.status,
+          raw,
+          message: parsed?.message,
+          errors: parsed?.errors,
+          base,
+        };
+
+        if (res.status !== 500) break;
       }
 
-      if (res.ok && data.status === 200) {
-        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-        const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-        const supabase = createClient(supabaseUrl, supabaseKey);
-
-        const consignment = data.consignment;
-        await supabase
-          .from("orders")
-          .update({
-            courier_tracking_id: String(consignment.consignment_id),
-            status: "processing",
-          })
-          .eq("id", order_id);
-
-        return new Response(JSON.stringify({ success: true, consignment }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      console.error("Steadfast API error:", data.message, data.errors);
-      return new Response(JSON.stringify({ error: data.message || "Steadfast API error", errors: data.errors }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      console.error("Steadfast API error:", lastError);
+      return toJson(
+        {
+          error: lastError?.message || "Steadfast API error",
+          status_code: lastError?.status,
+          provider_response: (lastError?.raw || "").slice(0, 500),
+          provider_errors: lastError?.errors || null,
+          endpoint: lastError?.base || null,
+        },
+        400,
+      );
     }
 
     if (action === "check_status") {
       const { consignment_id } = params;
+      if (!consignment_id) return toJson({ error: "consignment_id is required" }, 400);
 
-      const res = await fetch(
-        `${STEADFAST_BASE}/status_by_cid/${consignment_id}`,
-        { headers: steadfastHeaders }
-      );
+      const res = await fetch(`${STEADFAST_BASES[0]}/status_by_cid/${consignment_id}`, {
+        headers: steadfastHeaders,
+      });
 
-      const data = await res.json();
-
-      if (res.ok) {
-        return new Response(JSON.stringify({ success: true, delivery_status: data.delivery_status }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+      const raw = await res.text();
+      let data: any = null;
+      try {
+        data = raw ? JSON.parse(raw) : null;
+      } catch {
+        console.error("Steadfast status non-JSON:", raw);
       }
 
-      console.error("Steadfast status check error:", JSON.stringify(data));
-      return new Response(JSON.stringify({ error: "Could not fetch status" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      if (res.ok && data) return toJson({ success: true, delivery_status: data.delivery_status });
+
+      console.error("Steadfast status check error:", res.status, raw);
+      return toJson({ error: "Could not fetch status", status_code: res.status, provider_response: raw.slice(0, 500) }, 400);
     }
 
-    return new Response(JSON.stringify({ error: "Unknown action" }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return toJson({ error: "Unknown action" }, 400);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
     console.error("Edge function error:", msg);
-    return new Response(JSON.stringify({ error: msg }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return toJson({ error: msg }, 500);
   }
 });
