@@ -156,22 +156,22 @@ const HeroSlider = ({ slides }: HeroSliderProps) => {
             exit="exit"
             className="max-w-xl text-white"
           >
-            <motion.span variants={itemVariants} className="text-label text-white/80 mb-4 block">
+            <motion.span variants={itemVariants} className="text-label text-white/80 mb-2 md:mb-4 block text-[10px] md:text-xs">
               {slides[currentIndex].label}
             </motion.span>
 
-            <motion.h2 variants={itemVariants} className="heading-display text-white mb-6">
+            <motion.h2 variants={itemVariants} className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-serif font-bold text-white mb-2 md:mb-6 leading-tight">
               {slides[currentIndex].title}
             </motion.h2>
 
-            <motion.p variants={itemVariants} className="text-lg md:text-xl font-light leading-relaxed mb-8 text-white/90">
+            <motion.p variants={itemVariants} className="text-xs sm:text-sm md:text-xl font-light leading-relaxed mb-3 md:mb-8 text-white/90 line-clamp-2 md:line-clamp-none">
               {slides[currentIndex].description}
             </motion.p>
 
             <motion.div variants={itemVariants}>
               <AnimatedCtaButton
                 to={slides[currentIndex].ctaLink}
-                className="bg-white text-black px-8 py-4 text-sm uppercase tracking-[0.15em] font-medium hover:bg-white/90"
+                className="bg-white text-black px-4 py-2 md:px-8 md:py-4 text-[10px] md:text-sm uppercase tracking-[0.15em] font-medium hover:bg-white/90"
               >
                 {slides[currentIndex].ctaText}
               </AnimatedCtaButton>
@@ -185,32 +185,32 @@ const HeroSlider = ({ slides }: HeroSliderProps) => {
         <>
           <button
             onClick={prevSlide}
-            className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 p-3 bg-black/20 backdrop-blur-sm text-white hover:bg-black/40 transition-colors"
+            className="absolute left-2 md:left-8 top-1/2 -translate-y-1/2 p-1.5 md:p-3 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-colors"
             aria-label="Previous slide"
           >
-            <ChevronLeft size={24} />
+            <ChevronLeft className="w-4 h-4 md:w-6 md:h-6" />
           </button>
           <button
             onClick={nextSlide}
-            className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 p-3 bg-black/20 backdrop-blur-sm text-white hover:bg-black/40 transition-colors"
+            className="absolute right-2 md:right-8 top-1/2 -translate-y-1/2 p-1.5 md:p-3 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-colors"
             aria-label="Next slide"
           >
-            <ChevronRight size={24} />
+            <ChevronRight className="w-4 h-4 md:w-6 md:h-6" />
           </button>
         </>
       )}
 
       {/* Dot Indicators */}
       {slides.length > 1 && (
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3">
+        <div className="absolute bottom-3 md:bottom-8 left-1/2 -translate-x-1/2 flex gap-2 md:gap-3">
           {slides.map((_, index) => (
             <button
               key={index}
               onClick={() => goToSlide(index)}
-              className={`w-2 h-2 transition-all duration-300 ${
+              className={`h-1.5 md:h-2 rounded-full transition-all duration-300 ${
                 index === currentIndex
-                  ? "bg-white w-8"
-                  : "bg-white/50 hover:bg-white/70"
+                  ? "bg-white w-5 md:w-8"
+                  : "w-1.5 md:w-2 bg-white/50 hover:bg-white/70"
               }`}
               aria-label={`Go to slide ${index + 1}`}
             />
