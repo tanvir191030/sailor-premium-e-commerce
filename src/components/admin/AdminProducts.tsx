@@ -7,6 +7,28 @@ import { Plus, Pencil, Trash2, X, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 
+// Sub-category definitions per category
+const SUB_CATEGORIES: Record<string, string[]> = {
+  Women: ["Borkha", "Kameez", "Hijab", "Orna", "Shoes", "Bags", "Others"],
+  Men: ["Panjabi", "Shirt", "T-Shirt", "Pants", "Shoes", "Bags", "Others"],
+  Kids: ["Shirt", "T-Shirt", "Pants", "Shoes", "Others"],
+};
+
+const CLOTHING_SUBS = ["Borkha", "Kameez", "Panjabi", "Shirt", "T-Shirt", "Pants"];
+const HIJAB_SUBS = ["Hijab", "Orna"];
+const SHOE_SUBS = ["Shoes"];
+const NO_SIZE_SUBS = ["Bags", "Others"];
+
+const LETTER_SIZES = ["S", "M", "L", "XL", "XXL"];
+const SHOE_SIZES = ["36", "37", "38", "39", "40", "41", "42", "43", "44", "45"];
+
+const getSubCategoryType = (sub: string): "clothing" | "hijab" | "shoes" | "none" => {
+  if (CLOTHING_SUBS.includes(sub)) return "clothing";
+  if (HIJAB_SUBS.includes(sub)) return "hijab";
+  if (SHOE_SUBS.includes(sub)) return "shoes";
+  return "none";
+};
+
 const AdminProducts = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -55,10 +77,12 @@ const AdminProducts = () => {
     mutationFn: async () => {
       let image_url = undefined;
       if (imageFiles.length > 0) image_url = await uploadProductImage(imageFiles[0]);
+
+      const subType = form.sub_category ? getSubCategoryType(form.sub_category) : "none";
       let finalSizes: any = null;
       let totalStockFromSizes = 0;
 
-      if ((form.category === "Women" || form.category === "women") && form.sub_category) {
+      if (subType === "clothing" || subType === "hijab" || subType === "shoes") {
         const variants: any = {};
         Object.entries(form.sizes).forEach(([size, data]: any) => {
           if (data && data.stock && parseInt(data.stock) > 0) {
@@ -70,18 +94,7 @@ const AdminProducts = () => {
           }
         });
         if (Object.keys(variants).length > 0) {
-          finalSizes = { sub_category: form.sub_category, variants };
-        }
-      } else {
-        const parsed = Object.entries(form.sizes).reduce((acc, [size, val]: any) => {
-          const qty = parseInt(val);
-          if (!isNaN(qty) && qty > 0) acc[size] = qty;
-          return acc;
-        }, {} as Record<string, number>);
-
-        if (Object.keys(parsed).length > 0) {
-          finalSizes = parsed;
-          totalStockFromSizes = Object.values(parsed).reduce((a: number, b: unknown) => a + (b as number), 0);
+          finalSizes = { sub_category: form.sub_category, type: subType, variants };
         }
       }
 
@@ -166,7 +179,9 @@ const AdminProducts = () => {
         });
       } else {
         Object.entries(p.sizes).forEach(([k, v]) => {
-          initialSizes[k] = String(v);
+          if (k !== 'sub_category' && k !== 'type') {
+            initialSizes[k] = typeof v === 'object' ? v : String(v);
+          }
         });
       }
     }
@@ -187,6 +202,76 @@ const AdminProducts = () => {
   );
 
   const inputCls = "w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none bg-transparent text-foreground placeholder:text-muted-foreground";
+
+  const subType = form.sub_category ? getSubCategoryType(form.sub_category) : "none";
+  const availableSubCats = SUB_CATEGORIES[form.category] || [];
+
+  const renderSizeFields = () => {
+    if (!form.sub_category || subType === "none") {
+      // No size fields — just total stock
+      return (
+        <p className="text-xs text-muted-foreground italic">এই সাব-ক্যাটাগরিতে কোনো সাইজ ফিল্ড নেই। শুধু Total Stock ব্যবহার করুন।</p>
+      );
+    }
+
+    if (subType === "hijab") {
+      return (
+        <div className="space-y-4 border border-border p-3 rounded-lg bg-secondary/20">
+          <p className="text-xs font-medium text-muted-foreground">হিজাব/ওড়না — Width × Length (ইঞ্চি)</p>
+          <div className="flex flex-col gap-2">
+            <span className="text-sm font-medium">Free Size</span>
+            <div className="grid grid-cols-3 gap-2">
+              <input type="number" value={form.sizes["Free Size"]?.stock || ""} onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, "Free Size": { ...form.sizes["Free Size"], stock: e.target.value } } })} className={inputCls} placeholder="Stock" />
+              <input type="text" value={form.sizes["Free Size"]?.measurements?.width || ""} onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, "Free Size": { ...form.sizes["Free Size"], measurements: { ...form.sizes["Free Size"]?.measurements, width: e.target.value } } } })} className={inputCls} placeholder='Width (চওড়া)"' />
+              <input type="text" value={form.sizes["Free Size"]?.measurements?.length || ""} onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, "Free Size": { ...form.sizes["Free Size"], measurements: { ...form.sizes["Free Size"]?.measurements, length: e.target.value } } } })} className={inputCls} placeholder='Length (লম্বা)"' />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (subType === "shoes") {
+      return (
+        <div className="space-y-3 border border-border p-3 rounded-lg bg-secondary/20">
+          <p className="text-xs font-medium text-muted-foreground">জুতা — প্রতিটি সাইজের স্টক দিন</p>
+          <div className="grid grid-cols-5 gap-2">
+            {SHOE_SIZES.map((sz) => (
+              <div key={sz}>
+                <span className="block text-center text-[10px] text-muted-foreground mb-1">{sz}</span>
+                <input
+                  type="number"
+                  value={form.sizes[sz]?.stock || ""}
+                  onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, [sz]: { stock: e.target.value, measurements: {} } } })}
+                  className={`text-center px-1 py-2 border border-border rounded-lg text-sm focus:outline-none bg-transparent text-foreground placeholder:text-muted-foreground w-full`}
+                  placeholder="0"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // clothing
+    return (
+      <div className="space-y-3">
+        <p className="text-xs font-medium text-muted-foreground">পোশাক — সাইজ, স্টক ও মাপ দিন</p>
+        {LETTER_SIZES.map((sz) => (
+          <div key={sz} className="border border-border p-3 rounded-lg flex flex-col gap-2 bg-secondary/10">
+            <div className="flex justify-between items-center">
+              <span className="font-semibold text-sm w-12">{sz}</span>
+              <input type="number" value={form.sizes[sz]?.stock || ""} onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, [sz]: { ...form.sizes[sz], stock: e.target.value } } })} className={`${inputCls} w-24 py-1.5 px-2 text-center text-sm min-h-0`} placeholder="Stock" />
+            </div>
+            <div className="grid grid-cols-3 gap-1.5 mt-1">
+              <input type="text" value={form.sizes[sz]?.measurements?.bust || ""} onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, [sz]: { ...form.sizes[sz], measurements: { ...form.sizes[sz]?.measurements, bust: e.target.value } } } })} className={`${inputCls} text-[10px] px-1 py-1.5 h-auto text-center`} placeholder="Bust (বডি)" />
+              <input type="text" value={form.sizes[sz]?.measurements?.length || ""} onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, [sz]: { ...form.sizes[sz], measurements: { ...form.sizes[sz]?.measurements, length: e.target.value } } } })} className={`${inputCls} text-[10px] px-1 py-1.5 h-auto text-center`} placeholder="Length (লম্বা)" />
+              <input type="text" value={form.sizes[sz]?.measurements?.shoulder || ""} onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, [sz]: { ...form.sizes[sz], measurements: { ...form.sizes[sz]?.measurements, shoulder: e.target.value } } } })} className={`${inputCls} text-[10px] px-1 py-1.5 h-auto text-center`} placeholder="Shoulder (কাঁধ)" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -223,24 +308,24 @@ const AdminProducts = () => {
               <div className="grid grid-cols-2 gap-3">
                 <input value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder={t("admin.price")} type="number" className={inputCls} />
                 <input
-                  value={Object.keys(form.sizes).length > 0 ? String(Object.values(form.sizes).reduce((acc: number, curr: any) => acc + (parseInt(curr?.stock ?? curr) || 0), 0)) : form.stock}
+                  value={subType !== "none" && Object.keys(form.sizes).length > 0 ? String(Object.values(form.sizes).reduce((acc: number, curr: any) => acc + (parseInt(curr?.stock ?? curr) || 0), 0)) : form.stock}
                   onChange={(e) => setForm({ ...form, stock: e.target.value })}
-                  disabled={Object.keys(form.sizes).length > 0}
+                  disabled={subType !== "none" && Object.keys(form.sizes).length > 0}
                   placeholder={t("admin.stock")}
                   type="number"
-                  className={inputCls + (Object.keys(form.sizes).length > 0 ? " opacity-50 cursor-not-allowed" : "")}
+                  className={inputCls + (subType !== "none" && Object.keys(form.sizes).length > 0 ? " opacity-50 cursor-not-allowed" : "")}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value, sizes: {} })} className="px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none bg-card text-foreground">
+                <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value, sub_category: "", sizes: {} })} className="px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none bg-card text-foreground">
                   <option value="">{t("admin.selectCategory")}</option>
                   {categories.map((c: any) => <option key={c.id} value={c.name}>{c.name}</option>)}
                 </select>
-                {form.category === "Women" || form.category === "women" ? (
+                {availableSubCats.length > 0 ? (
                   <select value={form.sub_category} onChange={(e) => setForm({ ...form, sub_category: e.target.value, sizes: {} })} className="px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none bg-card text-foreground">
-                    <option value="">Select Sub-category</option>
-                    {["Borkha", "Hijab", "Orna", "Bags", "Shoes", "Others"].map((sc) => <option key={sc} value={sc}>{sc}</option>)}
+                    <option value="">Sub-category</option>
+                    {availableSubCats.map((sc) => <option key={sc} value={sc}>{sc}</option>)}
                   </select>
                 ) : (
                   <select value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} className="px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none bg-card text-foreground">
@@ -250,78 +335,17 @@ const AdminProducts = () => {
                 )}
               </div>
 
-              {(form.category === "Women" || form.category === "women") && (
-                <div className="grid grid-cols-1 gap-3">
-                  <select value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} className="px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none bg-card text-foreground">
-                    <option value="">{t("admin.selectBrand")}</option>
-                    {brands.map((b: any) => <option key={b.id} value={b.name}>{b.name}</option>)}
-                  </select>
-                </div>
+              {availableSubCats.length > 0 && (
+                <select value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none bg-card text-foreground">
+                  <option value="">{t("admin.selectBrand")}</option>
+                  {brands.map((b: any) => <option key={b.id} value={b.name}>{b.name}</option>)}
+                </select>
               )}
 
+              {/* Dynamic size/measurement fields */}
               <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1">Sizes & Measurements (Optional)</label>
-                {(form.category === "Women" || form.category === "women") && (form.sub_category === "Hijab" || form.sub_category === "Orna") ? (
-                  <div className="space-y-4 border border-border p-3 rounded-lg bg-secondary/20">
-                    <div className="flex flex-col gap-2">
-                      <span className="text-sm font-medium">Free Size</span>
-                      <div className="grid grid-cols-3 gap-2">
-                        <input
-                          type="number"
-                          value={form.sizes["Free Size"]?.stock || ""}
-                          onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, "Free Size": { ...form.sizes["Free Size"], stock: e.target.value } } })}
-                          className={inputCls} placeholder="Stock" />
-                        <input
-                          type="text"
-                          value={form.sizes["Free Size"]?.measurements?.width || ""}
-                          onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, "Free Size": { ...form.sizes["Free Size"], measurements: { ...form.sizes["Free Size"]?.measurements, width: e.target.value } } } })}
-                          className={inputCls} placeholder="Width (চওড়া)" />
-                        <input
-                          type="text"
-                          value={form.sizes["Free Size"]?.measurements?.length || ""}
-                          onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, "Free Size": { ...form.sizes["Free Size"], measurements: { ...form.sizes["Free Size"]?.measurements, length: e.target.value } } } })}
-                          className={inputCls} placeholder="Length (লম্বা)" />
-                      </div>
-                    </div>
-                  </div>
-                ) : (form.category === "Women" || form.category === "women") ? (
-                  <div className="space-y-3">
-                    {["S", "M", "L", "XL", "XXL"].map((sz) => (
-                      <div key={sz} className="border border-border p-3 rounded-lg flex flex-col gap-2 bg-secondary/10">
-                        <div className="flex justify-between items-center">
-                          <span className="font-semibold text-sm w-12">{sz}</span>
-                          <input
-                            type="number"
-                            value={form.sizes[sz]?.stock || ""}
-                            onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, [sz]: { ...form.sizes[sz], stock: e.target.value } } })}
-                            className={`${inputCls} w-24 py-1.5 px-2 text-center text-sm min-h-0`} placeholder="Stock" />
-                        </div>
-                        <div className="grid grid-cols-5 gap-1.5 mt-1">
-                          <input type="text" value={form.sizes[sz]?.measurements?.bust || ""} onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, [sz]: { ...form.sizes[sz], measurements: { ...form.sizes[sz]?.measurements, bust: e.target.value } } } })} className={`${inputCls} text-[10px] px-1 py-1.5 h-auto text-center`} placeholder="Bust" title="Bust (বডি)" />
-                          <input type="text" value={form.sizes[sz]?.measurements?.waist || ""} onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, [sz]: { ...form.sizes[sz], measurements: { ...form.sizes[sz]?.measurements, waist: e.target.value } } } })} className={`${inputCls} text-[10px] px-1 py-1.5 h-auto text-center`} placeholder="Waist" title="Waist (কোমর)" />
-                          <input type="text" value={form.sizes[sz]?.measurements?.hip || ""} onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, [sz]: { ...form.sizes[sz], measurements: { ...form.sizes[sz]?.measurements, hip: e.target.value } } } })} className={`${inputCls} text-[10px] px-1 py-1.5 h-auto text-center`} placeholder="Hip" title="Hip (হিপ)" />
-                          <input type="text" value={form.sizes[sz]?.measurements?.length || ""} onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, [sz]: { ...form.sizes[sz], measurements: { ...form.sizes[sz]?.measurements, length: e.target.value } } } })} className={`${inputCls} text-[10px] px-1 py-1.5 h-auto text-center`} placeholder="Length" title="Length (লম্বা)" />
-                          <input type="text" value={form.sizes[sz]?.measurements?.shoulder || ""} onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, [sz]: { ...form.sizes[sz], measurements: { ...form.sizes[sz]?.measurements, shoulder: e.target.value } } } })} className={`${inputCls} text-[10px] px-1 py-1.5 h-auto text-center`} placeholder="Shoulder" title="Shoulder (পুঁট)" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-5 gap-2">
-                    {["S", "M", "L", "XL", "XXL"].map((sz) => (
-                      <div key={sz}>
-                        <span className="block text-center text-[10px] text-muted-foreground mb-1">{sz}</span>
-                        <input
-                          type="number"
-                          value={form.sizes[sz] || ""}
-                          onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, [sz]: e.target.value } })}
-                          className={`text-center px-1 py-2 border border-border rounded-lg text-sm focus:outline-none bg-transparent text-foreground placeholder:text-muted-foreground w-full`}
-                          placeholder="0"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Sizes & Measurements</label>
+                {renderSizeFields()}
               </div>
 
               {/* English description */}
@@ -404,7 +428,10 @@ const AdminProducts = () => {
                       <div className="w-10 h-10 bg-secondary overflow-hidden rounded flex-shrink-0">
                         {p.image_url && <img src={p.image_url} alt="" className="w-full h-full object-cover" />}
                       </div>
-                      <span className="font-medium truncate max-w-[200px] text-foreground">{p.name}</span>
+                      <div>
+                        <span className="font-medium truncate max-w-[200px] text-foreground block">{p.name}</span>
+                        {p.sub_category && <span className="text-[10px] text-muted-foreground">{p.sub_category}</span>}
+                      </div>
                     </div>
                   </td>
                   <td className="p-3 text-muted-foreground">{p.category || "—"}</td>

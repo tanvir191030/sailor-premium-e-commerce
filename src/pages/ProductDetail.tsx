@@ -19,6 +19,10 @@ import { formatPrice } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
 
 const SIZES = ["S", "M", "L", "XL", "XXL"];
+const SHOE_SIZES = ["36", "37", "38", "39", "40", "41", "42", "43", "44", "45"];
+const HIJAB_SUBS = ["Hijab", "Orna"];
+const SHOE_SUBS = ["Shoes"];
+const NO_SIZE_SUBS = ["Bags", "Others"];
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -91,8 +95,11 @@ const ProductDetail = () => {
   const handleAddToCart = () => {
     if (!cartPayload) return;
 
-    // Check mandatory size selection
-    if (!selectedSize) {
+    // Check mandatory size selection (skip for no-size products)
+    const rawSizesCheck = product?.sizes as any;
+    const subCat = rawSizesCheck?.sub_category || product?.sub_category || "";
+    const isNoSize = NO_SIZE_SUBS.includes(subCat);
+    if (!isNoSize && !selectedSize) {
       setSizeError(true);
       toast({
         title: "সাইজ প্রয়োজন",
@@ -110,8 +117,11 @@ const ProductDetail = () => {
   const handleBuyNow = () => {
     if (!cartPayload) return;
 
-    // Check mandatory size selection
-    if (!selectedSize) {
+    // Check mandatory size selection (skip for no-size products)
+    const rawSizesCheck2 = product?.sizes as any;
+    const subCat2 = rawSizesCheck2?.sub_category || product?.sub_category || "";
+    const isNoSize2 = NO_SIZE_SUBS.includes(subCat2);
+    if (!isNoSize2 && !selectedSize) {
       setSizeError(true);
       toast({
         title: "সাইজ প্রয়োজন",
@@ -196,11 +206,13 @@ const ProductDetail = () => {
   const rawSizes = product.sizes as any;
   const isComplexSize = rawSizes && rawSizes.variants !== undefined;
   const productSubCategory = isComplexSize ? (rawSizes.sub_category || product.sub_category) : product.sub_category;
+  const sizeType = rawSizes?.type || (HIJAB_SUBS.includes(productSubCategory || "") ? "hijab" : SHOE_SUBS.includes(productSubCategory || "") ? "shoes" : NO_SIZE_SUBS.includes(productSubCategory || "") ? "none" : "clothing");
   const sizeVariants = isComplexSize ? rawSizes.variants : (rawSizes || {});
+  const isNoSizeProduct = sizeType === "none" || NO_SIZE_SUBS.includes(productSubCategory || "");
 
-  const hasSpecificSizes = sizeVariants && Object.keys(sizeVariants).length > 0;
+  const hasSpecificSizes = !isNoSizeProduct && sizeVariants && Object.keys(sizeVariants).length > 0;
 
-  const displaySizes = hasSpecificSizes ? Object.keys(sizeVariants) : SIZES;
+  const displaySizes = hasSpecificSizes ? Object.keys(sizeVariants) : (sizeType === "shoes" ? SHOE_SIZES : SIZES);
 
   const isInStock = product.stock > 0;
   const wishlisted = isWishlisted(product.id);
@@ -387,73 +399,100 @@ const ProductDetail = () => {
                   )}
                 </div>
 
-                {/* Size Selection */}
-                <div className={`transition-all duration-300 ${sizeError ? "animate-[shake_0.5s_ease-in-out] rounded-xl p-3 -mx-3 border border-destructive/50 bg-destructive/5" : ""}`}>
-                  <div className="flex items-center justify-between mb-2.5">
-                    <span className="text-sm font-medium">
-                      সাইজ বেছে নিন
-                      {sizeError && <span className="text-destructive text-xs ml-2 font-normal animate-pulse">অনুগ্রহ করে একটি সাইজ সিলেক্ট করুন</span>}
-                    </span>
-                    <button
-                      onClick={() => setSizeChartOpen(true)}
-                      className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors min-h-[44px] px-2"
-                    >
-                      <Ruler size={12} /> সাইজ গাইড
-                    </button>
+                {/* Size Selection — dynamic based on sub-category */}
+                {isNoSizeProduct ? (
+                  /* Bags/Others: no size selection needed */
+                  <div className="p-3 bg-secondary/20 rounded-lg border border-border/50">
+                    <span className="text-sm text-muted-foreground">ফ্রি সাইজ — সাইজ নির্বাচনের প্রয়োজন নেই</span>
                   </div>
-                  <div className="flex gap-2 flex-wrap">
-                    {displaySizes.map((size) => {
-                      const sizeData = sizeVariants[size];
-                      const stockCount = hasSpecificSizes
-                        ? (typeof sizeData === 'object' && sizeData !== null ? Number(sizeData.stock) : Number(sizeData) || 0)
-                        : null;
-                      const isOutOfStock = hasSpecificSizes && stockCount === 0;
-
+                ) : sizeType === "hijab" && hasSpecificSizes ? (
+                  /* Hijab/Orna: show dimensions */
+                  <div className="space-y-2">
+                    <span className="text-sm font-medium">সাইজ</span>
+                    {Object.entries(sizeVariants).map(([size, data]: [string, any]) => {
+                      const m = data?.measurements || {};
                       return (
-                        <div key={size} className="flex flex-col items-center gap-1">
-                          <button
-                            onClick={() => {
-                              if (isOutOfStock) return;
-                              setSelectedSize(size === selectedSize ? null : size);
-                              setSizeError(false);
-                              setQuantity(1); // Reset quantity when size changes
-                            }}
-                            disabled={isOutOfStock}
-                            className={`min-w-[44px] min-h-[44px] px-3 text-sm font-medium border transition-colors ${isOutOfStock
-                              ? "bg-secondary text-muted-foreground border-border cursor-not-allowed opacity-50"
-                              : selectedSize === size
-                                ? "bg-primary text-primary-foreground border-primary"
-                                : sizeError
-                                  ? "bg-background text-destructive border-destructive hover:border-destructive/80"
-                                  : "bg-background text-foreground border-border hover:border-primary"
-                              }`}
-                          >
-                            {size}
-                          </button>
-                          {hasSpecificSizes && stockCount !== null && (
-                            <span className={`text-[10px] ${stockCount > 0 ? "text-muted-foreground" : "text-destructive font-medium"}`}>
-                              {stockCount > 0 ? `${stockCount} pcs` : "Out"}
-                            </span>
+                        <div key={size} className="p-3 bg-secondary/20 rounded-lg border border-border/50">
+                          <span className="text-sm font-medium">{size}</span>
+                          {m.width && m.length && (
+                            <span className="ml-2 text-sm text-muted-foreground">— {m.width}" × {m.length}"</span>
                           )}
+                          <span className="ml-2 text-xs text-muted-foreground">({data.stock} pcs)</span>
                         </div>
                       );
                     })}
                   </div>
-                  {/* Display measurements if selected size has any */}
-                  {selectedSize && hasSpecificSizes && typeof sizeVariants[selectedSize] === 'object' && sizeVariants[selectedSize].measurements && Object.keys(sizeVariants[selectedSize].measurements).length > 0 && (
-                    <div className="mt-4 p-3 bg-secondary/30 rounded-lg border border-border/50 transition-all text-xs text-muted-foreground">
-                      <p className="font-medium text-foreground mb-1.5 uppercase tracking-wide text-[10px]">Measurements for {selectedSize}</p>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        {Object.entries(sizeVariants[selectedSize].measurements).map(([key, val]) => (
-                          <div key={key} className="flex flex-col">
-                            <span className="capitalize text-[10px]">{key}</span>
-                            <span className="font-semibold text-foreground">{String(val)}</span>
-                          </div>
-                        ))}
-                      </div>
+                ) : (
+                  /* Clothing / Shoes: show size buttons */
+                  <div className={`transition-all duration-300 ${sizeError ? "animate-[shake_0.5s_ease-in-out] rounded-xl p-3 -mx-3 border border-destructive/50 bg-destructive/5" : ""}`}>
+                    <div className="flex items-center justify-between mb-2.5">
+                      <span className="text-sm font-medium">
+                        {sizeType === "shoes" ? "সাইজ বেছে নিন (EU)" : "সাইজ বেছে নিন"}
+                        {sizeError && <span className="text-destructive text-xs ml-2 font-normal animate-pulse">অনুগ্রহ করে একটি সাইজ সিলেক্ট করুন</span>}
+                      </span>
+                      {sizeType !== "shoes" && (
+                        <button
+                          onClick={() => setSizeChartOpen(true)}
+                          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors min-h-[44px] px-2"
+                        >
+                          <Ruler size={12} /> সাইজ গাইড
+                        </button>
+                      )}
                     </div>
-                  )}
-                </div>
+                    <div className="flex gap-2 flex-wrap">
+                      {displaySizes.map((size) => {
+                        const sizeData = sizeVariants[size];
+                        const stockCount = hasSpecificSizes
+                          ? (typeof sizeData === 'object' && sizeData !== null ? Number(sizeData.stock) : Number(sizeData) || 0)
+                          : null;
+                        const isOutOfStock = hasSpecificSizes && stockCount === 0;
+
+                        return (
+                          <div key={size} className="flex flex-col items-center gap-1">
+                            <button
+                              onClick={() => {
+                                if (isOutOfStock) return;
+                                setSelectedSize(size === selectedSize ? null : size);
+                                setSizeError(false);
+                                setQuantity(1);
+                              }}
+                              disabled={isOutOfStock}
+                              className={`min-w-[44px] min-h-[44px] px-3 text-sm font-medium border transition-colors ${isOutOfStock
+                                ? "bg-secondary text-muted-foreground border-border cursor-not-allowed opacity-50"
+                                : selectedSize === size
+                                  ? "bg-primary text-primary-foreground border-primary"
+                                  : sizeError
+                                    ? "bg-background text-destructive border-destructive hover:border-destructive/80"
+                                    : "bg-background text-foreground border-border hover:border-primary"
+                                }`}
+                            >
+                              {size}
+                            </button>
+                            {hasSpecificSizes && stockCount !== null && (
+                              <span className={`text-[10px] ${stockCount > 0 ? "text-muted-foreground" : "text-destructive font-medium"}`}>
+                                {stockCount > 0 ? `${stockCount} pcs` : "Out"}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {/* Display measurements if selected size has any */}
+                    {selectedSize && hasSpecificSizes && typeof sizeVariants[selectedSize] === 'object' && sizeVariants[selectedSize].measurements && Object.keys(sizeVariants[selectedSize].measurements).length > 0 && (
+                      <div className="mt-4 p-3 bg-secondary/30 rounded-lg border border-border/50 transition-all text-xs text-muted-foreground">
+                        <p className="font-medium text-foreground mb-1.5 uppercase tracking-wide text-[10px]">Measurements for {selectedSize}</p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                          {Object.entries(sizeVariants[selectedSize].measurements).map(([key, val]) => (
+                            <div key={key} className="flex flex-col">
+                              <span className="capitalize text-[10px]">{key}</span>
+                              <span className="font-semibold text-foreground">{String(val)}"</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Quantity Selector + CTA Buttons */}
                 <div className="space-y-3 pt-1">
