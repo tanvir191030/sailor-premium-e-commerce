@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, ShoppingCart, Zap, Heart, Share2, Facebook,
   MessageCircle, ZoomIn, ChevronLeft, ChevronRight, Ruler,
-  Package, Tag, CheckCircle, XCircle, Plus, Minus
+  Package, Tag, CheckCircle, XCircle, Plus, Minus,
+  Truck, RotateCcw, Banknote, Star, Send, Camera
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
@@ -17,6 +18,8 @@ import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { formatPrice } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { optimizeProductImage } from "@/lib/imageOptimizer";
 
 const SIZES = ["S", "M", "L", "XL", "XXL"];
 const SHOE_SIZES = ["36", "37", "38", "39", "40", "41", "42", "43", "44", "45"];
@@ -31,6 +34,7 @@ const ProductDetail = () => {
   const { data: allProducts = [] } = useProducts();
   const { addItem, setIsOpen, setIsBuyNowOpen } = useCart();
   const { toggle, isWishlisted } = useWishlist();
+  const queryClient = useQueryClient();
 
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -41,6 +45,63 @@ const ProductDetail = () => {
   const [sizeError, setSizeError] = useState(false);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const { toast } = useToast();
+
+  // Reviews state
+  const [reviewName, setReviewName] = useState("");
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewImage, setReviewImage] = useState<File | null>(null);
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const reviewFileRef = useRef<HTMLInputElement>(null);
+
+  const { data: reviews = [] } = useQuery({
+    queryKey: ["reviews", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("reviews")
+        .select("*")
+        .eq("product_id", id!)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
+  const avgRating = reviews.length > 0
+    ? (reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviews.length).toFixed(1)
+    : null;
+
+  const handleSubmitReview = async () => {
+    if (!reviewName.trim()) { toast({ title: "নাম দিন", variant: "destructive" }); return; }
+    setSubmittingReview(true);
+    try {
+      let image_url = null;
+      if (reviewImage) {
+        const optimized = await optimizeProductImage(reviewImage);
+        const path = `reviews/${crypto.randomUUID()}.webp`;
+        const { error: upErr } = await supabase.storage.from("product-images").upload(path, optimized, { contentType: "image/webp" });
+        if (upErr) throw upErr;
+        const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+        image_url = data.publicUrl;
+      }
+      const { error } = await supabase.from("reviews").insert({
+        product_id: id!,
+        customer_name: reviewName,
+        rating: reviewRating,
+        comment: reviewComment || null,
+        image_url,
+      });
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["reviews", id] });
+      setReviewName(""); setReviewComment(""); setReviewRating(5); setReviewImage(null);
+      toast({ title: "✓ আপনার রিভিউ জমা হয়েছে!" });
+    } catch (err: any) {
+      toast({ title: "ত্রুটি", description: err.message, variant: "destructive" });
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   // Touch swipe state
   const touchStartX = useRef(0);
@@ -575,10 +636,51 @@ const ProductDetail = () => {
                     </button>
                   </div>
                 </div>
+
+                {/* Trust Badges */}
+                <div className="grid grid-cols-3 gap-2 pt-1">
+                  <div className="flex flex-col items-center gap-1.5 p-3 bg-secondary/30 rounded-lg border border-border/50 text-center">
+                    <Truck size={18} className="text-primary" />
+                    <span className="text-[10px] font-medium leading-tight">ফ্রি শিপিং</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1.5 p-3 bg-secondary/30 rounded-lg border border-border/50 text-center">
+                    <RotateCcw size={18} className="text-primary" />
+                    <span className="text-[10px] font-medium leading-tight">৭ দিন রিটার্ন</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1.5 p-3 bg-secondary/30 rounded-lg border border-border/50 text-center">
+                    <Banknote size={18} className="text-primary" />
+                    <span className="text-[10px] font-medium leading-tight">ক্যাশ অন ডেলিভারি</span>
+                  </div>
+                </div>
+
+                {/* Description with formatting */}
                 {product.description && (
                   <div className="border-t border-border pt-4 md:pt-5">
                     <h3 className="text-sm font-semibold uppercase tracking-wide mb-2.5">পণ্যের বিবরণ</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{product.description}</p>
+                    <div className="text-sm text-muted-foreground leading-relaxed space-y-1.5">
+                      {product.description.split("\n").map((line, i) => {
+                        // Support bullet points: lines starting with - or •
+                        const isBullet = /^\s*[-•]\s*/.test(line);
+                        const cleaned = line.replace(/^\s*[-•]\s*/, "");
+                        // Support **bold** text
+                        const formatBold = (text: string) => {
+                          const parts = text.split(/\*\*(.*?)\*\*/g);
+                          return parts.map((part, j) =>
+                            j % 2 === 1 ? <strong key={j} className="text-foreground font-semibold">{part}</strong> : part
+                          );
+                        };
+                        if (isBullet) {
+                          return (
+                            <div key={i} className="flex items-start gap-2 pl-1">
+                              <span className="text-primary mt-0.5 text-xs">•</span>
+                              <span>{formatBold(cleaned)}</span>
+                            </div>
+                          );
+                        }
+                        if (!line.trim()) return <div key={i} className="h-2" />;
+                        return <p key={i}>{formatBold(line)}</p>;
+                      })}
+                    </div>
                   </div>
                 )}
 
@@ -621,6 +723,100 @@ const ProductDetail = () => {
                   </button>
                 </div>
               </div>
+            </div>
+          </section>
+
+          {/* Customer Reviews Section */}
+          <section className="border-t border-border py-10 md:py-16">
+            <div className="container mx-auto px-4 md:px-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="heading-section text-lg md:text-xl">কাস্টমার রিভিউ</h2>
+                  {avgRating && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="flex">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star key={s} size={14} className={s <= Math.round(Number(avgRating)) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"} />
+                        ))}
+                      </div>
+                      <span className="text-sm font-medium">{avgRating}</span>
+                      <span className="text-xs text-muted-foreground">({reviews.length} টি রিভিউ)</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Review Form */}
+              <div className="bg-secondary/20 rounded-xl border border-border p-4 md:p-6 mb-8 max-w-2xl">
+                <h3 className="text-sm font-semibold mb-4">আপনার মতামত দিন</h3>
+                <div className="space-y-3">
+                  <input
+                    value={reviewName}
+                    onChange={(e) => setReviewName(e.target.value)}
+                    placeholder="আপনার নাম *"
+                    className="w-full px-3 py-2.5 border border-border rounded-lg text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary/30 placeholder:text-muted-foreground"
+                  />
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">রেটিং:</span>
+                    <div className="flex gap-0.5">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <button key={s} onClick={() => setReviewRating(s)} className="p-0.5">
+                          <Star size={20} className={s <= reviewRating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30 hover:text-yellow-400/50"} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <textarea
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    placeholder="আপনার অভিজ্ঞতা লিখুন..."
+                    rows={3}
+                    className="w-full px-3 py-2.5 border border-border rounded-lg text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary/30 resize-none placeholder:text-muted-foreground"
+                  />
+                  <div className="flex items-center gap-3">
+                    <input ref={reviewFileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) setReviewImage(f); }} />
+                    <button onClick={() => reviewFileRef.current?.click()} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded-lg px-3 py-2 transition-colors">
+                      <Camera size={13} /> {reviewImage ? reviewImage.name.slice(0, 20) : "ছবি যোগ করুন"}
+                    </button>
+                    <button
+                      onClick={handleSubmitReview}
+                      disabled={submittingReview}
+                      className="ml-auto flex items-center gap-1.5 bg-primary text-primary-foreground px-5 py-2.5 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                    >
+                      <Send size={13} /> {submittingReview ? "জমা হচ্ছে..." : "জমা দিন"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Reviews List */}
+              {reviews.length > 0 ? (
+                <div className="space-y-4 max-w-2xl">
+                  {reviews.map((review: any) => (
+                    <div key={review.id} className="p-4 bg-card rounded-xl border border-border">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <span className="text-sm font-semibold">{review.customer_name}</span>
+                          <div className="flex gap-0.5 mt-0.5">
+                            {[1, 2, 3, 4, 5].map((s) => (
+                              <Star key={s} size={11} className={s <= review.rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"} />
+                            ))}
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground">
+                          {new Date(review.created_at).toLocaleDateString("bn-BD")}
+                        </span>
+                      </div>
+                      {review.comment && <p className="text-sm text-muted-foreground leading-relaxed">{review.comment}</p>}
+                      {review.image_url && (
+                        <img src={review.image_url} alt="Review" className="mt-2 w-24 h-24 object-cover rounded-lg border border-border" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">এখনো কোনো রিভিউ নেই। প্রথম রিভিউ দিন!</p>
+              )}
             </div>
           </section>
 
