@@ -127,6 +127,17 @@ Deno.serve(async (req) => {
       }
 
       console.error("Steadfast API error:", lastError);
+
+      // Friendly message for inactive account (401)
+      if (lastError?.status === 401) {
+        const raw = (lastError?.raw || "").toLowerCase();
+        const isPending = raw.includes("not active") || raw.includes("pending");
+        return toJson(
+          { error: isPending ? "Steadfast অ্যাকাউন্ট এখনো অ্যাক্টিভ হয়নি। প্রোভাইডারের সাথে যোগাযোগ করুন।" : "Steadfast API credentials অবৈধ।" },
+          401,
+        );
+      }
+
       return toJson(
         {
           error: lastError?.message || "Steadfast API error",
