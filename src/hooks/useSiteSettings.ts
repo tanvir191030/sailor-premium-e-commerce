@@ -15,6 +15,8 @@ export interface SiteSettings {
   facebook_url: string;
   instagram_url: string;
   twitter_url: string;
+  tiktok_url: string;
+  youtube_url: string;
   site_title: string;
   meta_description: string;
   privacy_policy: string;
@@ -53,6 +55,8 @@ const DEFAULTS: SiteSettings = {
   facebook_url: "https://facebook.com",
   instagram_url: "https://instagram.com",
   twitter_url: "https://twitter.com",
+  tiktok_url: "",
+  youtube_url: "",
   site_title: "Modest Mart - Premium Fashion Bangladesh",
   meta_description: "Modest Mart - বাংলাদেশের সেরা প্রিমিয়াম ফ্যাশন ব্র্যান্ড। নারী, পুরুষ ও শিশুদের জন্য সর্বোচ্চ মানের পোশাক।",
   privacy_policy: "",

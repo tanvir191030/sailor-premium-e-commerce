@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Instagram, Facebook, MapPin, Mail, Phone, MessageCircle } from "lucide-react";
+import { Instagram, Facebook, MapPin, Mail, Phone, MessageCircle, Youtube } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
@@ -47,6 +47,8 @@ const Footer = () => {
   const instagramUrl = settings.instagram_url || settings.instagram || "#";
   const whatsappNumber = settings.whatsapp_number || "";
   const whatsappUrl = whatsappNumber ? `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, "")}` : "#";
+  const tiktokUrl = settings.tiktok_url || "";
+  const youtubeUrl = settings.youtube_url || "";
   const aboutUs = settings.about_us || t("footer.tagline");
   const officeAddress = settings.office_address;
   const supportEmail = settings.support_email || settings.contact_email;
@@ -119,6 +121,16 @@ const Footer = () => {
               <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-primary-foreground/10 transition-colors rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="WhatsApp">
                 <MessageCircle size={18} />
               </a>
+              {tiktokUrl && (
+                <a href={tiktokUrl} target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-primary-foreground/10 transition-colors rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="TikTok">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.71a8.2 8.2 0 004.76 1.52v-3.4a4.85 4.85 0 01-1-.14z"/></svg>
+                </a>
+              )}
+              {youtubeUrl && (
+                <a href={youtubeUrl} target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-primary-foreground/10 transition-colors rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="YouTube">
+                  <Youtube size={18} />
+                </a>
+              )}
             </div>
           </div>
 

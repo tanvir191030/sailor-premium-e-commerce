@@ -63,6 +63,8 @@ const AdminSettings = () => {
   const [facebookUrl, setFacebookUrl] = useState("");
   const [instagramUrl, setInstagramUrl] = useState("");
   const [twitterUrl, setTwitterUrl] = useState("");
+  const [tiktokUrl, setTiktokUrl] = useState("");
+  const [youtubeUrl, setYoutubeUrl] = useState("");
   // SEO
   const [siteTitle, setSiteTitle] = useState("");
   const [metaDescription, setMetaDescription] = useState("");
@@ -115,6 +117,8 @@ const AdminSettings = () => {
     setFacebookUrl(getSetting("facebook_url", getSetting("facebook", "")));
     setInstagramUrl(getSetting("instagram_url", getSetting("instagram", "")));
     setTwitterUrl(getSetting("twitter_url", ""));
+    setTiktokUrl(getSetting("tiktok_url", ""));
+    setYoutubeUrl(getSetting("youtube_url", ""));
     setSiteTitle(getSetting("site_title", "Modest Mart - Premium Fashion Bangladesh"));
     setMetaDescription(getSetting("meta_description", ""));
     setWebsiteUrl(getSetting("website_url", ""));
@@ -182,6 +186,8 @@ const AdminSettings = () => {
       { key: "facebook_url", value: facebookUrl },
       { key: "instagram_url", value: instagramUrl },
       { key: "twitter_url", value: twitterUrl },
+      { key: "tiktok_url", value: tiktokUrl },
+      { key: "youtube_url", value: youtubeUrl },
       { key: "facebook", value: facebookUrl },
       { key: "instagram", value: instagramUrl },
     ]);
@@ -528,6 +534,12 @@ const AdminSettings = () => {
           </Field>
           <Field label="Twitter / X Profile URL">
             <input value={twitterUrl} onChange={(e) => setTwitterUrl(e.target.value)} placeholder="https://twitter.com/sailorbd" className={inputCls} />
+          </Field>
+          <Field label="TikTok Profile URL (টিকটক)">
+            <input value={tiktokUrl} onChange={(e) => setTiktokUrl(e.target.value)} placeholder="https://tiktok.com/@sailorbd" className={inputCls} />
+          </Field>
+          <Field label="YouTube Channel URL (ইউটিউব)">
+            <input value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} placeholder="https://youtube.com/@sailorbd" className={inputCls} />
           </Field>
         </div>
         <SaveBtn onClick={handleSaveSocial} />
