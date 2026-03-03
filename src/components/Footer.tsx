@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Instagram, Facebook, Twitter, MapPin, Mail, Phone } from "lucide-react";
+import { Instagram, Facebook, MapPin, Mail, Phone, MessageCircle } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
@@ -43,9 +43,10 @@ const Footer = () => {
   ];
 
   const storeName = settings.store_name || "Modest Mart";
-  const facebookUrl = settings.facebook_url || settings.facebook || "https://facebook.com";
-  const instagramUrl = settings.instagram_url || settings.instagram || "https://instagram.com";
-  const twitterUrl = settings.twitter_url || "https://twitter.com";
+  const facebookUrl = settings.facebook_url || settings.facebook || "#";
+  const instagramUrl = settings.instagram_url || settings.instagram || "#";
+  const whatsappNumber = settings.whatsapp_number || "";
+  const whatsappUrl = whatsappNumber ? `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, "")}` : "#";
   const aboutUs = settings.about_us || t("footer.tagline");
   const officeAddress = settings.office_address;
   const supportEmail = settings.support_email || settings.contact_email;
@@ -115,8 +116,8 @@ const Footer = () => {
               <a href={facebookUrl} target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-primary-foreground/10 transition-colors rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Facebook">
                 <Facebook size={18} />
               </a>
-              <a href={twitterUrl} target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-primary-foreground/10 transition-colors rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Twitter">
-                <Twitter size={18} />
+              <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-primary-foreground/10 transition-colors rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="WhatsApp">
+                <MessageCircle size={18} />
               </a>
             </div>
           </div>
