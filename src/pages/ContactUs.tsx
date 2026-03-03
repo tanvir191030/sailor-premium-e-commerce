@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ArrowLeft, MapPin, Mail, Phone, Send, Facebook, Instagram, Twitter } from "lucide-react";
+import { ArrowLeft, MapPin, Mail, Phone, Send, Facebook, Instagram, Twitter, Youtube } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PageTransition from "@/components/PageTransition";
@@ -20,7 +20,9 @@ const ContactUs = () => {
   const officeAddress = settings.office_address || "ঢাকা, বাংলাদেশ";
   const facebookUrl = settings.facebook_url || settings.facebook || "https://facebook.com";
   const instagramUrl = settings.instagram_url || settings.instagram || "https://instagram.com";
-  const twitterUrl = settings.twitter_url || "https://twitter.com";
+  const twitterUrl = settings.twitter_url || "";
+  const tiktokUrl = settings.tiktok_url || "";
+  const youtubeUrl = settings.youtube_url || "";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,16 +84,32 @@ const ContactUs = () => {
 
                   <div className="mt-8 pt-8 border-t border-border">
                     <p className="text-xs text-muted-foreground mb-4 uppercase tracking-wider">সোশ্যাল মিডিয়া</p>
-                    <div className="flex gap-3">
-                      <a href={facebookUrl} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors text-foreground">
-                        <Facebook size={18} />
-                      </a>
-                      <a href={instagramUrl} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors text-foreground">
-                        <Instagram size={18} />
-                      </a>
-                      <a href={twitterUrl} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors text-foreground">
-                        <Twitter size={18} />
-                      </a>
+                    <div className="flex gap-3 flex-wrap">
+                      {facebookUrl && (
+                        <a href={facebookUrl} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors text-foreground">
+                          <Facebook size={18} />
+                        </a>
+                      )}
+                      {instagramUrl && (
+                        <a href={instagramUrl} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors text-foreground">
+                          <Instagram size={18} />
+                        </a>
+                      )}
+                      {twitterUrl && (
+                        <a href={twitterUrl} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors text-foreground">
+                          <Twitter size={18} />
+                        </a>
+                      )}
+                      {tiktokUrl && (
+                        <a href={tiktokUrl} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors text-foreground">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.71a8.2 8.2 0 004.76 1.52v-3.4a4.85 4.85 0 01-1-.14z"/></svg>
+                        </a>
+                      )}
+                      {youtubeUrl && (
+                        <a href={youtubeUrl} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors text-foreground">
+                          <Youtube size={18} />
+                        </a>
+                      )}
                     </div>
                   </div>
 
