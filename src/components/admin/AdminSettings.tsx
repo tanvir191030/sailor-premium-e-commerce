@@ -66,6 +66,7 @@ const AdminSettings = () => {
   // SEO
   const [siteTitle, setSiteTitle] = useState("");
   const [metaDescription, setMetaDescription] = useState("");
+  const [websiteUrl, setWebsiteUrl] = useState("");
   // Delivery
   const [insideDhaka, setInsideDhaka] = useState("80");
   const [outsideDhaka, setOutsideDhaka] = useState("130");
@@ -114,8 +115,9 @@ const AdminSettings = () => {
     setFacebookUrl(getSetting("facebook_url", getSetting("facebook", "")));
     setInstagramUrl(getSetting("instagram_url", getSetting("instagram", "")));
     setTwitterUrl(getSetting("twitter_url", ""));
-    setSiteTitle(getSetting("site_title", "SAILOR - Premium Fashion Bangladesh"));
+    setSiteTitle(getSetting("site_title", "Modest Mart - Premium Fashion Bangladesh"));
     setMetaDescription(getSetting("meta_description", ""));
+    setWebsiteUrl(getSetting("website_url", ""));
     setInsideDhaka(getSetting("delivery_inside_dhaka", "80"));
     setOutsideDhaka(getSetting("delivery_outside_dhaka", "130"));
     setBkashNumber(getSetting("bkash_number", ""));
@@ -190,6 +192,7 @@ const AdminSettings = () => {
     await saveAll([
       { key: "site_title", value: siteTitle },
       { key: "meta_description", value: metaDescription },
+      { key: "website_url", value: websiteUrl },
     ]);
     toast({ title: "✓ SEO সেটিংস সেভ হয়েছে" });
   };
@@ -534,10 +537,14 @@ const AdminSettings = () => {
       <Section icon={Search} title="SEO সেটিংস">
         <div className="space-y-4 max-w-2xl">
           <Field label={`সাইটের টাইটেল (${siteTitle.length}/60 অক্ষর)`}>
-            <input value={siteTitle} onChange={(e) => setSiteTitle(e.target.value)} maxLength={60} placeholder="SAILOR - Premium Fashion Bangladesh" className={inputCls} />
+            <input value={siteTitle} onChange={(e) => setSiteTitle(e.target.value)} maxLength={60} placeholder="Modest Mart - Premium Fashion Bangladesh" className={inputCls} />
           </Field>
           <Field label={`মেটা বিবরণ (${metaDescription.length}/160 অক্ষর)`}>
-            <textarea rows={3} value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} maxLength={160} placeholder="SAILOR - বাংলাদেশের সেরা প্রিমিয়াম ফ্যাশন ব্র্যান্ড..." className={textareaCls} />
+            <textarea rows={3} value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} maxLength={160} placeholder="Modest Mart - বাংলাদেশের সেরা প্রিমিয়াম ফ্যাশন ব্র্যান্ড..." className={textareaCls} />
+          </Field>
+          <Field label="ওয়েবসাইট URL (ইনভয়েসে QR Code হিসেবে দেখাবে)">
+            <input value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} placeholder="https://yoursite.com" className={inputCls} />
+            <p className="text-xs text-muted-foreground mt-1.5">এই URL ইনভয়েসের নিচে QR Code আকারে দেখাবে।</p>
           </Field>
         </div>
         <SaveBtn onClick={handleSaveSEO} />

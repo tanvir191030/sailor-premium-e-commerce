@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/lib/currency";
 import { FileDown, Search, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import jsPDF from "jspdf";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { generateInvoiceHTML } from "@/lib/invoiceTemplate";
 
 const statusColors: Record<string, string> = {
   pending:    "bg-amber-500/10 text-amber-500",
@@ -23,6 +24,7 @@ const AdminOrders = () => {
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { settings: siteSettings } = useSiteSettings();
 
   const { data: orders = [] } = useQuery({
     queryKey: ["admin-orders"],
@@ -62,23 +64,31 @@ const AdminOrders = () => {
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  const generateInvoice = (order: any) => {
-    const doc = new jsPDF();
-    doc.setFontSize(22); doc.text("SAILOR", 20, 25);
-    doc.setFontSize(10); doc.setTextColor(100); doc.text("Invoice / Memo", 20, 33); doc.line(20, 36, 190, 36);
-    doc.setTextColor(0); doc.text(`Order ID: #${order.id.slice(0, 8)}`, 20, 45);
-    doc.text(`Date: ${new Date(order.created_at).toLocaleDateString("en-GB")}`, 20, 52);
-    doc.text(`Status: ${(order.status || "pending").toUpperCase()}`, 130, 45);
-    if (order.payment_method) doc.text(`Payment: ${order.payment_method}`, 130, 52);
-    doc.setFontSize(11); doc.text("Customer Details:", 20, 65);
-    doc.setFontSize(9); doc.text(`Name: ${order.customer_name}`, 25, 73); doc.text(`Phone: ${order.phone}`, 25, 80); doc.text(`Address: ${order.address}`, 25, 87);
-    let y = 100; doc.setFontSize(9); doc.setFillColor(245, 245, 245); doc.rect(20, y - 5, 170, 10, "F");
-    doc.text("Item", 25, y + 2); doc.text("Qty", 120, y + 2); doc.text("Price", 145, y + 2); doc.text("Total", 170, y + 2); y += 12;
+  const handleGenerateInvoice = (order: any) => {
     const items = Array.isArray(order.cart_items) ? order.cart_items : [];
-    items.forEach((item: any) => { doc.text(String(item.name || "Item").substring(0, 40), 25, y); doc.text(String(item.quantity || 1), 123, y); doc.text(`BDT ${item.price || 0}`, 145, y); doc.text(`BDT ${(item.price || 0) * (item.quantity || 1)}`, 170, y); y += 8; });
-    doc.line(20, y, 190, y); y += 8; doc.setFontSize(12); doc.text(`Total: BDT ${order.total}`, 140, y);
-    if (order.courier_tracking_id) { y += 12; doc.setFontSize(9); doc.text(`Courier Tracking: ${order.courier_tracking_id}`, 20, y); }
-    doc.save(`invoice-${order.id.slice(0, 8)}.pdf`);
+    const deliveryCharge = order.delivery_charge ?? 0;
+    const subtotal = order.total - deliveryCharge;
+
+    const html = generateInvoiceHTML({
+      storeName: siteSettings.store_name || "Modest Mart",
+      websiteUrl: siteSettings.website_url || "",
+      orderId: order.id,
+      date: new Date(order.created_at).toLocaleDateString("en-GB"),
+      status: (order.status || "pending").toUpperCase(),
+      paymentMethod: order.payment_method || "Cash on Delivery",
+      transactionId: order.transaction_id || "",
+      customerName: order.customer_name,
+      phone: order.phone,
+      address: order.address,
+      items,
+      subtotal,
+      deliveryCharge,
+      total: order.total,
+      courierTrackingId: order.courier_tracking_id || "",
+    });
+
+    const win = window.open("", "_blank");
+    if (win) { win.document.write(html); win.document.close(); }
   };
 
   const filtered = orders.filter((o: any) => {
@@ -144,10 +154,10 @@ const AdminOrders = () => {
                 <option value="returned">📦 Returned</option>
               </select>
               <input placeholder="কুরিয়ার ট্র্যাকিং ID" defaultValue={o.courier_tracking_id || ""} onBlur={(e) => { if (e.target.value !== (o.courier_tracking_id || "")) updateTracking.mutate({ id: o.id, courier_tracking_id: e.target.value }); }} className="px-3 py-1.5 border border-border rounded-lg text-xs focus:outline-none flex-1 bg-transparent text-foreground placeholder:text-muted-foreground" />
-              <button onClick={() => generateInvoice(o)} className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary hover:bg-muted rounded-lg text-xs font-medium transition-colors text-foreground">
+              <button onClick={() => handleGenerateInvoice(o)} className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary hover:bg-muted rounded-lg text-xs font-medium transition-colors text-foreground">
                 <FileDown size={13} /> ইনভয়েস
               </button>
-              <button onClick={() => setDeleteTarget(o)} className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-red-500/10 text-red-500 rounded-lg text-xs font-medium transition-colors">
+              <button onClick={() => setDeleteTarget(o)} className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-destructive/10 text-destructive rounded-lg text-xs font-medium transition-colors">
                 <Trash2 size={13} /> ডিলিট
               </button>
             </div>

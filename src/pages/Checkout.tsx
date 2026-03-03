@@ -10,7 +10,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SuccessAnimation from "@/components/SuccessAnimation";
-import jsPDF from "jspdf";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { generateInvoiceHTML } from "@/lib/invoiceTemplate";
 import bkashLogo from "@/assets/bkash-logo.png";
 import nagadLogo from "@/assets/nagad-logo.png";
 import rocketLogo from "@/assets/rocket-logo.png";
@@ -34,6 +35,7 @@ const generateTrackingId = () => {
 const Checkout = () => {
   const { items, totalPrice, clearCart } = useCart();
   const { toast } = useToast();
+  const { settings: siteSettings } = useSiteSettings();
   const [form, setForm] = useState({
     name: "", phone: "", email: "", district: "", thana: "", address: "",
   });
@@ -286,26 +288,23 @@ const Checkout = () => {
     const cartItems = Array.isArray(orderSuccess.cart_items) ? orderSuccess.cart_items : [];
     const subtotal = orderSuccess.total - savedDelivery;
 
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Invoice - ${orderSuccess.tracking_id || ""}</title>
-<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Tahoma,sans-serif;padding:40px;color:#111;max-width:800px;margin:auto}
-h1{font-size:28px;font-weight:700;margin-bottom:4px}h2{font-size:14px;font-weight:400;color:#666;margin-bottom:16px}
-.line{border-top:2px solid #111;margin:12px 0 20px}.meta{display:flex;justify-content:space-between;font-size:13px;line-height:1.8}
-.section-title{font-size:15px;font-weight:600;margin:20px 0 8px}.detail{font-size:13px;line-height:1.8;padding-left:12px}
-table{width:100%;border-collapse:collapse;margin-top:20px;font-size:13px}th{background:#f5f5f5;text-align:left;padding:10px 12px;border:1px solid #ddd}
-td{padding:10px 12px;border:1px solid #eee}.total-row{text-align:right;font-size:13px;margin-top:12px;line-height:2}
-.grand-total{font-size:20px;font-weight:700;text-align:right;margin-top:8px}
-@media print{body{padding:20px}button{display:none!important}}</style></head><body>
-<h1>SAILOR</h1><h2>Invoice / Memo</h2><div class="line"></div>
-<div class="meta"><div><div>Order ID: #${(orderSuccess.id || "").slice(0, 8)}</div><div>Date: ${new Date(orderSuccess.created_at).toLocaleDateString("en-GB")}</div></div>
-<div style="text-align:right"><div>Status: ${(orderSuccess.status || "PENDING").toUpperCase()}</div><div>Payment: ${orderSuccess.payment_method || "Cash on Delivery"}${orderSuccess.transaction_id ? ` (TxnID: ${orderSuccess.transaction_id})` : ""}</div></div></div>
-<div class="section-title">Customer Details:</div>
-<div class="detail">Name: ${orderSuccess.customer_name}<br>Phone: ${orderSuccess.phone}<br>Address: ${orderSuccess.address}</div>
-<table><thead><tr><th>Item</th><th style="width:60px">Qty</th><th style="width:90px">Price</th><th style="width:90px">Total</th></tr></thead><tbody>
-${cartItems.map((item: any) => `<tr><td>${item.name || "Item"}</td><td>${item.quantity || 1}</td><td>BDT ${item.price || 0}</td><td>BDT ${(item.price || 0) * (item.quantity || 1)}</td></tr>`).join("")}
-</tbody></table>
-<div class="total-row">Subtotal: BDT ${subtotal}<br>Delivery: BDT ${savedDelivery}</div>
-<div class="grand-total">Total: BDT ${orderSuccess.total}</div>
-<script>window.onload=function(){window.print()}<\/script></body></html>`;
+    const html = generateInvoiceHTML({
+      storeName: siteSettings.store_name || "Modest Mart",
+      websiteUrl: siteSettings.website_url || "",
+      orderId: orderSuccess.id,
+      date: new Date(orderSuccess.created_at).toLocaleDateString("en-GB"),
+      status: (orderSuccess.status || "PENDING").toUpperCase(),
+      paymentMethod: orderSuccess.payment_method || "Cash on Delivery",
+      transactionId: orderSuccess.transaction_id || "",
+      customerName: orderSuccess.customer_name,
+      phone: orderSuccess.phone,
+      address: orderSuccess.address,
+      items: cartItems,
+      subtotal,
+      deliveryCharge: savedDelivery,
+      total: orderSuccess.total,
+      courierTrackingId: "",
+    });
 
     const win = window.open("", "_blank");
     if (win) { win.document.write(html); win.document.close(); }
