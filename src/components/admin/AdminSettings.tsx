@@ -77,17 +77,27 @@ const AdminSettings = () => {
   // Chat Widget
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [messengerId, setMessengerId] = useState("");
-  // Hero Section
-  const [heroImageUrl, setHeroImageUrl] = useState("");
-  const [heroTitle, setHeroTitle] = useState("");
-  const [heroSubtitle, setHeroSubtitle] = useState("");
   // Pages
   const [privacyPolicy, setPrivacyPolicy] = useState("");
   const [termsConditions, setTermsConditions] = useState("");
 
   const [loaded, setLoaded] = useState(false);
-  const [uploading, setUploading] = useState<"logo" | "favicon" | "hero" | null>(null);
-  const heroInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState<"logo" | "favicon" | null>(null);
+
+  // Hero slides (multi-slide from banners table)
+  const { data: heroSlides = [], refetch: refetchHeroSlides } = useQuery({
+    queryKey: ["hero-banners"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("banners").select("*").order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+  });
+  const [heroForm, setHeroForm] = useState({ title: "", subtitle: "", image_url: "" });
+  const [heroFile, setHeroFile] = useState<File | null>(null);
+  const [heroEditId, setHeroEditId] = useState<string | null>(null);
+  const [heroUploading, setHeroUploading] = useState(false);
+  const heroFileRef = useRef<HTMLInputElement>(null);
 
   if (settings.length > 0 && !loaded) {
     setStoreName(getSetting("store_name", "SAILOR"));
@@ -115,9 +125,6 @@ const AdminSettings = () => {
     setMessengerId(getSetting("messenger_id", ""));
     setPrivacyPolicy(getSetting("privacy_policy", ""));
     setTermsConditions(getSetting("terms_conditions", ""));
-    setHeroImageUrl(getSetting("hero_image_url", ""));
-    setHeroTitle(getSetting("hero_title", ""));
-    setHeroSubtitle(getSetting("hero_subtitle", ""));
     setLoaded(true);
   }
 
@@ -216,13 +223,47 @@ const AdminSettings = () => {
     toast({ title: "✓ পেজ কন্টেন্ট সেভ হয়েছে" });
   };
 
-  const handleSaveHero = async () => {
-    await saveAll([
-      { key: "hero_image_url", value: heroImageUrl },
-      { key: "hero_title", value: heroTitle },
-      { key: "hero_subtitle", value: heroSubtitle },
-    ]);
-    toast({ title: "✓ হিরো সেকশন সেভ হয়েছে" });
+  const handleSaveHeroSlide = async () => {
+    setHeroUploading(true);
+    try {
+      let image_url = heroForm.image_url;
+      if (heroFile) {
+        const ext = heroFile.name.split(".").pop();
+        const path = `hero-${Date.now()}.${ext}`;
+        const { error: uploadError } = await supabase.storage.from("site-assets").upload(path, heroFile, { upsert: true });
+        if (uploadError) throw uploadError;
+        const { data } = supabase.storage.from("site-assets").getPublicUrl(path);
+        image_url = data.publicUrl;
+      }
+      if (!image_url) throw new Error("ইমেজ দিন");
+
+      if (heroEditId) {
+        const { error } = await supabase.from("banners").update({ title: heroForm.title, subtitle: heroForm.subtitle, image_url }).eq("id", heroEditId);
+        if (error) throw error;
+      } else {
+        const nextOrder = heroSlides.length;
+        const { error } = await supabase.from("banners").insert({ title: heroForm.title || "Slide", subtitle: heroForm.subtitle, image_url, sort_order: nextOrder, is_active: true });
+        if (error) throw error;
+      }
+      refetchHeroSlides();
+      queryClient.invalidateQueries({ queryKey: ["banners"] });
+      setHeroForm({ title: "", subtitle: "", image_url: "" });
+      setHeroFile(null);
+      setHeroEditId(null);
+      toast({ title: heroEditId ? "✓ স্লাইড আপডেট হয়েছে" : "✓ নতুন স্লাইড যোগ হয়েছে" });
+    } catch (err: any) {
+      toast({ title: "ত্রুটি", description: err.message, variant: "destructive" });
+    } finally {
+      setHeroUploading(false);
+    }
+  };
+
+  const handleDeleteHeroSlide = async (id: string) => {
+    const { error } = await supabase.from("banners").delete().eq("id", id);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    refetchHeroSlides();
+    queryClient.invalidateQueries({ queryKey: ["banners"] });
+    toast({ title: "✓ স্লাইড ডিলিট হয়েছে" });
   };
 
   // File upload helper
@@ -378,55 +419,71 @@ const AdminSettings = () => {
         <SaveBtn onClick={handleSaveBrand} />
       </Section>
 
-      {/* ── Hero Section ── */}
-      <Section icon={Image} title="হিরো সেকশন (হোমপেজ ব্যানার)">
+      {/* ── Hero Slides (Multi-Slide) ── */}
+      <Section icon={Image} title="হিরো স্লাইডার (হোমপেজ ব্যানার)">
         <div className="space-y-4 max-w-2xl">
-          <p className="text-xs text-muted-foreground">হোমপেজের প্রধান ব্যানার ইমেজ, শিরোনাম ও সাব-টাইটেল এখান থেকে পরিবর্তন করুন। খালি রাখলে ডিফল্ট স্লাইডার দেখাবে।</p>
+          <p className="text-xs text-muted-foreground">একাধিক স্লাইড যোগ করুন। প্রতিটি স্লাইডে আলাদা ইমেজ, টাইটেল ও সাব-টাইটেল দেওয়া যাবে। কোনো স্লাইড না থাকলে ডিফল্ট স্লাইডার দেখাবে।</p>
 
-          {/* Hero Image Preview & Upload */}
+          {/* Existing slides list */}
+          {heroSlides.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">বর্তমান স্লাইড ({heroSlides.length} টি)</p>
+              {heroSlides.map((slide: any, idx: number) => (
+                <div key={slide.id} className="flex items-center gap-3 p-3 bg-secondary/30 rounded-lg border border-border/50">
+                  <span className="text-xs font-bold text-muted-foreground w-6 text-center">{idx + 1}</span>
+                  {slide.image_url && <img src={slide.image_url} alt="" className="w-20 h-12 object-cover rounded" />}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{slide.title || "Untitled"}</p>
+                    {slide.subtitle && <p className="text-xs text-muted-foreground truncate">{slide.subtitle}</p>}
+                  </div>
+                  <button onClick={() => { setHeroEditId(slide.id); setHeroForm({ title: slide.title || "", subtitle: slide.subtitle || "", image_url: slide.image_url || "" }); setHeroFile(null); }} className="text-xs text-primary hover:underline">Edit</button>
+                  <button onClick={() => handleDeleteHeroSlide(slide.id)} className="text-xs text-destructive hover:underline">Delete</button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Add / Edit form */}
           <div className="border border-dashed border-border rounded-xl p-4 space-y-3">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">হিরো ইমেজ (1920×1080 recommended)</p>
-            {heroImageUrl ? (
-              <img src={heroImageUrl} alt="Hero" className="w-full h-48 object-cover rounded-lg" />
-            ) : (
-              <div className="w-full h-48 bg-secondary rounded-lg flex items-center justify-center">
-                <Image size={40} className="text-muted-foreground/30" />
-              </div>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              {heroEditId ? "স্লাইড এডিট করুন" : "নতুন স্লাইড যোগ করুন"}
+            </p>
+            {(heroForm.image_url || heroFile) && (
+              <img src={heroFile ? URL.createObjectURL(heroFile) : heroForm.image_url} alt="Preview" className="w-full h-40 object-cover rounded-lg" />
             )}
             <input
               type="url"
-              value={heroImageUrl}
-              onChange={(e) => setHeroImageUrl(e.target.value)}
+              value={heroForm.image_url}
+              onChange={(e) => setHeroForm({ ...heroForm, image_url: e.target.value })}
               placeholder="ইমেজ URL পেস্ট করুন অথবা নিচে আপলোড করুন"
               className={`${inputCls} text-xs`}
             />
-            <input
-              ref={heroInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) handleFileUpload(f, "hero" as any, setHeroImageUrl);
-              }}
-            />
-            <button
-              onClick={() => heroInputRef.current?.click()}
-              disabled={uploading === "hero"}
-              className="w-full flex items-center justify-center gap-2 border border-border rounded-lg py-2 text-xs hover:bg-secondary transition-colors disabled:opacity-50"
-            >
-              <Upload size={13} /> {uploading === "hero" ? "আপলোড হচ্ছে..." : "ইমেজ আপলোড"}
+            <input ref={heroFileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) setHeroFile(f); }} />
+            <button onClick={() => heroFileRef.current?.click()} className="w-full flex items-center justify-center gap-2 border border-border rounded-lg py-2 text-xs hover:bg-secondary transition-colors">
+              <Upload size={13} /> ইমেজ আপলোড
             </button>
+            <Field label="শিরোনাম (Title)">
+              <input value={heroForm.title} onChange={(e) => setHeroForm({ ...heroForm, title: e.target.value })} placeholder="Timeless Elegance" className={inputCls} />
+            </Field>
+            <Field label="সাব-টাইটেল (Subtitle)">
+              <textarea rows={2} value={heroForm.subtitle} onChange={(e) => setHeroForm({ ...heroForm, subtitle: e.target.value })} placeholder="Discover our curated selection..." className={textareaCls} />
+            </Field>
           </div>
-
-          <Field label="হিরো শিরোনাম (Title)">
-            <input value={heroTitle} onChange={(e) => setHeroTitle(e.target.value)} placeholder="Timeless Elegance" className={inputCls} />
-          </Field>
-          <Field label="হিরো সাব-টাইটেল (Subtitle)">
-            <textarea rows={2} value={heroSubtitle} onChange={(e) => setHeroSubtitle(e.target.value)} placeholder="Discover our curated selection of contemporary pieces..." className={textareaCls} />
-          </Field>
+          <div className="flex gap-2">
+            <button
+              onClick={handleSaveHeroSlide}
+              disabled={heroUploading}
+              className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-full text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              <Save size={14} /> {heroEditId ? "আপডেট করুন" : "স্লাইড যোগ করুন"}
+            </button>
+            {heroEditId && (
+              <button onClick={() => { setHeroEditId(null); setHeroForm({ title: "", subtitle: "", image_url: "" }); setHeroFile(null); }} className="px-4 py-2.5 border border-border rounded-full text-sm hover:bg-secondary transition-colors">
+                বাতিল
+              </button>
+            )}
+          </div>
         </div>
-        <SaveBtn onClick={handleSaveHero} />
       </Section>
 
       {/* ── Footer Info ── */}
