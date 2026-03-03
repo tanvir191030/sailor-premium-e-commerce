@@ -42,6 +42,7 @@ const AdminProducts = () => {
   });
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [existingImages, setExistingImages] = useState<string[]>([]); // URLs from DB
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -75,8 +76,11 @@ const AdminProducts = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      let image_url = undefined;
-      if (imageFiles.length > 0) image_url = await uploadProductImage(imageFiles[0]);
+      // Determine primary image: first existing or first new upload
+      let image_url: string | undefined = existingImages.length > 0 ? existingImages[0] : undefined;
+      if (imageFiles.length > 0 && existingImages.length === 0) {
+        image_url = await uploadProductImage(imageFiles[0]);
+      }
 
       const subType = form.sub_category ? getSubCategoryType(form.sub_category) : "none";
       let finalSizes: any = null;
@@ -116,15 +120,29 @@ const AdminProducts = () => {
       if (editingId) {
         const { error } = await supabase.from("products").update(payload).eq("id", editingId);
         if (error) throw error;
+
+        // Remove old product_images and re-insert existing (non-primary) + new
+        await supabase.from("product_images").delete().eq("product_id", editingId);
+        let sortIdx = 1;
+        for (const url of existingImages.slice(1)) {
+          await supabase.from("product_images").insert({ product_id: editingId, image_url: url, sort_order: sortIdx++, is_primary: false });
+        }
+        // Upload new files (skip first if it became primary)
+        const startIdx = existingImages.length === 0 ? 1 : 0;
+        for (let i = startIdx; i < imageFiles.length; i++) {
+          const url = await uploadProductImage(imageFiles[i]);
+          await supabase.from("product_images").insert({ product_id: editingId, image_url: url, sort_order: sortIdx++, is_primary: false });
+        }
       } else {
         const { data, error } = await supabase.from("products").insert(payload).select("id").single();
         if (error) throw error;
         productId = data.id;
-      }
-      if (imageFiles.length > 1 && productId) {
-        for (let i = 1; i < imageFiles.length; i++) {
-          const url = await uploadProductImage(imageFiles[i]);
-          await supabase.from("product_images").insert({ product_id: productId, image_url: url, sort_order: i, is_primary: false });
+        // Upload additional images for new product
+        if (imageFiles.length > 1 && productId) {
+          for (let i = 1; i < imageFiles.length; i++) {
+            const url = await uploadProductImage(imageFiles[i]);
+            await supabase.from("product_images").insert({ product_id: productId, image_url: url, sort_order: i, is_primary: false });
+          }
         }
       }
     },
@@ -167,10 +185,10 @@ const AdminProducts = () => {
 
   const resetForm = () => {
     setForm({ name: "", name_bn: "", price: "", category: "", brand: "", stock: "", description: "", description_bn: "", is_featured: false, sub_category: "", sizes: {} });
-    setImageFiles([]); setImagePreviews([]); setEditingId(null); setShowForm(false);
+    setImageFiles([]); setImagePreviews([]); setExistingImages([]); setEditingId(null); setShowForm(false);
   };
 
-  const startEdit = (p: any) => {
+  const startEdit = async (p: any) => {
     let initialSizes: any = {};
     if (p.sizes) {
       if (p.sizes.variants) {
@@ -186,6 +204,20 @@ const AdminProducts = () => {
       }
     }
 
+    // Fetch existing images
+    const urls: string[] = [];
+    if (p.image_url) urls.push(p.image_url);
+    const { data: extraImages } = await supabase
+      .from("product_images")
+      .select("image_url")
+      .eq("product_id", p.id)
+      .order("sort_order");
+    if (extraImages) {
+      extraImages.forEach((img: any) => {
+        if (!urls.includes(img.image_url)) urls.push(img.image_url);
+      });
+    }
+
     setForm({
       name: p.name, name_bn: p.name_bn || "", price: String(p.price),
       category: p.category || "", sub_category: p.sub_category || p.sizes?.sub_category || "", brand: p.brand || "", stock: String(p.stock ?? 0),
@@ -193,7 +225,7 @@ const AdminProducts = () => {
       is_featured: p.is_featured || false,
       sizes: initialSizes,
     });
-    setEditingId(p.id); setImageFiles([]); setImagePreviews([]); setShowForm(true);
+    setEditingId(p.id); setImageFiles([]); setImagePreviews([]); setExistingImages(urls); setShowForm(true);
   };
 
   const filtered = products.filter((p: any) =>
@@ -423,25 +455,38 @@ const AdminProducts = () => {
                 <label className="block text-sm font-medium text-foreground mb-1">{t("admin.images")}</label>
                 <input type="file" accept="image/*" multiple onChange={(e) => {
                   const newFiles = Array.from(e.target.files || []);
-                  const combined = [...imageFiles, ...newFiles];
-                  if (combined.length > 10) {
+                  const totalCount = existingImages.length + imageFiles.length + newFiles.length;
+                  if (totalCount > 10) {
                     toast({ title: "সর্বোচ্চ ১০টি ছবি", variant: "destructive" });
-                    const trimmed = combined.slice(0, 10);
-                    setImageFiles(trimmed);
-                    imagePreviews.forEach(p => URL.revokeObjectURL(p));
-                    setImagePreviews(trimmed.map(f => URL.createObjectURL(f)));
+                    const allowed = 10 - existingImages.length - imageFiles.length;
+                    const trimmed = newFiles.slice(0, Math.max(0, allowed));
+                    setImageFiles(prev => [...prev, ...trimmed]);
+                    setImagePreviews(prev => [...prev, ...trimmed.map(f => URL.createObjectURL(f))]);
                   } else {
-                    setImageFiles(combined);
+                    setImageFiles(prev => [...prev, ...newFiles]);
                     setImagePreviews(prev => [...prev, ...newFiles.map(f => URL.createObjectURL(f))]);
                   }
                   e.target.value = "";
                 }} className="w-full text-sm text-muted-foreground" />
-                {imagePreviews.length > 0 && (
+
+                {/* Existing + new image previews */}
+                {(existingImages.length > 0 || imagePreviews.length > 0) && (
                   <div className="grid grid-cols-5 gap-2 mt-3">
-                    {imagePreviews.map((src, i) => (
-                      <div key={i} className="relative aspect-square rounded-lg overflow-hidden border border-border group">
-                        <img src={src} alt={`Preview ${i + 1}`} className="w-full h-full object-cover" />
+                    {/* Existing images from DB */}
+                    {existingImages.map((url, i) => (
+                      <div key={`existing-${i}`} className="relative aspect-square rounded-lg overflow-hidden border border-border group">
+                        <img src={url} alt={`Existing ${i + 1}`} className="w-full h-full object-cover" />
                         {i === 0 && <span className="absolute bottom-0 left-0 right-0 bg-primary/80 text-primary-foreground text-[9px] text-center py-0.5">Main</span>}
+                        <button type="button" onClick={() => {
+                          setExistingImages(prev => prev.filter((_, idx) => idx !== i));
+                        }} className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity">×</button>
+                      </div>
+                    ))}
+                    {/* Newly selected files */}
+                    {imagePreviews.map((src, i) => (
+                      <div key={`new-${i}`} className="relative aspect-square rounded-lg overflow-hidden border border-border group">
+                        <img src={src} alt={`Preview ${i + 1}`} className="w-full h-full object-cover" />
+                        {existingImages.length === 0 && i === 0 && <span className="absolute bottom-0 left-0 right-0 bg-primary/80 text-primary-foreground text-[9px] text-center py-0.5">Main</span>}
                         <button type="button" onClick={() => {
                           const nf = [...imageFiles]; nf.splice(i, 1); setImageFiles(nf);
                           const np = [...imagePreviews]; URL.revokeObjectURL(np[i]); np.splice(i, 1); setImagePreviews(np);
@@ -450,7 +495,7 @@ const AdminProducts = () => {
                     ))}
                   </div>
                 )}
-                <p className="text-xs text-muted-foreground mt-1">{imageFiles.length}/10 images selected</p>
+                <p className="text-xs text-muted-foreground mt-1">{existingImages.length + imageFiles.length}/10 images</p>
               </div>
 
               <label className="flex items-center gap-2 text-sm text-foreground">
