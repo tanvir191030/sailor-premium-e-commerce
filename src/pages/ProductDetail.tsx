@@ -620,20 +620,24 @@ const ProductDetail = () => {
 
                   {/* Buttons */}
                   <div className="flex gap-3">
-                    <button
-                      onClick={handleAddToCart}
-                      disabled={!isInStock}
-                      className="flex-1 bg-primary text-primary-foreground py-3.5 text-xs uppercase tracking-[0.12em] font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <ShoppingCart size={15} /> {isInStock ? "কার্টে যোগ করুন" : "স্টক নেই"}
-                    </button>
-                    <button
+                    <motion.button
                       onClick={handleBuyNow}
                       disabled={!isInStock}
-                      className="flex-1 bg-background text-foreground border border-primary py-3.5 text-xs uppercase tracking-[0.12em] font-semibold hover:bg-secondary transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.97 }}
+                      className="flex-1 bg-primary text-primary-foreground h-12 text-xs uppercase tracking-[0.15em] font-bold hover:bg-primary/90 transition-all duration-300 flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <Zap size={15} /> {isInStock ? "এখনই কিনুন" : "স্টক নেই"}
-                    </button>
+                      <Zap size={16} /> {isInStock ? "এখনই কিনুন" : "স্টক নেই"}
+                    </motion.button>
+                    <motion.button
+                      onClick={handleAddToCart}
+                      disabled={!isInStock}
+                      whileHover={{ scale: 1.02, backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))" }}
+                      whileTap={{ scale: 0.97 }}
+                      className="flex-1 bg-transparent text-foreground border-2 border-primary h-12 text-xs uppercase tracking-[0.15em] font-bold transition-all duration-300 flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ShoppingCart size={16} /> {isInStock ? "কার্টে যোগ করুন" : "স্টক নেই"}
+                    </motion.button>
                   </div>
                 </div>
 
@@ -844,32 +848,34 @@ const ProductDetail = () => {
         </main>
 
         {/* Sticky CTA Bar — mobile only, above bottom nav */}
-        <div className="fixed bottom-[52px] left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-t border-border px-4 py-2.5 md:hidden safe-bottom">
-          <div className="flex items-center gap-2.5">
+        <div className="fixed bottom-[52px] left-0 right-0 z-40 bg-background/95 backdrop-blur-md border-t border-border px-3 py-2 md:hidden safe-bottom">
+          <div className="flex items-center gap-2">
             {/* Mini quantity selector */}
-            <div className="flex items-center border border-border rounded-lg flex-shrink-0 overflow-hidden">
-              <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="w-9 h-11 flex items-center justify-center hover:bg-muted active:bg-muted/80 transition-colors" disabled={!isInStock}>
-                <Minus size={14} />
+            <div className="flex items-center border border-border flex-shrink-0 overflow-hidden">
+              <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="w-8 h-10 flex items-center justify-center hover:bg-muted active:bg-muted/80 transition-colors" disabled={!isInStock}>
+                <Minus size={13} />
               </button>
-              <span className="w-9 h-11 flex items-center justify-center text-sm font-semibold border-x border-border">{quantity}</span>
-              <button onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))} className="w-9 h-11 flex items-center justify-center hover:bg-muted active:bg-muted/80 transition-colors" disabled={!isInStock}>
-                <Plus size={14} />
+              <span className="w-8 h-10 flex items-center justify-center text-xs font-semibold border-x border-border">{quantity}</span>
+              <button onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))} className="w-8 h-10 flex items-center justify-center hover:bg-muted active:bg-muted/80 transition-colors" disabled={!isInStock}>
+                <Plus size={13} />
               </button>
             </div>
-            <button
+            <motion.button
               onClick={handleBuyNow}
               disabled={!isInStock}
-              className="flex-1 bg-background text-foreground border-2 border-foreground rounded-lg py-3 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97] transition-transform"
+              whileTap={{ scale: 0.95 }}
+              className="flex-1 bg-primary text-primary-foreground h-10 text-[11px] font-bold uppercase tracking-[0.12em] flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Zap size={16} /> {isInStock ? "Buy Now" : "স্টক নেই"}
-            </button>
-            <button
+              <Zap size={14} /> {isInStock ? "Buy Now" : "স্টক নেই"}
+            </motion.button>
+            <motion.button
               onClick={handleAddToCart}
               disabled={!isInStock}
-              className="flex-1 bg-primary text-primary-foreground rounded-lg py-3 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97] transition-transform"
+              whileTap={{ scale: 0.95 }}
+              className="flex-1 bg-transparent text-foreground border-2 border-primary h-10 text-[11px] font-bold uppercase tracking-[0.12em] flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <ShoppingCart size={16} /> {isInStock ? "Add to Cart" : "স্টক নেই"}
-            </button>
+              <ShoppingCart size={14} /> {isInStock ? "Add to Cart" : "স্টক নেই"}
+            </motion.button>
           </div>
         </div>
 
