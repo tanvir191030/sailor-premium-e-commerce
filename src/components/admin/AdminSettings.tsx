@@ -5,9 +5,12 @@ import { formatPrice } from "@/lib/currency";
 import { optimizeHeroImage } from "@/lib/imageOptimizer";
 import {
   Download, Save, Globe, Share2, Truck, Smartphone,
-  Upload, Image, Search, Mail, Phone, MapPin, FileText, Palette, Zap, BookOpen, MessageCircle
+  Upload, Image, Search, Mail, Phone, MapPin, FileText, Palette, Zap, BookOpen, MessageCircle, FileSpreadsheet, File
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const Section = ({ icon: Icon, title, children }: { icon: any; title: string; children: React.ReactNode }) => (
   <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
@@ -323,14 +326,36 @@ const AdminSettings = () => {
     },
   });
 
-  const downloadCSV = (filename: string, headers: string, rows: string) => {
-    const blob = new Blob([headers + rows], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${filename}-${new Date().toISOString().split("T")[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+  // ── Report helpers ──
+  type ReportData = { headers: string[]; rows: (string | number)[][] };
+
+  const downloadExcel = (filename: string, data: ReportData) => {
+    const ws = XLSX.utils.aoa_to_sheet([data.headers, ...data.rows]);
+    // Auto-size columns
+    ws["!cols"] = data.headers.map((h, i) => {
+      const maxLen = Math.max(h.length, ...data.rows.map(r => String(r[i] ?? "").length));
+      return { wch: Math.min(maxLen + 2, 40) };
+    });
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Report");
+    XLSX.writeFile(wb, `${filename}-${new Date().toISOString().split("T")[0]}.xlsx`);
+  };
+
+  const downloadPDF = (filename: string, title: string, data: ReportData) => {
+    const doc = new jsPDF({ orientation: data.headers.length > 6 ? "landscape" : "portrait" });
+    doc.setFontSize(16);
+    doc.text(title, 14, 18);
+    doc.setFontSize(9);
+    doc.text(`Generated: ${new Date().toLocaleDateString("en-GB")}`, 14, 25);
+    autoTable(doc, {
+      head: [data.headers],
+      body: data.rows.map(r => r.map(c => String(c))),
+      startY: 30,
+      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: [30, 30, 30], textColor: 255, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+    });
+    doc.save(`${filename}-${new Date().toISOString().split("T")[0]}.pdf`);
   };
 
   const SaveBtn = ({ onClick, saving }: { onClick: () => void; saving?: boolean }) => (
@@ -659,49 +684,76 @@ const AdminSettings = () => {
       </Section>
 
       {/* ── Reports ── */}
-      <Section icon={Download} title="রিপোর্ট ডাউনলোড (CSV)">
+      <Section icon={Download} title="রিপোর্ট ডাউনলোড (Excel ও PDF)">
         <div className="space-y-3">
-          {[
-            {
-              title: "সেলস রিপোর্ট",
-              desc: `${orders.length} অর্ডার · মোট ${formatPrice(orders.reduce((s: number, o: any) => s + Number(o.total), 0))}`,
-              fn: () => downloadCSV("sales-report", "Order ID,Customer,Phone,Address,Status,Payment,Total,Date\n",
-                orders.map((o: any) => `${o.id.slice(0, 8)},"${o.customer_name}",${o.phone},"${o.address}",${o.status || "pending"},${o.payment_method || "N/A"},${o.total},${new Date(o.created_at).toLocaleDateString("en-GB")}`).join("\n")),
-            },
-            {
-              title: "স্টক রিপোর্ট",
-              desc: `${products.length} প্রোডাক্ট`,
-              fn: () => downloadCSV("stock-report", "Product,Category,Brand,Stock,Price\n",
-                products.map((p: any) => `"${p.name}",${p.category || "N/A"},${p.brand || "N/A"},${p.stock ?? 0},${p.price}`).join("\n")),
-            },
-            {
-              title: "কাস্টমার রিপোর্ট",
-              desc: "কাস্টমার তালিকা ও মোট খরচ",
-              fn: () => {
-                const m = new Map<string, any>();
-                orders.forEach((o: any) => {
-                  const k = `${o.customer_name}-${o.phone}`;
-                  if (!m.has(k)) m.set(k, { name: o.customer_name, phone: o.phone, address: o.address, cnt: 0, total: 0 });
-                  const c = m.get(k); c.cnt++; c.total += Number(o.total);
-                });
-                downloadCSV("customer-report", "Customer,Phone,Address,Orders,Total Spent\n",
-                  Array.from(m.values()).map((c) => `"${c.name}",${c.phone},"${c.address}",${c.cnt},${c.total}`).join("\n"));
+          {(() => {
+            const reports: { title: string; desc: string; filename: string; getData: () => ReportData }[] = [
+              {
+                title: "সেলস রিপোর্ট",
+                desc: `${orders.length} অর্ডার · মোট ${formatPrice(orders.reduce((s: number, o: any) => s + Number(o.total), 0))}`,
+                filename: "sales-report",
+                getData: () => ({
+                  headers: ["Order ID", "Customer", "Phone", "Address", "Status", "Payment", "Total", "Date"],
+                  rows: orders.map((o: any) => [
+                    o.id.slice(0, 8), o.customer_name, o.phone, o.address,
+                    o.status || "pending", o.payment_method || "N/A", o.total,
+                    new Date(o.created_at).toLocaleDateString("en-GB"),
+                  ]),
+                }),
               },
-            },
-          ].map((r) => (
-            <div key={r.title} className="flex items-center justify-between p-4 bg-secondary rounded-xl">
-              <div>
-                <p className="font-medium text-sm text-foreground">{r.title}</p>
-                <p className="text-xs text-muted-foreground">{r.desc}</p>
+              {
+                title: "স্টক রিপোর্ট",
+                desc: `${products.length} প্রোডাক্ট`,
+                filename: "stock-report",
+                getData: () => ({
+                  headers: ["Product", "Category", "Brand", "Stock", "Price"],
+                  rows: products.map((p: any) => [
+                    p.name, p.category || "N/A", p.brand || "N/A", p.stock ?? 0, p.price,
+                  ]),
+                }),
+              },
+              {
+                title: "কাস্টমার রিপোর্ট",
+                desc: "কাস্টমার তালিকা ও মোট খরচ",
+                filename: "customer-report",
+                getData: () => {
+                  const m = new Map<string, any>();
+                  orders.forEach((o: any) => {
+                    const k = `${o.customer_name}-${o.phone}`;
+                    if (!m.has(k)) m.set(k, { name: o.customer_name, phone: o.phone, address: o.address, cnt: 0, total: 0 });
+                    const c = m.get(k); c.cnt++; c.total += Number(o.total);
+                  });
+                  return {
+                    headers: ["Customer", "Phone", "Address", "Orders", "Total Spent"],
+                    rows: Array.from(m.values()).map((c) => [c.name, c.phone, c.address, c.cnt, c.total]),
+                  };
+                },
+              },
+            ];
+
+            return reports.map((r) => (
+              <div key={r.title} className="flex items-center justify-between p-4 bg-secondary rounded-xl">
+                <div>
+                  <p className="font-medium text-sm text-foreground">{r.title}</p>
+                  <p className="text-xs text-muted-foreground">{r.desc}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => downloadExcel(r.filename, r.getData())}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 text-white rounded-full text-xs font-medium hover:opacity-90 transition-opacity"
+                  >
+                    <FileSpreadsheet size={14} /> Excel
+                  </button>
+                  <button
+                    onClick={() => downloadPDF(r.filename, r.title, r.getData())}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-full text-xs font-medium hover:opacity-90 transition-opacity"
+                  >
+                    <File size={14} /> PDF
+                  </button>
+                </div>
               </div>
-              <button
-                onClick={r.fn}
-                className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-full text-xs font-medium hover:opacity-90 transition-opacity"
-              >
-                <Download size={14} /> ডাউনলোড
-              </button>
-            </div>
-          ))}
+            ));
+          })()}
         </div>
       </Section>
     </div>
