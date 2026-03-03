@@ -215,17 +215,64 @@ const AdminProducts = () => {
     }
 
     if (subType === "hijab") {
+      const hijabSizes = Object.keys(form.sizes);
+      // Add default 90x30 if empty
+      const ensureDefault = () => {
+        if (Object.keys(form.sizes).length === 0) {
+          setForm({ ...form, sizes: { "90x30": { stock: "", measurements: { width: "90", length: "30" } } } });
+        }
+      };
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      if (hijabSizes.length === 0) {
+        setTimeout(ensureDefault, 0);
+      }
+
       return (
         <div className="space-y-4 border border-border p-3 rounded-lg bg-secondary/20">
-          <p className="text-xs font-medium text-muted-foreground">হিজাব/ওড়না — Width × Length (ইঞ্চি)</p>
-          <div className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Free Size</span>
-            <div className="grid grid-cols-3 gap-2">
-              <input type="number" value={form.sizes["Free Size"]?.stock || ""} onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, "Free Size": { ...form.sizes["Free Size"], stock: e.target.value } } })} className={inputCls} placeholder="Stock" />
-              <input type="text" value={form.sizes["Free Size"]?.measurements?.width || ""} onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, "Free Size": { ...form.sizes["Free Size"], measurements: { ...form.sizes["Free Size"]?.measurements, width: e.target.value } } } })} className={inputCls} placeholder='Width (চওড়া)"' />
-              <input type="text" value={form.sizes["Free Size"]?.measurements?.length || ""} onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, "Free Size": { ...form.sizes["Free Size"], measurements: { ...form.sizes["Free Size"]?.measurements, length: e.target.value } } } })} className={inputCls} placeholder='Length (লম্বা)"' />
+          <p className="text-xs font-medium text-muted-foreground">হিজাব/ওড়না — কাস্টম সাইজ যোগ করুন (Width × Length ইঞ্চি)</p>
+          
+          {/* Existing sizes */}
+          {Object.entries(form.sizes).map(([sizeKey, data]: [string, any]) => (
+            <div key={sizeKey} className="flex flex-col gap-2 p-2 bg-secondary/30 rounded-lg border border-border/50">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-foreground">{data?.measurements?.width || "?"}" × {data?.measurements?.length || "?"}"</span>
+                <button type="button" onClick={() => {
+                  const newSizes = { ...form.sizes };
+                  delete newSizes[sizeKey];
+                  setForm({ ...form, sizes: newSizes });
+                }} className="text-destructive hover:text-destructive/80 p-1"><X size={14} /></button>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <input type="number" value={data?.stock || ""} onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, [sizeKey]: { ...data, stock: e.target.value } } })} className={inputCls} placeholder="Stock" />
+                <input type="text" value={data?.measurements?.width || ""} onChange={(e) => {
+                  const newWidth = e.target.value;
+                  const newLength = data?.measurements?.length || "";
+                  const newKey = `${newWidth}x${newLength}`;
+                  const newSizes = { ...form.sizes };
+                  delete newSizes[sizeKey];
+                  newSizes[newKey] = { ...data, measurements: { ...data?.measurements, width: newWidth } };
+                  setForm({ ...form, sizes: newSizes });
+                }} className={inputCls} placeholder='Width (চওড়া)"' />
+                <input type="text" value={data?.measurements?.length || ""} onChange={(e) => {
+                  const newLength = e.target.value;
+                  const newWidth = data?.measurements?.width || "";
+                  const newKey = `${newWidth}x${newLength}`;
+                  const newSizes = { ...form.sizes };
+                  delete newSizes[sizeKey];
+                  newSizes[newKey] = { ...data, measurements: { ...data?.measurements, length: newLength } };
+                  setForm({ ...form, sizes: newSizes });
+                }} className={inputCls} placeholder='Length (লম্বা)"' />
+              </div>
             </div>
-          </div>
+          ))}
+
+          {/* Add new size button */}
+          <button type="button" onClick={() => {
+            const newKey = `new_${Date.now()}`;
+            setForm({ ...form, sizes: { ...form.sizes, [newKey]: { stock: "", measurements: { width: "", length: "" } } } });
+          }} className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 font-medium py-2">
+            <Plus size={14} /> নতুন সাইজ যোগ করুন
+          </button>
         </div>
       );
     }
