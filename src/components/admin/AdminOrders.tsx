@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/lib/currency";
-import { FileDown, Search, Trash2 } from "lucide-react";
+import { FileDown, Search, Trash2, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { generateInvoiceHTML } from "@/lib/invoiceTemplate";
@@ -62,6 +62,30 @@ const AdminOrders = () => {
       setDeleteTarget(null);
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const sendToCourier = useMutation({
+    mutationFn: async (order: any) => {
+      const res = await supabase.functions.invoke("steadfast-courier", {
+        body: {
+          action: "create_order",
+          order_id: order.id,
+          recipient_name: order.customer_name,
+          recipient_phone: order.phone,
+          recipient_address: order.address,
+          cod_amount: order.total,
+          note: order.tracking_id || "",
+        },
+      });
+      if (res.error) throw new Error(res.error.message);
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      toast({ title: "কুরিয়ারে পাঠানো হয়েছে", description: `Consignment ID: ${data.consignment?.consignment_id}` });
+    },
+    onError: (e: any) => toast({ title: "কুরিয়ারে পাঠাতে সমস্যা", description: e.message, variant: "destructive" }),
   });
 
   const handleGenerateInvoice = (order: any) => {
@@ -157,6 +181,20 @@ const AdminOrders = () => {
               <button onClick={() => handleGenerateInvoice(o)} className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary hover:bg-muted rounded-lg text-xs font-medium transition-colors text-foreground">
                 <FileDown size={13} /> ইনভয়েস
               </button>
+              {!o.courier_tracking_id && (
+                <button
+                  onClick={() => sendToCourier.mutate(o)}
+                  disabled={sendToCourier.isPending}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                >
+                  <Send size={13} /> {sendToCourier.isPending ? "পাঠানো হচ্ছে..." : "কুরিয়ারে পাঠান"}
+                </button>
+              )}
+              {o.courier_tracking_id && (
+                <span className="px-3 py-1.5 bg-emerald-500/10 text-emerald-500 rounded-lg text-xs font-medium">
+                  ✅ CID: {o.courier_tracking_id}
+                </span>
+              )}
               <button onClick={() => setDeleteTarget(o)} className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-destructive/10 text-destructive rounded-lg text-xs font-medium transition-colors">
                 <Trash2 size={13} /> ডিলিট
               </button>
