@@ -80,7 +80,7 @@ const HeroSlider = ({ slides }: HeroSliderProps) => {
 
   if (slides.length === 0) {
     return (
-      <div className="h-screen bg-secondary flex items-center justify-center">
+      <div className="w-full aspect-video bg-secondary flex items-center justify-center">
         <p className="text-muted-foreground">No featured products</p>
       </div>
     );
@@ -89,7 +89,7 @@ const HeroSlider = ({ slides }: HeroSliderProps) => {
   // Show loading state until images are ready
   if (!imagesLoaded) {
     return (
-      <div className="h-screen bg-secondary flex items-center justify-center">
+      <div className="w-full aspect-video bg-secondary flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent animate-spin" />
       </div>
     );
@@ -121,7 +121,7 @@ const HeroSlider = ({ slides }: HeroSliderProps) => {
   };
 
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-secondary">
+    <div className="relative w-full aspect-video overflow-hidden bg-secondary">
       {/* Background Images Layer - Crossfade */}
       <div className="absolute inset-0">
         {slides.map((slide, index) => (
