@@ -227,6 +227,7 @@ export type Database = {
           image_url: string | null
           is_featured: boolean | null
           name: string
+          original_price: number | null
           price: number
           size_stock: Json | null
           sizes: Json | null
@@ -242,6 +243,7 @@ export type Database = {
           image_url?: string | null
           is_featured?: boolean | null
           name: string
+          original_price?: number | null
           price: number
           size_stock?: Json | null
           sizes?: Json | null
@@ -257,6 +259,7 @@ export type Database = {
           image_url?: string | null
           is_featured?: boolean | null
           name?: string
+          original_price?: number | null
           price?: number
           size_stock?: Json | null
           sizes?: Json | null

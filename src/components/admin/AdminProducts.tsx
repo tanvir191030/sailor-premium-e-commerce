@@ -35,7 +35,7 @@ const AdminProducts = () => {
   const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const [form, setForm] = useState({
-    name: "", name_bn: "", price: "", category: "", brand: "",
+    name: "", name_bn: "", price: "", original_price: "", category: "", brand: "",
     stock: "", description: "", description_bn: "", is_featured: false,
     sub_category: "",
     sizes: {} as any,
@@ -104,9 +104,13 @@ const AdminProducts = () => {
 
       const finalStock = finalSizes ? totalStockFromSizes : (parseInt(form.stock) || 0);
 
+      const salePrice = parseFloat(form.price);
+      const mrp = form.original_price ? parseFloat(form.original_price) : null;
+
       const payload: any = {
         name: form.name,
-        price: parseFloat(form.price),
+        price: salePrice,
+        original_price: mrp && mrp > salePrice ? mrp : null,
         category: form.category || null,
         sub_category: form.sub_category || null,
         brand: form.brand || null,
@@ -184,7 +188,7 @@ const AdminProducts = () => {
   });
 
   const resetForm = () => {
-    setForm({ name: "", name_bn: "", price: "", category: "", brand: "", stock: "", description: "", description_bn: "", is_featured: false, sub_category: "", sizes: {} });
+    setForm({ name: "", name_bn: "", price: "", original_price: "", category: "", brand: "", stock: "", description: "", description_bn: "", is_featured: false, sub_category: "", sizes: {} });
     setImageFiles([]); setImagePreviews([]); setExistingImages([]); setEditingId(null); setShowForm(false);
   };
 
@@ -220,6 +224,7 @@ const AdminProducts = () => {
 
     setForm({
       name: p.name, name_bn: p.name_bn || "", price: String(p.price),
+      original_price: p.original_price ? String(p.original_price) : "",
       category: p.category || "", sub_category: p.sub_category || p.sizes?.sub_category || "", brand: p.brand || "", stock: String(p.stock ?? 0),
       description: p.description || "", description_bn: p.description_bn || "",
       is_featured: p.is_featured || false,
@@ -396,8 +401,27 @@ const AdminProducts = () => {
                 <input value={form.name_bn} onChange={(e) => setForm({ ...form, name_bn: e.target.value })} placeholder="পণ্যের নাম (বাংলা)" className={inputCls} />
               </div>
 
+              {/* Pricing fields */}
+              <div className="space-y-3 p-3 border border-border rounded-lg bg-secondary/10">
+                <p className="text-xs font-medium text-muted-foreground">মূল্য নির্ধারণ</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] text-muted-foreground mb-1">Original Price (MRP)</label>
+                    <input value={form.original_price} onChange={(e) => setForm({ ...form, original_price: e.target.value })} placeholder="MRP ৳" type="number" className={inputCls} />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-muted-foreground mb-1">Sale Price (বিক্রয় মূল্য)</label>
+                    <input value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="Sale ৳" type="number" className={inputCls} />
+                  </div>
+                </div>
+                {form.original_price && form.price && parseFloat(form.original_price) > parseFloat(form.price) && (
+                  <p className="text-xs text-green-600 font-medium">
+                    ডিসকাউন্ট: {Math.round(((parseFloat(form.original_price) - parseFloat(form.price)) / parseFloat(form.original_price)) * 100)}% OFF
+                  </p>
+                )}
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
-                <input value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder={t("admin.price")} type="number" className={inputCls} />
                 <input
                   value={subType !== "none" && Object.keys(form.sizes).length > 0 ? String(Object.values(form.sizes).reduce((acc: number, curr: any) => acc + (parseInt(curr?.stock ?? curr) || 0), 0)) : form.stock}
                   onChange={(e) => setForm({ ...form, stock: e.target.value })}
@@ -539,7 +563,14 @@ const AdminProducts = () => {
                     </div>
                   </td>
                   <td className="p-3 text-muted-foreground">{p.category || "—"}</td>
-                  <td className="p-3 text-right font-medium text-foreground">{formatPrice(p.price)}</td>
+                  <td className="p-3 text-right">
+                    <div className="flex flex-col items-end">
+                      <span className="font-medium text-foreground">{formatPrice(p.price)}</span>
+                      {p.original_price && p.original_price > p.price && (
+                        <span className="text-[10px] text-muted-foreground line-through">{formatPrice(p.original_price)}</span>
+                      )}
+                    </div>
+                  </td>
                   <td className="p-3 text-right">
                     <span className={`px-2 py-0.5 rounded-full text-xs ${(p.stock ?? 0) < 5 ? "bg-red-500/10 text-red-500" : "bg-emerald-500/10 text-emerald-500"}`}>{p.stock ?? 0}</span>
                   </td>

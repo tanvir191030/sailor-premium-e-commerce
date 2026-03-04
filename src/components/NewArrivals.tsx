@@ -7,6 +7,7 @@ interface Product {
   id: string;
   name: string;
   price: number;
+  original_price?: number | null;
   image_url: string | null;
   category: string | null;
   created_at: string | null;
@@ -56,6 +57,7 @@ const NewArrivals = ({ products }: NewArrivalsProps) => {
                 id={product.id}
                 name={product.name}
                 price={product.price}
+                originalPrice={product.original_price ?? undefined}
                 image={product.image_url || "/placeholder.svg"}
                 category={product.category || undefined}
                 isNew={index < 4}

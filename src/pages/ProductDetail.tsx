@@ -462,8 +462,16 @@ const ProductDetail = () => {
                 </div>
 
                 {/* Price */}
-                <div className="flex items-baseline gap-3">
+                <div className="flex items-baseline gap-3 flex-wrap">
                   <span className="text-2xl md:text-3xl font-bold tracking-tight">{formatPrice(product.price)}</span>
+                  {(product as any).original_price && (product as any).original_price > product.price && (
+                    <>
+                      <span className="text-base md:text-lg text-muted-foreground line-through">{formatPrice((product as any).original_price)}</span>
+                      <span className="text-xs md:text-sm font-bold text-green-600 bg-green-500/10 px-2 py-0.5 rounded">
+                        -{Math.round((((product as any).original_price - product.price) / (product as any).original_price) * 100)}% OFF
+                      </span>
+                    </>
+                  )}
                 </div>
 
                 {/* Stock & Meta chips */}
