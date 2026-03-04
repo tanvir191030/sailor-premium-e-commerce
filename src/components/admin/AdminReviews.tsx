@@ -32,13 +32,15 @@ const AdminReviews = () => {
 
   const approveMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("reviews").update({ is_approved: true } as any).eq("id", id);
+      const { error } = await supabase.from("reviews").update({ is_approved: true }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-reviews"] });
+      queryClient.invalidateQueries({ queryKey: ["reviews"] });
       toast({ title: "✓ রিভিউ অনুমোদিত হয়েছে" });
     },
+    onError: (e: any) => toast({ title: "ত্রুটি", description: e.message, variant: "destructive" }),
   });
 
   const deleteMutation = useMutation({
@@ -48,8 +50,10 @@ const AdminReviews = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-reviews"] });
+      queryClient.invalidateQueries({ queryKey: ["reviews"] });
       toast({ title: "✓ রিভিউ মুছে ফেলা হয়েছে" });
     },
+    onError: (e: any) => toast({ title: "ত্রুটি", description: e.message, variant: "destructive" }),
   });
 
   const pending = reviews.filter((r: any) => !(r as any).is_approved);
