@@ -106,10 +106,13 @@ const ProductDetail = () => {
 
         const items = Array.isArray(order.cart_items) ? order.cart_items : [];
         return items.some((item: any) => {
-          const productId = String(item.product_id || item.productId || item.id || "")
-            .split("-")[0]
-            .trim();
-          return productId === id;
+          // product_id is the clean UUID; fallback to extracting UUID from composite id (e.g. "uuid-size")
+          if (item.product_id && item.product_id === id) return true;
+          if (item.productId && item.productId === id) return true;
+          // Extract UUID (36 chars) from the start of the id field
+          const rawId = String(item.id || "");
+          const uuidMatch = rawId.match(/^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+          return uuidMatch ? uuidMatch[1] === id : rawId === id;
         });
       });
       setCanReview(hasProduct);
