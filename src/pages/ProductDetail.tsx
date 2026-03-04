@@ -93,21 +93,24 @@ const ProductDetail = () => {
   const checkPurchaseEligibility = async (phone: string) => {
     if (!phone || !isValidBDPhone(phone) || !id) return;
     const normalized = normalizePhone(phone);
-    
-    // Query all orders (status check done client-side for case-insensitivity)
+
     const { data } = await supabase
       .from("orders")
-      .select("cart_items, phone, status");
-    
+      .select("cart_items, phone, status")
+      .ilike("status", "delivered");
+
     if (data && data.length > 0) {
       const hasProduct = data.some((order: any) => {
-        // Case-insensitive status check (handles "Delivered", "delivered", etc.)
-        const isDelivered = (order.status || "").toLowerCase() === "delivered";
-        if (!isDelivered) return false;
         const dbPhone = normalizePhone(order.phone || "");
         if (dbPhone !== normalized) return false;
+
         const items = Array.isArray(order.cart_items) ? order.cart_items : [];
-        return items.some((item: any) => item.id === id);
+        return items.some((item: any) => {
+          const productId = String(item.product_id || item.productId || item.id || "")
+            .split("-")[0]
+            .trim();
+          return productId === id;
+        });
       });
       setCanReview(hasProduct);
     } else {
@@ -805,7 +808,7 @@ const ProductDetail = () => {
                     />
                     <button
                       onClick={() => checkPurchaseEligibility(buyerPhone)}
-                      disabled={buyerPhone.length < 10}
+                      disabled={!isValidBDPhone(buyerPhone)}
                       className="flex items-center gap-1.5 bg-primary text-primary-foreground px-5 py-2.5 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
                     >
                       <CheckCircle size={14} /> যাচাই করুন
