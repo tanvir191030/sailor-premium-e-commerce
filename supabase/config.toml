@@ -2,3 +2,6 @@ project_id = "ghvschvzfxnyzzkvintq"
 
 [functions.steadfast-courier]
 verify_jwt = false
+
+[functions.steadfast-webhook]
+verify_jwt = false
