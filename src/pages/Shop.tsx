@@ -116,6 +116,7 @@ const Shop = () => {
                             id={product.id}
                             name={product.name}
                             price={product.price}
+                            originalPrice={(product as any).original_price ?? undefined}
                             image={product.image_url || "/placeholder.svg"}
                             category={product.category || undefined}
                             isNew={index < 4}

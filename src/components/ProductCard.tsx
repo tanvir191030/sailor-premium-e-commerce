@@ -79,17 +79,15 @@ const ProductCard = ({
           />
 
           {/* Badges */}
-          {isNew && (
-            <span className="absolute top-2 left-2 md:top-3 md:left-3 bg-primary text-primary-foreground px-2 py-0.5 md:px-3 md:py-1 text-[9px] md:text-[10px] uppercase tracking-[0.1em]">
+          {originalPrice && originalPrice > price ? (
+            <span className="absolute top-2 left-2 md:top-3 md:left-3 bg-destructive text-destructive-foreground px-2 py-0.5 md:px-3 md:py-1 text-[9px] md:text-[10px] font-bold tracking-[0.05em] z-[1]">
+              -{Math.round(((originalPrice - price) / originalPrice) * 100)}%
+            </span>
+          ) : isNew ? (
+            <span className="absolute top-2 left-2 md:top-3 md:left-3 bg-primary text-primary-foreground px-2 py-0.5 md:px-3 md:py-1 text-[9px] md:text-[10px] uppercase tracking-[0.1em] z-[1]">
               New
             </span>
-          )}
-
-          {originalPrice && originalPrice > price && (
-            <span className="absolute top-2 left-2 md:top-3 md:left-3 bg-destructive text-destructive-foreground px-2 py-0.5 md:px-3 md:py-1 text-[9px] md:text-[10px] uppercase tracking-[0.1em]">
-              Sale
-            </span>
-          )}
+          ) : null}
 
           {/* Wishlist Button */}
           <button
