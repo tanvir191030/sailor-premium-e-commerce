@@ -74,30 +74,36 @@ const ProductDetail = () => {
   const [buyerPhone, setBuyerPhone] = useState("");
 
   const normalizePhone = (p: string) => {
+    // Strip everything except digits
     let d = p.replace(/\D/g, "");
+    // Remove country code +880 or 880
     if (d.startsWith("880")) d = d.substring(3);
-    if (d.startsWith("0")) d = d.substring(1);
-    return d;
+    // Ensure it starts with 0
+    if (!d.startsWith("0") && d.length === 10) d = "0" + d;
+    return d; // returns 11-digit format like 01XXXXXXXXX
+  };
+
+  const isValidBDPhone = (phone: string) => {
+    const d = phone.replace(/\D/g, "");
+    // After stripping, must be 11 digits starting with 01[3-9]
+    const normalized = normalizePhone(phone);
+    return /^01[3-9]\d{8}$/.test(normalized);
   };
 
   const checkPurchaseEligibility = async (phone: string) => {
-    if (!phone || phone.replace(/\D/g, "").length < 10 || !id) return;
+    if (!phone || !isValidBDPhone(phone) || !id) return;
     const normalized = normalizePhone(phone);
     
-    // Fetch all delivered orders (case-insensitive status check)
+    // Query only delivered orders to reduce payload
     const { data } = await supabase
       .from("orders")
-      .select("cart_items, status, phone");
+      .select("cart_items, phone")
+      .eq("status", "delivered");
     
     if (data && data.length > 0) {
-      const matchingOrders = data.filter((order: any) => {
+      const hasProduct = data.some((order: any) => {
         const dbPhone = normalizePhone(order.phone || "");
-        const isPhoneMatch = dbPhone === normalized || normalized.endsWith(dbPhone) || dbPhone.endsWith(normalized);
-        const isDelivered = (order.status || "").toLowerCase() === "delivered";
-        return isPhoneMatch && isDelivered;
-      });
-      
-      const hasProduct = matchingOrders.some((order: any) => {
+        if (dbPhone !== normalized) return false;
         const items = Array.isArray(order.cart_items) ? order.cart_items : [];
         return items.some((item: any) => item.id === id);
       });
