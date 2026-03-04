@@ -94,14 +94,16 @@ const ProductDetail = () => {
     if (!phone || !isValidBDPhone(phone) || !id) return;
     const normalized = normalizePhone(phone);
     
-    // Query only delivered orders to reduce payload
+    // Query all orders (status check done client-side for case-insensitivity)
     const { data } = await supabase
       .from("orders")
-      .select("cart_items, phone")
-      .eq("status", "delivered");
+      .select("cart_items, phone, status");
     
     if (data && data.length > 0) {
       const hasProduct = data.some((order: any) => {
+        // Case-insensitive status check (handles "Delivered", "delivered", etc.)
+        const isDelivered = (order.status || "").toLowerCase() === "delivered";
+        if (!isDelivered) return false;
         const dbPhone = normalizePhone(order.phone || "");
         if (dbPhone !== normalized) return false;
         const items = Array.isArray(order.cart_items) ? order.cart_items : [];
