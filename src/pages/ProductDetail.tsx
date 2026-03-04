@@ -73,15 +73,31 @@ const ProductDetail = () => {
   const [canReview, setCanReview] = useState<boolean | null>(null);
   const [buyerPhone, setBuyerPhone] = useState("");
 
+  const normalizePhone = (p: string) => {
+    let d = p.replace(/\D/g, "");
+    if (d.startsWith("880")) d = d.substring(3);
+    if (d.startsWith("0")) d = d.substring(1);
+    return d;
+  };
+
   const checkPurchaseEligibility = async (phone: string) => {
-    if (!phone || phone.length < 10 || !id) return;
+    if (!phone || phone.replace(/\D/g, "").length < 10 || !id) return;
+    const normalized = normalizePhone(phone);
+    
+    // Fetch all delivered orders (case-insensitive status check)
     const { data } = await supabase
       .from("orders")
-      .select("cart_items, status")
-      .eq("phone", phone)
-      .eq("status", "delivered");
+      .select("cart_items, status, phone");
+    
     if (data && data.length > 0) {
-      const hasProduct = data.some((order: any) => {
+      const matchingOrders = data.filter((order: any) => {
+        const dbPhone = normalizePhone(order.phone || "");
+        const isPhoneMatch = dbPhone === normalized || normalized.endsWith(dbPhone) || dbPhone.endsWith(normalized);
+        const isDelivered = (order.status || "").toLowerCase() === "delivered";
+        return isPhoneMatch && isDelivered;
+      });
+      
+      const hasProduct = matchingOrders.some((order: any) => {
         const items = Array.isArray(order.cart_items) ? order.cart_items : [];
         return items.some((item: any) => item.id === id);
       });
