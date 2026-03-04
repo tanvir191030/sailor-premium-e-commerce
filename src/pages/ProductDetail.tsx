@@ -821,8 +821,8 @@ const ProductDetail = () => {
                   /* Not eligible */
                   <div className="text-center py-6 space-y-2">
                     <XCircle size={32} className="mx-auto text-muted-foreground/50" />
-                    <p className="text-sm font-medium text-muted-foreground">শুধুমাত্র পণ্যটি ক্রয়কারী গ্রাহকরাই রিভিউ দিতে পারবেন।</p>
-                    <p className="text-xs text-muted-foreground">এই ফোন নম্বরে এই পণ্যের কোনো ডেলিভারি সম্পন্ন অর্ডার পাওয়া যায়নি।</p>
+                    <p className="text-sm font-medium text-muted-foreground">এই পণ্যটি আপনার এই নম্বরে এখনো ডেলিভারি হয়নি।</p>
+                    <p className="text-xs text-muted-foreground">শুধুমাত্র ক্রয়কারী গ্রাহকরাই রিভিউ দিতে পারবেন।</p>
                     <button onClick={() => { setCanReview(null); setBuyerPhone(""); }} className="text-xs text-primary hover:underline mt-2">
                       অন্য নম্বর দিয়ে চেষ্টা করুন
                     </button>
