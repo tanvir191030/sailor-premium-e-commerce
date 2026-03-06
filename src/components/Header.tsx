@@ -419,7 +419,7 @@ const Header = () => {
                 className="fixed top-0 left-0 w-[280px] h-[100dvh] max-h-[100dvh] bg-background z-[80] flex flex-col shadow-2xl md:hidden overflow-y-auto overscroll-contain"
               >
                 {/* Drawer header */}
-                <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+                <div className="sticky top-0 z-10 bg-background flex items-center justify-between px-5 py-4 border-b border-border">
                   <span className="font-serif text-lg tracking-[0.1em]">{storeName}</span>
                   <button
                     onClick={() => setIsMobileMenuOpen(false)}
