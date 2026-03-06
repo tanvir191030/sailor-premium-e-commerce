@@ -44,6 +44,7 @@ const AnimatedRoutes = () => {
         <Route path="/admin" element={<Admin />} />
         <Route path="/admin/:section" element={<Admin />} />
         <Route path="/category/:categoryName" element={<Category />} />
+        <Route path="/category/:categoryName/:subCategoryName" element={<Category />} />
         <Route path="/shop" element={<Shop />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/track-order" element={<TrackOrder />} />
