@@ -15,6 +15,8 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 const Index = () => {
   const { data: products = [], isLoading: productsLoading } = useProducts();
   const { data: featuredProducts = [], isLoading: featuredLoading } = useFeaturedProducts();
+  const { settings } = useSiteSettings();
+  const baseUrl = settings.website_url || "https://modestmart.com";
 
   const { data: banners = [], isLoading: bannersLoading } = useQuery({
     queryKey: ["hero-banners-public"],
