@@ -431,7 +431,7 @@ const Header = () => {
                 </div>
 
                 {/* Nav links with accordion sub-categories */}
-                <nav className="flex-1 overflow-y-auto overscroll-contain py-2 min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
+                <nav className="flex-1 overflow-y-auto overscroll-contain py-2 min-h-0 h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
                   {navLinks.map((link, i) => {
                     const subs = link.catId ? subCategories.filter((s: any) => s.category_id === link.catId) : [];
                     const isExpanded = mobileExpandedCats.has(link.name);
@@ -479,7 +479,7 @@ const Header = () => {
                                   onClick={() => setIsMobileMenuOpen(false)}
                                   className="block py-2 text-[12px] tracking-[0.1em] text-primary font-medium hover:text-foreground transition-colors"
                                 >
-                                  সব দেখুন
+                                  {link.name} All
                                 </Link>
                                 {subs.map((sub: any) => (
                                   <Link
