@@ -122,6 +122,39 @@ export type Database = {
         }
         Relationships: []
       }
+      expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          expense_date: string
+          id: string
+          title: string
+        }
+        Insert: {
+          amount?: number
+          category?: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          expense_date?: string
+          id?: string
+          title: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          expense_date?: string
+          id?: string
+          title?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           address: string
