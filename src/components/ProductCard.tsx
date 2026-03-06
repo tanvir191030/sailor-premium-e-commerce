@@ -156,6 +156,11 @@ const ProductCard = ({
                 </span>
               )}
             </div>
+            {isFreeDelivery && (
+              <span className="flex items-center gap-1 text-[10px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                <Truck size={10} /> Free Delivery
+              </span>
+            )}
           </div>
 
           {/* Mobile Action Buttons - Below Image */}
