@@ -6,26 +6,15 @@ import { formatPrice } from "@/lib/currency";
 import { Plus, Pencil, Trash2, X, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
-
-// Sub-category definitions per category
-const SUB_CATEGORIES: Record<string, string[]> = {
-  Women: ["Borkha", "Kameez", "Hijab", "Orna", "Shoes", "Bags", "Others"],
-  Men: ["Panjabi", "Shirt", "T-Shirt", "Pants", "Shoes", "Bags", "Others"],
-  Kids: ["Shirt", "T-Shirt", "Pants", "Shoes", "Others"],
-};
-
-const CLOTHING_SUBS = ["Borkha", "Kameez", "Panjabi", "Shirt", "T-Shirt", "Pants"];
-const HIJAB_SUBS = ["Hijab", "Orna"];
-const SHOE_SUBS = ["Shoes"];
-const NO_SIZE_SUBS = ["Bags", "Others"];
+import { useSubCategories, MEASUREMENT_TEMPLATES } from "@/hooks/useSubCategories";
 
 const LETTER_SIZES = ["S", "M", "L", "XL", "XXL"];
 const SHOE_SIZES = ["36", "37", "38", "39", "40", "41", "42", "43", "44", "45"];
 
-const getSubCategoryType = (sub: string): "clothing" | "hijab" | "shoes" | "none" => {
-  if (CLOTHING_SUBS.includes(sub)) return "clothing";
-  if (HIJAB_SUBS.includes(sub)) return "hijab";
-  if (SHOE_SUBS.includes(sub)) return "shoes";
+const getTemplateType = (template: string): "clothing" | "hijab" | "shoes" | "none" => {
+  if (template === "clothing" || template === "panjabi" || template === "pants") return "clothing";
+  if (template === "hijab") return "hijab";
+  if (template === "shoes") return "shoes";
   return "none";
 };
 
