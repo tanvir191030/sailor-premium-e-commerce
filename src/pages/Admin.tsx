@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import {
   LayoutDashboard, Package, ShoppingCart, Users, CreditCard,
   Megaphone, Settings, ArrowLeft, Menu, X, LogOut, Moon, Sun, Tag, Award, Ticket, MessageSquare,
+  Warehouse, Wallet, BarChart3,
 } from "lucide-react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import AdminDashboard from "@/components/admin/AdminDashboard";
