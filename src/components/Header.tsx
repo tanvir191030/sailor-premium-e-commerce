@@ -479,7 +479,7 @@ const Header = () => {
                                   onClick={() => setIsMobileMenuOpen(false)}
                                   className="block py-2 text-[12px] tracking-[0.1em] text-primary font-medium hover:text-foreground transition-colors"
                                 >
-                                  সব দেখুন
+                                  {link.name} All
                                 </Link>
                                 {subs.map((sub: any) => (
                                   <Link
