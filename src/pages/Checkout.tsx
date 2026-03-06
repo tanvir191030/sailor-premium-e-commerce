@@ -384,7 +384,11 @@ const Checkout = () => {
                         </select>
                         {form.district && (
                           <p className="text-xs mt-1 text-muted-foreground">
-                            ডেলিভারি: {deliveryZone === "inside_dhaka" ? "ঢাকার ভিতরে" : "ঢাকার বাইরে"} — {formatPrice(deliveryCharge)}
+                            {isFreeDelivery ? (
+                              <span className="text-primary font-medium">🎉 ফ্রি ডেলিভারি!</span>
+                            ) : (
+                              <>ডেলিভারি: {deliveryZone === "inside_dhaka" ? "ঢাকার ভিতরে" : "ঢাকার বাইরে"} — {formatPrice(deliveryCharge)}</>
+                            )}
                           </p>
                         )}
                       </div>
