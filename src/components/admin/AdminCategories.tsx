@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Trash2, Tag, ChevronDown, ChevronUp, FolderTree } from "lucide-react";
+import { Plus, Trash2, Tag, ChevronDown, ChevronUp, FolderTree, Pencil, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSubCategories, MEASUREMENT_TEMPLATES } from "@/hooks/useSubCategories";
 
@@ -12,6 +12,9 @@ const AdminCategories = () => {
   const [newSubName, setNewSubName] = useState("");
   const [newSubTemplate, setNewSubTemplate] = useState("clothing");
   const [deleteSubTarget, setDeleteSubTarget] = useState<any>(null);
+  const [editingSub, setEditingSub] = useState<string | null>(null);
+  const [editSubName, setEditSubName] = useState("");
+  const [editSubTemplate, setEditSubTemplate] = useState("");
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -85,6 +88,22 @@ const AdminCategories = () => {
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
+  const editSubMutation = useMutation({
+    mutationFn: async ({ id, name, template }: { id: string; name: string; template: string }) => {
+      const { error } = await (supabase as any).from("sub_categories").update({
+        name,
+        measurement_template: template,
+      }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sub-categories"] });
+      toast({ title: "সাব-ক্যাটাগরি আপডেট হয়েছে" });
+      setEditingSub(null);
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
   const deleteSubMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await (supabase as any).from("sub_categories").delete().eq("id", id);
@@ -99,6 +118,12 @@ const AdminCategories = () => {
   });
 
   const getSubsForCategory = (catId: string) => subCategories.filter((s: any) => s.category_id === catId);
+
+  const startEditSub = (sub: any) => {
+    setEditingSub(sub.id);
+    setEditSubName(sub.name);
+    setEditSubTemplate(sub.measurement_template);
+  };
 
   return (
     <div className="space-y-6">
@@ -138,7 +163,6 @@ const AdminCategories = () => {
 
             return (
               <div key={c.id}>
-                {/* Category Row */}
                 <div className="flex items-center justify-between p-3 hover:bg-secondary/50">
                   <button
                     onClick={() => setExpandedCat(isExpanded ? null : c.id)}
@@ -153,15 +177,11 @@ const AdminCategories = () => {
                       {subs.length} sub
                     </span>
                   </button>
-                  <button
-                    onClick={() => setDeleteTarget(c)}
-                    className="p-1.5 hover:bg-destructive/10 text-destructive rounded"
-                  >
+                  <button onClick={() => setDeleteTarget(c)} className="p-1.5 hover:bg-destructive/10 text-destructive rounded">
                     <Trash2 size={14} />
                   </button>
                 </div>
 
-                {/* Sub-categories Panel */}
                 {isExpanded && (
                   <div className="bg-secondary/30 px-4 py-4 space-y-3 border-t border-border/50">
                     {/* Add sub-category form */}
@@ -202,19 +222,60 @@ const AdminCategories = () => {
                       <div className="space-y-1.5">
                         {subs.map((sub: any) => (
                           <div key={sub.id} className="flex items-center justify-between bg-card p-2.5 rounded-lg border border-border/50">
-                            <div className="flex items-center gap-2">
-                              <FolderTree size={14} className="text-muted-foreground" />
-                              <span className="text-sm font-medium text-foreground">{sub.name}</span>
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">
-                                {MEASUREMENT_TEMPLATES[sub.measurement_template]?.label || sub.measurement_template}
-                              </span>
+                            {editingSub === sub.id ? (
+                              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 flex-1 mr-2">
+                                <input
+                                  value={editSubName}
+                                  onChange={(e) => setEditSubName(e.target.value)}
+                                  className="flex-1 px-2 py-1 border border-border rounded text-sm bg-transparent text-foreground focus:outline-none min-w-0"
+                                  autoFocus
+                                />
+                                <select
+                                  value={editSubTemplate}
+                                  onChange={(e) => setEditSubTemplate(e.target.value)}
+                                  className="px-2 py-1 border border-border rounded text-xs bg-card text-foreground"
+                                >
+                                  {Object.entries(MEASUREMENT_TEMPLATES).map(([key, tmpl]) => (
+                                    <option key={key} value={key}>{tmpl.label}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <FolderTree size={14} className="text-muted-foreground" />
+                                <span className="text-sm font-medium text-foreground">{sub.name}</span>
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">
+                                  {MEASUREMENT_TEMPLATES[sub.measurement_template]?.label || sub.measurement_template}
+                                </span>
+                              </div>
+                            )}
+                            <div className="flex items-center gap-1">
+                              {editingSub === sub.id ? (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      if (editSubName.trim()) editSubMutation.mutate({ id: sub.id, name: editSubName.trim(), template: editSubTemplate });
+                                    }}
+                                    disabled={!editSubName.trim() || editSubMutation.isPending}
+                                    className="p-1 hover:bg-primary/10 text-primary rounded"
+                                  >
+                                    <Check size={14} />
+                                  </button>
+                                  <button onClick={() => setEditingSub(null)} className="p-1 hover:bg-secondary text-muted-foreground rounded">
+                                    <X size={14} />
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button onClick={() => startEditSub(sub)} className="p-1 hover:bg-secondary text-muted-foreground rounded">
+                                    <Pencil size={12} />
+                                  </button>
+                                  <button onClick={() => setDeleteSubTarget(sub)} className="p-1 hover:bg-destructive/10 text-destructive rounded">
+                                    <Trash2 size={12} />
+                                  </button>
+                                </>
+                              )}
                             </div>
-                            <button
-                              onClick={() => setDeleteSubTarget(sub)}
-                              className="p-1 hover:bg-destructive/10 text-destructive rounded"
-                            >
-                              <Trash2 size={12} />
-                            </button>
                           </div>
                         ))}
                       </div>

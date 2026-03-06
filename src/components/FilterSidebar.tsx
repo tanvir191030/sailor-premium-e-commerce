@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { X, SlidersHorizontal, ChevronDown, ChevronUp } from "lucide-react";
+import { useSubCategories } from "@/hooks/useSubCategories";
 
 export interface FilterState {
   sizes: string[];
@@ -8,8 +9,6 @@ export interface FilterState {
   priceMin: number;
   priceMax: number;
 }
-
-const SUB_CATEGORIES = ["Borkha", "Hijab", "Bags", "Shoes", "Others"];
 
 const SIZES = ["XS", "S", "M", "L", "XL", "XXL", "3XL", "ফ্রি সাইজ"];
 const COLORS = [
@@ -52,6 +51,10 @@ const Accordion = ({ title, children }: { title: string; children: React.ReactNo
 };
 
 const FilterSidebar = ({ filters, onChange, mobileOpen, onClose }: Props) => {
+  const { data: subCategories = [] } = useSubCategories();
+
+  const subCategoryNames = [...new Set(subCategories.map((s) => s.name))];
+
   const toggleSubCategory = (s: string) => {
     const next = filters.subCategories?.includes(s)
       ? filters.subCategories.filter((x) => x !== s)
@@ -135,22 +138,24 @@ const FilterSidebar = ({ filters, onChange, mobileOpen, onClose }: Props) => {
         </div>
       </Accordion>
 
-      {/* Sub Categories */}
-      <Accordion title="ক্যাটাগরি (Women)">
-        <div className="flex flex-col gap-2">
-          {SUB_CATEGORIES.map((s) => (
-            <label key={s} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground cursor-pointer transition-colors">
-              <input
-                type="checkbox"
-                checked={filters.subCategories?.includes(s) || false}
-                onChange={() => toggleSubCategory(s)}
-                className="rounded border-border text-primary focus:ring-primary/30"
-              />
-              {s}
-            </label>
-          ))}
-        </div>
-      </Accordion>
+      {/* Sub Categories - Dynamic */}
+      {subCategoryNames.length > 0 && (
+        <Accordion title="সাব-ক্যাটাগরি">
+          <div className="flex flex-col gap-2 max-h-48 overflow-y-auto">
+            {subCategoryNames.map((s) => (
+              <label key={s} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground cursor-pointer transition-colors">
+                <input
+                  type="checkbox"
+                  checked={filters.subCategories?.includes(s) || false}
+                  onChange={() => toggleSubCategory(s)}
+                  className="rounded border-border text-primary focus:ring-primary/30"
+                />
+                {s}
+              </label>
+            ))}
+          </div>
+        </Accordion>
+      )}
 
       {/* Sizes */}
       <Accordion title="সাইজ">
@@ -207,20 +212,14 @@ const FilterSidebar = ({ filters, onChange, mobileOpen, onClose }: Props) => {
 
   return (
     <>
-      {/* Mobile Overlay */}
       {mobileOpen && (
-        <div
-          className="fixed inset-0 bg-black/40 z-40 lg:hidden"
-          onClick={onClose}
-        />
+        <div className="fixed inset-0 bg-black/40 z-40 lg:hidden" onClick={onClose} />
       )}
 
-      {/* Desktop sidebar */}
       <aside className="hidden lg:block w-56 shrink-0 sticky top-24 self-start">
         <div className="bg-card border border-border rounded-xl p-4">{content}</div>
       </aside>
 
-      {/* Mobile drawer */}
       <div
         className={`fixed inset-y-0 left-0 z-50 w-72 bg-card border-r border-border p-5 overflow-y-auto transition-transform duration-300 lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"
           }`}
