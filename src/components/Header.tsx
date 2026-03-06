@@ -89,12 +89,26 @@ const Header = () => {
         .slice(0, 5)
     : [];
 
+  const { data: categories = [] } = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("categories").select("*").order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+  const { data: subCategories = [] } = useSubCategories();
+  const [hoveredCat, setHoveredCat] = useState<string | null>(null);
+
+  // Build dynamic nav links from categories
   const navLinks = [
-    { name: t("nav.newIn"), href: "/category/new" },
-    { name: t("nav.women"), href: "/category/women" },
-    { name: t("nav.men"), href: "/category/men" },
-    { name: t("nav.kids"), href: "/category/kids" },
-    { name: t("nav.sale"), href: "/category/sale" },
+    { name: t("nav.newIn"), href: "/category/new", catId: null },
+    ...categories.map((c: any) => ({
+      name: c.name,
+      href: `/category/${c.name.toLowerCase()}`,
+      catId: c.id,
+    })),
+    { name: t("nav.sale"), href: "/category/sale", catId: null },
   ];
 
   return (
