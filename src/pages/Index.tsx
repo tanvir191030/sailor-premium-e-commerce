@@ -2,6 +2,8 @@ import Header from "@/components/Header";
 import HeroSlider from "@/components/HeroSlider";
 import NewArrivals from "@/components/NewArrivals";
 import CategorySection from "@/components/CategorySection";
+import ShoeCollection from "@/components/ShoeCollection";
+import WatchGallery from "@/components/WatchGallery";
 import Footer from "@/components/Footer";
 import PageTransition from "@/components/PageTransition";
 import { useProducts, useFeaturedProducts } from "@/hooks/useProducts";
@@ -12,7 +14,6 @@ const Index = () => {
   const { data: products = [], isLoading: productsLoading } = useProducts();
   const { data: featuredProducts = [], isLoading: featuredLoading } = useFeaturedProducts();
 
-  // Fetch hero banners from banners table
   const { data: banners = [], isLoading: bannersLoading } = useQuery({
     queryKey: ["hero-banners-public"],
     queryFn: async () => {
@@ -26,7 +27,6 @@ const Index = () => {
     },
   });
 
-  // Convert banners to slide format
   const bannerSlides = banners.map((b: any) => ({
     id: b.id,
     image: b.image_url,
@@ -77,7 +77,6 @@ const Index = () => {
     },
   ];
 
-  // Priority: Admin banners > Featured products > Default slides
   const slides = bannerSlides.length > 0 ? bannerSlides : featuredProducts.length > 0 ? featuredSlides : defaultSlides;
 
   if (productsLoading || featuredLoading || bannersLoading) {
@@ -96,6 +95,8 @@ const Index = () => {
           <HeroSlider slides={slides} />
           <NewArrivals products={products} />
           <CategorySection />
+          <ShoeCollection />
+          <WatchGallery />
         </main>
         <Footer />
       </div>

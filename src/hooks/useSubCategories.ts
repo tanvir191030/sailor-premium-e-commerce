@@ -11,11 +11,14 @@ export interface SubCategory {
 
 export const MEASUREMENT_TEMPLATES: Record<string, { label: string; fields: string[] }> = {
   none: { label: "কোনো সাইজ নেই (Bags, Others)", fields: [] },
-  clothing: { label: "পোশাক (Chest, Length, Shoulder)", fields: ["bust", "length", "shoulder"] },
+  clothing: { label: "পোশাক (Chest, Length, Shoulder)", fields: ["chest", "length", "shoulder"] },
   hijab: { label: "হিজাব/ওড়না (Width × Length)", fields: ["width", "length"] },
   shoes: { label: "জুতা (EU Size)", fields: [] },
   panjabi: { label: "পাঞ্জাবি (Chest, Length)", fields: ["chest", "length"] },
   pants: { label: "প্যান্ট (Waist, Length)", fields: ["waist", "length"] },
+  jewellery: { label: "জুয়েলারি (Diameter/Length)", fields: ["diameter", "length"] },
+  watch: { label: "ঘড়ি (Case Size)", fields: [] },
+  salwar_kameez: { label: "সালোয়ার কামিজ (Bust, Waist, Length)", fields: ["bust", "waist", "length"] },
 };
 
 export const useSubCategories = () => {
