@@ -230,8 +230,10 @@ const AdminProducts = () => {
 
   const inputCls = "w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none bg-transparent text-foreground placeholder:text-muted-foreground";
 
-  const subType = form.sub_category ? getSubCategoryType(form.sub_category) : "none";
-  const availableSubCats = SUB_CATEGORIES[form.category] || [];
+  const selectedSubCat = allSubCategories.find((s: any) => s.name === form.sub_category);
+  const subType = selectedSubCat ? getTemplateType(selectedSubCat.measurement_template) : "none";
+  const selectedCatObj = categories.find((c: any) => c.name === form.category);
+  const availableSubCats = selectedCatObj ? allSubCategories.filter((s: any) => s.category_id === selectedCatObj.id) : [];
 
   const renderSizeFields = () => {
     if (!form.sub_category || subType === "none") {
