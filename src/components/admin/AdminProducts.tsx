@@ -71,7 +71,8 @@ const AdminProducts = () => {
         image_url = await uploadProductImage(imageFiles[0]);
       }
 
-      const subType = form.sub_category ? getSubCategoryType(form.sub_category) : "none";
+      const selectedSub = allSubCategories.find((s: any) => s.name === form.sub_category);
+      const subType = selectedSub ? getTemplateType(selectedSub.measurement_template) : "none";
       let finalSizes: any = null;
       let totalStockFromSizes = 0;
 
