@@ -82,6 +82,30 @@ const AdminInventory = () => {
     doc.save(`inventory-${new Date().toISOString().split("T")[0]}.pdf`);
   };
 
+  const { settings } = useSiteSettings();
+  const storeName = settings.store_name || "Modest Mart";
+
+  const handlePrint = () => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+    const rows = filtered.map((p: any) => `
+      <tr>
+        <td style="padding:6px 10px;border-bottom:1px solid #eee">${p.name}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #eee">${p.category || "-"}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:center;font-weight:bold;${p.stock <= 0 ? "color:red" : p.stock < LOW_STOCK_THRESHOLD ? "color:orange" : ""}">${p.stock}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right">${p.price}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right">${(p.stock * Number(p.price)).toFixed(0)}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:center">${p.stock <= 0 ? "Out of Stock" : p.stock < LOW_STOCK_THRESHOLD ? "Low Stock" : "In Stock"}</td>
+      </tr>`).join("");
+    printWindow.document.write(`<!DOCTYPE html><html><head><title>Inventory Report</title><style>body{font-family:Arial,sans-serif;padding:30px}table{width:100%;border-collapse:collapse;margin-top:20px}th{background:#f5f5f5;padding:8px 10px;text-align:left;border-bottom:2px solid #ddd;font-size:12px}td{font-size:12px}h1{font-size:20px;margin:0}p{color:#666;font-size:12px;margin:4px 0}@media print{body{padding:15px}}</style></head><body>
+      <h1>${storeName} — Inventory Report</h1>
+      <p>Date: ${new Date().toLocaleDateString("en-GB")} | Total Items: ${filtered.length} | Total Stock: ${totalStock} | Inventory Value: ৳${totalValue.toFixed(0)}</p>
+      <table><thead><tr><th>Product</th><th>Category</th><th style="text-align:center">Stock</th><th style="text-align:right">Price</th><th style="text-align:right">Value</th><th style="text-align:center">Status</th></tr></thead><tbody>${rows}</tbody></table>
+    </body></html>`);
+    printWindow.document.close();
+    printWindow.print();
+  };
+
   const stats = [
     { label: "মোট স্টক", value: totalStock, icon: Package, bg: "bg-blue-500/10", color: "text-blue-500" },
     { label: "কম স্টক", value: lowStockCount, icon: AlertTriangle, bg: "bg-amber-500/10", color: "text-amber-500" },
