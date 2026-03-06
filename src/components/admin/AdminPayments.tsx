@@ -20,11 +20,14 @@ const AdminPayments = () => {
   const [rocketNumber, setRocketNumber] = useState("");
   const [defaultCourier, setDefaultCourier] = useState("");
   const [shippingCost, setShippingCost] = useState("");
+  const [freeDelivery, setFreeDelivery] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
   if (settings.length > 0 && !loaded) {
     setBkashNumber(getSetting("bkash_number")); setNagadNumber(getSetting("nagad_number")); setRocketNumber(getSetting("rocket_number"));
-    setDefaultCourier(getSetting("default_courier")); setShippingCost(getSetting("shipping_cost")); setLoaded(true);
+    setDefaultCourier(getSetting("default_courier")); setShippingCost(getSetting("shipping_cost"));
+    setFreeDelivery(getSetting("free_delivery") === "true");
+    setLoaded(true);
   }
 
   const saveSetting = useMutation({
