@@ -353,6 +353,14 @@ const ProductDetail = () => {
                   </Link>
                 </>
               )}
+              {product.sub_category && (
+                <>
+                  <span>/</span>
+                  <Link to={`/category/${(product.category || '').toLowerCase()}/${product.sub_category.toLowerCase()}`} className="hover:text-foreground transition-colors">
+                    {product.sub_category}
+                  </Link>
+                </>
+              )}
               <span>/</span>
               <span className="text-foreground truncate max-w-[120px]">{product.name}</span>
             </nav>
