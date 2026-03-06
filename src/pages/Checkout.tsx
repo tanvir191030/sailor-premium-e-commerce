@@ -70,9 +70,10 @@ const Checkout = () => {
     },
   });
 
-  const deliveryCharge = deliveryZone === "inside_dhaka"
+  const isFreeDelivery = deliverySettings?.free_delivery ?? false;
+  const deliveryCharge = isFreeDelivery ? 0 : (deliveryZone === "inside_dhaka"
     ? (deliverySettings?.inside_dhaka ?? 80)
-    : (deliverySettings?.outside_dhaka ?? 130);
+    : (deliverySettings?.outside_dhaka ?? 130));
 
   const discount = appliedCoupon
     ? appliedCoupon.discount_type === "percentage"
