@@ -429,20 +429,38 @@ const Header = () => {
                   </button>
                 </div>
 
-                {/* Nav links */}
+                {/* Nav links with sub-categories */}
                 <nav className="flex-1 overflow-y-auto py-2">
-                  {navLinks.map((link, i) => (
-                    <Link
-                      key={link.name}
-                      to={link.href}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className={`block px-6 py-3.5 text-[13px] uppercase tracking-[0.12em] font-medium text-foreground/80 hover:bg-secondary/60 hover:text-foreground transition-colors ${
-                        i < navLinks.length - 1 ? "border-b border-border/40" : ""
-                      }`}
-                    >
-                      {link.name}
-                    </Link>
-                  ))}
+                  {navLinks.map((link, i) => {
+                    const subs = link.catId ? subCategories.filter((s: any) => s.category_id === link.catId) : [];
+                    return (
+                      <div key={link.name}>
+                        <Link
+                          to={link.href}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className={`block px-6 py-3.5 text-[13px] uppercase tracking-[0.12em] font-medium text-foreground/80 hover:bg-secondary/60 hover:text-foreground transition-colors ${
+                            i < navLinks.length - 1 && subs.length === 0 ? "border-b border-border/40" : ""
+                          }`}
+                        >
+                          {link.name}
+                        </Link>
+                        {subs.length > 0 && (
+                          <div className="pl-10 pb-2 space-y-0.5 border-b border-border/40">
+                            {subs.map((sub: any) => (
+                              <Link
+                                key={sub.id}
+                                to={`/category/${link.name.toLowerCase()}/${sub.name.toLowerCase()}`}
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className="block py-2 text-[12px] tracking-[0.1em] text-muted-foreground hover:text-foreground transition-colors"
+                              >
+                                {sub.name}
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
 
                   <div className="border-t border-border my-1" />
 
