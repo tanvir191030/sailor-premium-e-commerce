@@ -103,7 +103,9 @@ const AdminDashboard = () => {
   ].filter((d) => d.value > 0);
 
   const stats = [
-    { label: "মোট আয়", value: formatPrice(totalRevenue), icon: TrendingUp, bg: "bg-emerald-500/10", color: "text-emerald-500" },
+    { label: "মোট বিক্রয়", value: formatPrice(totalRevenue), icon: TrendingUp, bg: "bg-emerald-500/10", color: "text-emerald-500" },
+    { label: "মোট খরচ", value: formatPrice(totalExpenses), icon: TrendingDown, bg: "bg-destructive/10", color: "text-destructive" },
+    { label: "নেট প্রফিট", value: formatPrice(netProfit), icon: Wallet, bg: netProfit >= 0 ? "bg-emerald-500/10" : "bg-destructive/10", color: netProfit >= 0 ? "text-emerald-500" : "text-destructive" },
     { label: "মোট অর্ডার", value: orders.length, icon: ShoppingCart, bg: "bg-blue-500/10", color: "text-blue-500" },
     { label: "পেন্ডিং অর্ডার", value: pendingOrders, icon: Clock, bg: "bg-amber-500/10", color: "text-amber-500" },
     { label: "ডেলিভারড", value: deliveredOrders, icon: Package, bg: "bg-emerald-500/10", color: "text-emerald-500" },
