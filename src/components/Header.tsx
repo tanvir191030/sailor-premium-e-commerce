@@ -127,11 +127,47 @@ const Header = () => {
 
             {/* LEFT — Nav links (desktop) */}
             <nav className="hidden md:flex items-center gap-6 flex-1">
-              {navLinks.map((link) => (
-                <Link key={link.name} to={link.href} className="nav-link">
-                  {link.name}
-                </Link>
-              ))}
+              {navLinks.map((link) => {
+                const subs = link.catId ? subCategories.filter((s: any) => s.category_id === link.catId) : [];
+                return (
+                  <div
+                    key={link.name}
+                    className="relative"
+                    onMouseEnter={() => subs.length > 0 ? setHoveredCat(link.name) : undefined}
+                    onMouseLeave={() => setHoveredCat(null)}
+                  >
+                    <Link to={link.href} className="nav-link flex items-center gap-1">
+                      {link.name}
+                      {subs.length > 0 && <ChevronDown size={12} className="opacity-50" />}
+                    </Link>
+                    {/* Dropdown */}
+                    {subs.length > 0 && hoveredCat === link.name && (
+                      <div className="absolute top-full left-0 pt-2 z-50">
+                        <div className="bg-background border border-border shadow-lg rounded-lg py-2 min-w-[160px]">
+                          <Link
+                            to={link.href}
+                            className="block px-4 py-2 text-sm text-foreground/80 hover:bg-secondary hover:text-foreground transition-colors font-medium"
+                            onClick={() => setHoveredCat(null)}
+                          >
+                            সব {link.name}
+                          </Link>
+                          <div className="border-t border-border/50 my-1" />
+                          {subs.map((sub: any) => (
+                            <Link
+                              key={sub.id}
+                              to={`/category/${link.name.toLowerCase()}/${sub.name.toLowerCase()}`}
+                              className="block px-4 py-2 text-sm text-foreground/70 hover:bg-secondary hover:text-foreground transition-colors"
+                              onClick={() => setHoveredCat(null)}
+                            >
+                              {sub.name}
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </nav>
 
             {/* Mobile hamburger */}
