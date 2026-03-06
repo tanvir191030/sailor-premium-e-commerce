@@ -21,6 +21,9 @@ import AdminCategories from "@/components/admin/AdminCategories";
 import AdminBrands from "@/components/admin/AdminBrands";
 import AdminCoupons from "@/components/admin/AdminCoupons";
 import AdminReviews from "@/components/admin/AdminReviews";
+import AdminInventory from "@/components/admin/AdminInventory";
+import AdminExpenses from "@/components/admin/AdminExpenses";
+import AdminReports from "@/components/admin/AdminReports";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n/index";
 
