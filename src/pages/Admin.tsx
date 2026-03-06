@@ -101,6 +101,7 @@ const Admin = () => {
       case "categories": return <AdminCategories />;
       case "brands": return <AdminBrands />;
       case "orders": return <AdminOrders />;
+      case "inventory": return <AdminInventory />;
       case "customers": return <AdminCustomers />;
       case "payments": return <AdminPayments />;
       case "coupons": return <AdminCoupons />;
