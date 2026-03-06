@@ -30,7 +30,18 @@ const AdminDashboard = () => {
     },
   });
 
-  const totalRevenue = orders.reduce((sum, o) => sum + Number(o.total), 0);
+  const { data: expenses = [] } = useQuery({
+    queryKey: ["admin-expenses-dashboard"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("expenses").select("*");
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  const totalRevenue = orders.filter((o) => o.status === "delivered").reduce((sum, o) => sum + Number(o.total), 0);
+  const totalExpenses = expenses.reduce((s: number, e: any) => s + Number(e.amount), 0);
+  const netProfit = totalRevenue - totalExpenses;
   const pendingOrders = orders.filter((o) => o.status === "pending").length;
   const processingOrders = orders.filter((o) => o.status === "processing").length;
   const shippedOrders = orders.filter((o) => o.status === "shipped").length;
