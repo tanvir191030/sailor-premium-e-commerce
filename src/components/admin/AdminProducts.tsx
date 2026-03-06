@@ -34,7 +34,7 @@ const AdminProducts = () => {
   const [existingImages, setExistingImages] = useState<string[]>([]); // URLs from DB
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { t } = useTranslation();
+  const { data: allSubCategories = [] } = useSubCategories();
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["admin-products"],
