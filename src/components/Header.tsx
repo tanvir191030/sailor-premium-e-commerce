@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Heart, ShoppingBag, Menu, X, Moon, Sun, MapPin } from "lucide-react";
+import { Search, Heart, ShoppingBag, Menu, X, Moon, Sun, MapPin, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useProducts } from "@/hooks/useProducts";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -9,6 +9,9 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n/index";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useSubCategories } from "@/hooks/useSubCategories";
 
 const LanguageSwitcher = () => {
   const { i18n: i18nInstance } = useTranslation();
