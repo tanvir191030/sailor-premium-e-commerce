@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Heart, ShoppingCart, Zap, Ruler } from "lucide-react";
+import { Heart, ShoppingCart, Zap, Ruler, Truck } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -7,6 +7,7 @@ import { useCart } from "@/contexts/CartContext";
 import { formatPrice } from "@/lib/currency";
 import { toast } from "sonner";
 import SizeChartModal from "@/components/SizeChartModal";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 interface ProductCardProps {
   id: string;
