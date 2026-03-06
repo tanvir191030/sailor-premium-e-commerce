@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Heart, ShoppingCart, Zap, Ruler } from "lucide-react";
+import { Heart, ShoppingCart, Zap, Ruler, Truck } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -7,6 +7,7 @@ import { useCart } from "@/contexts/CartContext";
 import { formatPrice } from "@/lib/currency";
 import { toast } from "sonner";
 import SizeChartModal from "@/components/SizeChartModal";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 interface ProductCardProps {
   id: string;
@@ -31,6 +32,8 @@ const ProductCard = ({
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const { toggle, isWishlisted } = useWishlist();
   const { addItem, setIsBuyNowOpen, setIsOpen } = useCart();
+  const { settings } = useSiteSettings();
+  const isFreeDelivery = settings.free_delivery === "true";
   const wishlisted = isWishlisted(id);
   const navigate = useNavigate();
 
@@ -153,6 +156,11 @@ const ProductCard = ({
                 </span>
               )}
             </div>
+            {isFreeDelivery && (
+              <span className="flex items-center gap-1 text-[10px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                <Truck size={10} /> Free Delivery
+              </span>
+            )}
           </div>
 
           {/* Mobile Action Buttons - Below Image */}

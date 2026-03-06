@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { CreditCard, Save, Truck } from "lucide-react";
+import { CreditCard, Save, Truck, Gift } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Switch } from "@/components/ui/switch";
 
 const AdminPayments = () => {
   const queryClient = useQueryClient();
@@ -19,11 +20,14 @@ const AdminPayments = () => {
   const [rocketNumber, setRocketNumber] = useState("");
   const [defaultCourier, setDefaultCourier] = useState("");
   const [shippingCost, setShippingCost] = useState("");
+  const [freeDelivery, setFreeDelivery] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
   if (settings.length > 0 && !loaded) {
     setBkashNumber(getSetting("bkash_number")); setNagadNumber(getSetting("nagad_number")); setRocketNumber(getSetting("rocket_number"));
-    setDefaultCourier(getSetting("default_courier")); setShippingCost(getSetting("shipping_cost")); setLoaded(true);
+    setDefaultCourier(getSetting("default_courier")); setShippingCost(getSetting("shipping_cost"));
+    setFreeDelivery(getSetting("free_delivery") === "true");
+    setLoaded(true);
   }
 
   const saveSetting = useMutation({
@@ -38,7 +42,8 @@ const AdminPayments = () => {
   const handleSave = () => {
     saveSetting.mutate({ key: "bkash_number", value: bkashNumber }); saveSetting.mutate({ key: "nagad_number", value: nagadNumber });
     saveSetting.mutate({ key: "rocket_number", value: rocketNumber }); saveSetting.mutate({ key: "default_courier", value: defaultCourier });
-    saveSetting.mutate({ key: "shipping_cost", value: shippingCost }); toast({ title: "সেটিংস সেভ হয়েছে" });
+    saveSetting.mutate({ key: "shipping_cost", value: shippingCost }); saveSetting.mutate({ key: "free_delivery", value: freeDelivery ? "true" : "false" });
+    toast({ title: "সেটিংস সেভ হয়েছে" });
   };
 
   const gateways = [
@@ -75,6 +80,23 @@ const AdminPayments = () => {
       <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
         <div className="flex items-center gap-2 mb-1"><Truck size={18} className="text-muted-foreground" /><h3 className="font-serif text-base text-foreground">শিপিং কনফিগারেশন</h3></div>
         <p className="text-xs text-muted-foreground mb-4">কুরিয়ার এবং শিপিং খরচ সেট করুন।</p>
+
+        {/* Free Delivery Toggle */}
+        <div className="border border-border rounded-xl p-4 mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center"><Gift size={18} className="text-primary" /></div>
+              <div>
+                <h4 className="font-medium text-sm text-foreground">ফ্রি ডেলিভারি সর্বত্র</h4>
+                <p className="text-[11px] text-muted-foreground">চালু করলে সব অর্ডারে ডেলিভারি চার্জ ০ হবে</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {freeDelivery && <span className="px-2.5 py-1 bg-primary/10 text-primary text-xs rounded-full font-medium">Active</span>}
+              <Switch checked={freeDelivery} onCheckedChange={setFreeDelivery} />
+            </div>
+          </div>
+        </div>
         <div className="grid md:grid-cols-2 gap-3">
           <div><label className="text-xs text-muted-foreground mb-1 block">ডিফল্ট কুরিয়ার</label><input value={defaultCourier} onChange={(e) => setDefaultCourier(e.target.value)} placeholder="যেমন: পাঠাও" className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none bg-transparent text-foreground placeholder:text-muted-foreground" /></div>
           <div><label className="text-xs text-muted-foreground mb-1 block">শিপিং খরচ (৳)</label><input value={shippingCost} onChange={(e) => setShippingCost(e.target.value)} placeholder="120" type="number" className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none bg-transparent text-foreground placeholder:text-muted-foreground" /></div>

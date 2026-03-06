@@ -39,6 +39,7 @@ export interface SiteSettings {
   hero_image_url: string;
   hero_title: string;
   hero_subtitle: string;
+  free_delivery: string;
 }
 
 const DEFAULTS: SiteSettings = {
@@ -78,6 +79,7 @@ const DEFAULTS: SiteSettings = {
   hero_image_url: "",
   hero_title: "",
   hero_subtitle: "",
+  free_delivery: "false",
 };
 
 export const useSiteSettings = () => {

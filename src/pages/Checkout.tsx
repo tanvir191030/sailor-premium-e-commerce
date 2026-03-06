@@ -55,7 +55,7 @@ const Checkout = () => {
       const { data, error } = await supabase
         .from("site_settings")
         .select("key, value")
-        .in("key", ["delivery_inside_dhaka", "delivery_outside_dhaka", "bkash_number", "nagad_number", "rocket_number"]);
+        .in("key", ["delivery_inside_dhaka", "delivery_outside_dhaka", "bkash_number", "nagad_number", "rocket_number", "free_delivery"]);
       if (error) throw error;
       const map: Record<string, string> = {};
       data?.forEach((s) => { map[s.key] = s.value || ""; });
@@ -65,13 +65,15 @@ const Checkout = () => {
         bkash_number: map["bkash_number"] || "",
         nagad_number: map["nagad_number"] || "",
         rocket_number: map["rocket_number"] || "",
+        free_delivery: map["free_delivery"] === "true",
       };
     },
   });
 
-  const deliveryCharge = deliveryZone === "inside_dhaka"
+  const isFreeDelivery = deliverySettings?.free_delivery ?? false;
+  const deliveryCharge = isFreeDelivery ? 0 : (deliveryZone === "inside_dhaka"
     ? (deliverySettings?.inside_dhaka ?? 80)
-    : (deliverySettings?.outside_dhaka ?? 130);
+    : (deliverySettings?.outside_dhaka ?? 130));
 
   const discount = appliedCoupon
     ? appliedCoupon.discount_type === "percentage"
@@ -382,7 +384,11 @@ const Checkout = () => {
                         </select>
                         {form.district && (
                           <p className="text-xs mt-1 text-muted-foreground">
-                            ডেলিভারি: {deliveryZone === "inside_dhaka" ? "ঢাকার ভিতরে" : "ঢাকার বাইরে"} — {formatPrice(deliveryCharge)}
+                            {isFreeDelivery ? (
+                              <span className="text-primary font-medium">🎉 ফ্রি ডেলিভারি!</span>
+                            ) : (
+                              <>ডেলিভারি: {deliveryZone === "inside_dhaka" ? "ঢাকার ভিতরে" : "ঢাকার বাইরে"} — {formatPrice(deliveryCharge)}</>
+                            )}
                           </p>
                         )}
                       </div>
@@ -548,8 +554,8 @@ const Checkout = () => {
                             </div>
                           )}
                           <div className="flex justify-between text-sm text-muted-foreground">
-                            <span>ডেলিভারি ({deliveryZone === "inside_dhaka" ? "ঢাকা" : "ঢাকার বাইরে"})</span>
-                            <span>{formatPrice(deliveryCharge)}</span>
+                            <span>ডেলিভারি {isFreeDelivery && <span className="text-primary font-medium">(ফ্রি!)</span>}</span>
+                            <span>{isFreeDelivery ? <span className="text-primary font-medium line-through-none">ফ্রি</span> : formatPrice(deliveryCharge)}</span>
                           </div>
                           <div className="flex justify-between font-bold text-base pt-2 border-t border-border text-foreground"><span>মোট</span><span>{formatPrice(grandTotal)}</span></div>
                         </div>
