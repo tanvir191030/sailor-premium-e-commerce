@@ -28,15 +28,8 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem("sailor-theme", theme);
   }, [theme]);
 
-  // Listen for system preference changes
-  useEffect(() => {
-    const stored = localStorage.getItem("sailor-theme");
-    if (stored) return; // User has explicit preference
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const handler = (e: MediaQueryListEvent) => setTheme(e.matches ? "dark" : "light");
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
+  // Never auto-switch to dark mode based on OS preference.
+  // Light mode is the strict default for all new visitors.
 
   const toggleTheme = () => setTheme((prev) => (prev === "light" ? "dark" : "light"));
 
