@@ -35,6 +35,7 @@ const AdminProducts = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { data: allSubCategories = [] } = useSubCategories();
+  const { t } = useTranslation();
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["admin-products"],
