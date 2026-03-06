@@ -5,11 +5,29 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import PageTransition from "@/components/PageTransition";
+import SEOHead, { breadcrumbSchema, siteNavigationSchema } from "@/components/SEOHead";
 import { useProducts } from "@/hooks/useProducts";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
+
+const CATEGORY_META: Record<string, { title: string; description: string }> = {
+  men: {
+    title: "Premium Men's Collection - Panjabi, Shirts & More | Modest Mart",
+    description: "পুরুষদের জন্য সেরা কালেকশন — পাঞ্জাবি, শার্ট, টি-শার্ট, পোলো, ট্রাউজার্স ও আরও অনেক কিছু। Modest Mart এ কেনাকাটা করুন।",
+  },
+  women: {
+    title: "Women's Fashion - Borkha, Hijab, Salwar Kameez | Modest Mart",
+    description: "মহিলাদের জন্য এক্সক্লুসিভ ফ্যাশন — বোরখা, হিজাব, ওড়না, সালোয়ার কামিজ ও জুয়েলারি। Modest Mart এ অর্ডার করুন।",
+  },
+  kids: {
+    title: "Kids' Collection - Stylish Outfits for Children | Modest Mart",
+    description: "শিশুদের জন্য আরামদায়ক ও স্টাইলিশ পোশাক। বাংলাদেশের সেরা কিডস ফ্যাশন Modest Mart এ পাওয়া যায়।",
+  },
+};
 
 const Category = () => {
   const { categoryName, subCategoryName } = useParams<{ categoryName: string; subCategoryName?: string }>();
   const { data: products = [], isLoading } = useProducts();
+  const { settings } = useSiteSettings();
 
   const displayName = categoryName
     ? categoryName.charAt(0).toUpperCase() + categoryName.slice(1).toLowerCase()
@@ -28,6 +46,37 @@ const Category = () => {
     return true;
   });
 
+  const baseUrl = settings.website_url || "https://modestmart.com";
+  const catKey = categoryName?.toLowerCase() || "";
+  const catMeta = CATEGORY_META[catKey] || {
+    title: `${displayName} Collection | Modest Mart`,
+    description: `${displayName} ক্যাটাগরির সেরা পণ্য Modest Mart এ পাওয়া যায়।`,
+  };
+
+  const seoTitle = subCategoryName
+    ? `${displaySubName} - ${displayName} Collection | Modest Mart`
+    : catMeta.title;
+  const seoDesc = subCategoryName
+    ? `${displayName} > ${displaySubName} কালেকশন — Modest Mart এ সেরা দামে কিনুন।`
+    : catMeta.description;
+
+  const breadcrumbItems = [
+    { name: "Home", url: baseUrl },
+    { name: "Shop", url: `${baseUrl}/shop` },
+  ];
+  if (categoryName) breadcrumbItems.push({ name: displayName, url: `${baseUrl}/category/${categoryName}` });
+  if (subCategoryName) breadcrumbItems.push({ name: displaySubName, url: `${baseUrl}/category/${categoryName}/${subCategoryName}` });
+
+  const jsonLd = [
+    breadcrumbSchema(breadcrumbItems),
+    siteNavigationSchema([
+      { name: "Men", url: `${baseUrl}/category/men` },
+      { name: "Women", url: `${baseUrl}/category/women` },
+      { name: "Kids", url: `${baseUrl}/category/kids` },
+      { name: "Shop", url: `${baseUrl}/shop` },
+    ]),
+  ];
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -38,84 +87,90 @@ const Category = () => {
 
   return (
     <PageTransition>
-    <div className="min-h-screen">
-      <Header />
-      <main>
-        {/* Hero Banner */}
-        <section className="bg-secondary py-16 md:py-24">
-          <div className="container mx-auto px-4 md:px-6 text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              {/* Breadcrumb */}
-              <div className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground mb-4">
-                <Link to="/" className="hover:text-foreground transition-colors">Home</Link>
-                <ChevronRight size={14} />
-                {subCategoryName ? (
-                  <>
-                    <Link to={`/category/${categoryName}`} className="hover:text-foreground transition-colors">{displayName}</Link>
-                    <ChevronRight size={14} />
-                    <span className="text-foreground font-medium">{displaySubName}</span>
-                  </>
-                ) : (
-                  <span className="text-foreground font-medium">{displayName}</span>
-                )}
-              </div>
-              <h1 className="heading-display mb-4">
-                {subCategoryName ? displaySubName : displayName}
-              </h1>
-              <p className="text-body max-w-lg mx-auto">
-                {subCategoryName
-                  ? `${displayName} > ${displaySubName} collection`
-                  : `Explore our curated ${displayName.toLowerCase()} collection.`}
-              </p>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* Products */}
-        <section className="py-16 md:py-24">
-          <div className="container mx-auto px-4 md:px-6">
-            {filtered.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-                {filtered.map((product, index) => (
-                  <motion.div
-                    key={product.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: index * 0.08 }}
-                  >
-                    <ProductCard
-                      id={product.id}
-                      name={product.name}
-                      price={product.price}
-                      image={product.image_url || "/placeholder.svg"}
-                      category={product.category || undefined}
-                      isNew={index < 4}
-                    />
-                  </motion.div>
-                ))}
-              </div>
-            ) : (
+      <div className="min-h-screen">
+        <SEOHead
+          title={seoTitle}
+          description={seoDesc}
+          canonical={subCategoryName ? `${baseUrl}/category/${categoryName}/${subCategoryName}` : `${baseUrl}/category/${categoryName}`}
+          jsonLd={jsonLd}
+        />
+        <Header />
+        <main>
+          {/* Hero Banner */}
+          <section className="bg-secondary py-16 md:py-24">
+            <div className="container mx-auto px-4 md:px-6 text-center">
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-center py-20"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
               >
-                <p className="text-body mb-8">No products found in this category.</p>
-                <Link to="/" className="btn-primary inline-flex items-center gap-2">
-                  <ArrowLeft size={16} />
-                  Back to Home
-                </Link>
+                {/* Breadcrumb */}
+                <nav aria-label="Breadcrumb" className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground mb-4">
+                  <Link to="/" className="hover:text-foreground transition-colors">Home</Link>
+                  <ChevronRight size={14} />
+                  {subCategoryName ? (
+                    <>
+                      <Link to={`/category/${categoryName}`} className="hover:text-foreground transition-colors">{displayName}</Link>
+                      <ChevronRight size={14} />
+                      <span className="text-foreground font-medium">{displaySubName}</span>
+                    </>
+                  ) : (
+                    <span className="text-foreground font-medium">{displayName}</span>
+                  )}
+                </nav>
+                <h1 className="heading-display mb-4">
+                  {subCategoryName ? displaySubName : displayName}
+                </h1>
+                <p className="text-body max-w-lg mx-auto">
+                  {subCategoryName
+                    ? `${displayName} > ${displaySubName} collection`
+                    : `Explore our curated ${displayName.toLowerCase()} collection.`}
+                </p>
               </motion.div>
-            )}
-          </div>
-        </section>
-      </main>
-      <Footer />
-    </div>
+            </div>
+          </section>
+
+          {/* Products */}
+          <section className="py-16 md:py-24">
+            <div className="container mx-auto px-4 md:px-6">
+              {filtered.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                  {filtered.map((product, index) => (
+                    <motion.div
+                      key={product.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4, delay: index * 0.08 }}
+                    >
+                      <ProductCard
+                        id={product.id}
+                        name={product.name}
+                        price={product.price}
+                        image={product.image_url || "/placeholder.svg"}
+                        category={product.category || undefined}
+                        isNew={index < 4}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-center py-20"
+                >
+                  <p className="text-body mb-8">No products found in this category.</p>
+                  <Link to="/" className="btn-primary inline-flex items-center gap-2">
+                    <ArrowLeft size={16} />
+                    Back to Home
+                  </Link>
+                </motion.div>
+              )}
+            </div>
+          </section>
+        </main>
+        <Footer />
+      </div>
     </PageTransition>
   );
 };
