@@ -259,9 +259,7 @@ const Header = () => {
                             key={product.id}
                             onClick={() => {
                               setIsSearchOpen(false);
-                              if (product.category) {
-                                navigate(`/category/${product.category.toLowerCase()}`);
-                              }
+                              navigate(`/product/${product.id}`);
                             }}
                             className="w-full flex items-center gap-3 p-3 hover:bg-secondary transition-colors text-left"
                           >
@@ -390,9 +388,7 @@ const Header = () => {
                             key={product.id}
                             onClick={() => {
                               setIsSearchOpen(false);
-                              if (product.category) {
-                                navigate(`/category/${product.category.toLowerCase()}`);
-                              }
+                              navigate(`/product/${product.id}`);
                             }}
                             className="w-full flex items-center gap-3 p-3 hover:bg-secondary transition-colors text-left"
                           >
