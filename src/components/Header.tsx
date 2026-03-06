@@ -40,6 +40,7 @@ const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [mobileExpandedCat, setMobileExpandedCat] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
@@ -429,35 +430,57 @@ const Header = () => {
                   </button>
                 </div>
 
-                {/* Nav links with sub-categories */}
+                {/* Nav links with accordion sub-categories */}
                 <nav className="flex-1 overflow-y-auto overscroll-contain py-2 min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
                   {navLinks.map((link, i) => {
                     const subs = link.catId ? subCategories.filter((s: any) => s.category_id === link.catId) : [];
+                    const isExpanded = mobileExpandedCat === link.name;
                     return (
-                      <div key={link.name}>
-                        <Link
-                          to={link.href}
-                          onClick={() => setIsMobileMenuOpen(false)}
-                          className={`block px-6 py-3.5 text-[13px] uppercase tracking-[0.12em] font-medium text-foreground/80 hover:bg-secondary/60 hover:text-foreground transition-colors ${
-                            i < navLinks.length - 1 && subs.length === 0 ? "border-b border-border/40" : ""
-                          }`}
-                        >
-                          {link.name}
-                        </Link>
-                        {subs.length > 0 && (
-                          <div className="pl-10 pb-2 space-y-0.5 border-b border-border/40">
-                            {subs.map((sub: any) => (
-                              <Link
-                                key={sub.id}
-                                to={`/category/${link.name.toLowerCase()}/${sub.name.toLowerCase()}`}
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className="block py-2 text-[12px] tracking-[0.1em] text-muted-foreground hover:text-foreground transition-colors"
-                              >
-                                {sub.name}
-                              </Link>
-                            ))}
-                          </div>
-                        )}
+                      <div key={link.name} className={i < navLinks.length - 1 ? "border-b border-border/40" : ""}>
+                        <div className="flex items-center">
+                          <Link
+                            to={link.href}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="flex-1 px-6 py-3.5 text-[13px] uppercase tracking-[0.12em] font-medium text-foreground/80 hover:bg-secondary/60 hover:text-foreground transition-colors"
+                          >
+                            {link.name}
+                          </Link>
+                          {subs.length > 0 && (
+                            <button
+                              onClick={() => setMobileExpandedCat(isExpanded ? null : link.name)}
+                              className="px-4 py-3.5 text-muted-foreground hover:text-foreground transition-colors"
+                              aria-label={`Toggle ${link.name} sub-categories`}
+                            >
+                              <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                                <ChevronDown size={16} />
+                              </motion.div>
+                            </button>
+                          )}
+                        </div>
+                        <AnimatePresence initial={false}>
+                          {subs.length > 0 && isExpanded && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.25, ease: "easeInOut" }}
+                              className="overflow-hidden"
+                            >
+                              <div className="pl-10 pr-4 pb-2 space-y-0">
+                                {subs.map((sub: any) => (
+                                  <Link
+                                    key={sub.id}
+                                    to={`/category/${link.name.toLowerCase()}/${sub.name.toLowerCase()}`}
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className="block py-2 text-[12px] tracking-[0.1em] text-muted-foreground hover:text-foreground transition-colors"
+                                  >
+                                    {sub.name}
+                                  </Link>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     );
                   })}
