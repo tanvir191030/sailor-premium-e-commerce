@@ -13,6 +13,7 @@ import PageTransition from "@/components/PageTransition";
 import { useProducts, useFeaturedProducts } from "@/hooks/useProducts";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const Index = () => {
   const { data: products = [], isLoading: productsLoading } = useProducts();
