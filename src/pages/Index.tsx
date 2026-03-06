@@ -6,13 +6,17 @@ import ShoeCollection from "@/components/ShoeCollection";
 import WatchGallery from "@/components/WatchGallery";
 import Footer from "@/components/Footer";
 import PageTransition from "@/components/PageTransition";
+import SEOHead, { organizationSchema, siteNavigationSchema } from "@/components/SEOHead";
 import { useProducts, useFeaturedProducts } from "@/hooks/useProducts";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const Index = () => {
   const { data: products = [], isLoading: productsLoading } = useProducts();
   const { data: featuredProducts = [], isLoading: featuredLoading } = useFeaturedProducts();
+  const { settings } = useSiteSettings();
+  const baseUrl = settings.website_url || "https://modestmart.com";
 
   const { data: banners = [], isLoading: bannersLoading } = useQuery({
     queryKey: ["hero-banners-public"],
@@ -90,6 +94,21 @@ const Index = () => {
   return (
     <PageTransition>
       <div className="min-h-screen">
+        <SEOHead
+          title={settings.site_title || "Modest Mart - Premium Fashion Bangladesh"}
+          description={settings.meta_description || "বাংলাদেশের সেরা প্রিমিয়াম ফ্যাশন ব্র্যান্ড।"}
+          canonical={baseUrl}
+          jsonLd={[
+            organizationSchema(settings.store_name || "Modest Mart", baseUrl, settings.logo_url || undefined),
+            siteNavigationSchema([
+              { name: "Shop", url: `${baseUrl}/shop` },
+              { name: "Men", url: `${baseUrl}/category/men` },
+              { name: "Women", url: `${baseUrl}/category/women` },
+              { name: "Kids", url: `${baseUrl}/category/kids` },
+              { name: "Contact", url: `${baseUrl}/contact` },
+            ]),
+          ]}
+        />
         <Header />
         <main>
           <HeroSlider slides={slides} />

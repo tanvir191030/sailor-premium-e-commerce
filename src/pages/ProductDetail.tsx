@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -13,6 +13,7 @@ import Footer from "@/components/Footer";
 import PageTransition from "@/components/PageTransition";
 import ProductCard from "@/components/ProductCard";
 import SizeChartModal from "@/components/SizeChartModal";
+import SEOHead, { productSchema, breadcrumbSchema } from "@/components/SEOHead";
 import { useProduct, useProducts } from "@/hooks/useProducts";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -20,6 +21,7 @@ import { formatPrice } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { optimizeProductImage } from "@/lib/imageOptimizer";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const SIZES = ["S", "M", "L", "XL", "XXL"];
 const SHOE_SIZES = ["36", "37", "38", "39", "40", "41", "42", "43", "44", "45"];
@@ -162,14 +164,35 @@ const ProductDetail = () => {
   const touchEndX = useRef(0);
   const sliderRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (product) {
-      document.title = `${product.name} | SAILOR`;
-      const meta = document.querySelector('meta[name="description"]');
-      if (meta) meta.setAttribute("content", product.description || product.name);
-    }
-    return () => { document.title = "SAILOR"; };
-  }, [product]);
+  const { settings } = useSiteSettings();
+  const baseUrl = settings.website_url || "https://modestmart.com";
+
+  const seoJsonLd = useMemo(() => {
+    if (!product) return undefined;
+    const avgRating = reviews.length > 0 ? reviews.reduce((s: number, r: any) => s + r.rating, 0) / reviews.length : 0;
+    const breadcrumbs = [
+      { name: "Home", url: baseUrl },
+      { name: "Shop", url: `${baseUrl}/shop` },
+    ];
+    if (product.category) breadcrumbs.push({ name: product.category, url: `${baseUrl}/category/${product.category.toLowerCase()}` });
+    if (product.sub_category) breadcrumbs.push({ name: product.sub_category, url: `${baseUrl}/category/${(product.category || "").toLowerCase()}/${product.sub_category.toLowerCase()}` });
+    breadcrumbs.push({ name: product.name, url: `${baseUrl}/product/${product.id}` });
+
+    return [
+      productSchema({
+        name: product.name,
+        description: product.description || undefined,
+        image: product.image_url || undefined,
+        price: product.price,
+        url: `${baseUrl}/product/${product.id}`,
+        brand: (product as any).brand || "Modest Mart",
+        availability: product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+        ratingValue: avgRating,
+        reviewCount: reviews.length,
+      }),
+      breadcrumbSchema(breadcrumbs),
+    ];
+  }, [product, reviews, baseUrl]);
 
   useEffect(() => {
     if (!product) return;
@@ -335,6 +358,16 @@ const ProductDetail = () => {
 
   return (
     <PageTransition>
+      {product && (
+        <SEOHead
+          title={`${product.name} | Modest Mart`}
+          description={product.description || `${product.name} — Modest Mart এ সেরা দামে কিনুন।`}
+          canonical={`${baseUrl}/product/${product.id}`}
+          image={product.image_url || undefined}
+          type="product"
+          jsonLd={seoJsonLd}
+        />
+      )}
       <SizeChartModal open={sizeChartOpen} onClose={() => setSizeChartOpen(false)} product={product} />
       <div className="min-h-screen bg-background">
         <Header />
