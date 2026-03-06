@@ -32,6 +32,8 @@ const ProductCard = ({
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const { toggle, isWishlisted } = useWishlist();
   const { addItem, setIsBuyNowOpen, setIsOpen } = useCart();
+  const { settings } = useSiteSettings();
+  const isFreeDelivery = settings.free_delivery === "true";
   const wishlisted = isWishlisted(id);
   const navigate = useNavigate();
 
