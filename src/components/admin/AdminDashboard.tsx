@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/lib/currency";
-import { Package, ShoppingCart, Clock, TrendingUp, AlertTriangle, Users, DollarSign } from "lucide-react";
+import { Package, ShoppingCart, Clock, TrendingUp, AlertTriangle, Users, DollarSign, TrendingDown, Wallet } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
 import { useTheme } from "@/contexts/ThemeContext";
 
@@ -30,7 +30,18 @@ const AdminDashboard = () => {
     },
   });
 
-  const totalRevenue = orders.reduce((sum, o) => sum + Number(o.total), 0);
+  const { data: expenses = [] } = useQuery({
+    queryKey: ["admin-expenses-dashboard"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("expenses").select("*");
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  const totalRevenue = orders.filter((o) => o.status === "delivered").reduce((sum, o) => sum + Number(o.total), 0);
+  const totalExpenses = expenses.reduce((s: number, e: any) => s + Number(e.amount), 0);
+  const netProfit = totalRevenue - totalExpenses;
   const pendingOrders = orders.filter((o) => o.status === "pending").length;
   const processingOrders = orders.filter((o) => o.status === "processing").length;
   const shippedOrders = orders.filter((o) => o.status === "shipped").length;
@@ -92,7 +103,9 @@ const AdminDashboard = () => {
   ].filter((d) => d.value > 0);
 
   const stats = [
-    { label: "মোট আয়", value: formatPrice(totalRevenue), icon: TrendingUp, bg: "bg-emerald-500/10", color: "text-emerald-500" },
+    { label: "মোট বিক্রয়", value: formatPrice(totalRevenue), icon: TrendingUp, bg: "bg-emerald-500/10", color: "text-emerald-500" },
+    { label: "মোট খরচ", value: formatPrice(totalExpenses), icon: TrendingDown, bg: "bg-destructive/10", color: "text-destructive" },
+    { label: "নেট প্রফিট", value: formatPrice(netProfit), icon: Wallet, bg: netProfit >= 0 ? "bg-emerald-500/10" : "bg-destructive/10", color: netProfit >= 0 ? "text-emerald-500" : "text-destructive" },
     { label: "মোট অর্ডার", value: orders.length, icon: ShoppingCart, bg: "bg-blue-500/10", color: "text-blue-500" },
     { label: "পেন্ডিং অর্ডার", value: pendingOrders, icon: Clock, bg: "bg-amber-500/10", color: "text-amber-500" },
     { label: "ডেলিভারড", value: deliveredOrders, icon: Package, bg: "bg-emerald-500/10", color: "text-emerald-500" },
@@ -105,7 +118,7 @@ const AdminDashboard = () => {
   return (
     <div className="space-y-6">
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-4">
         {stats.map((s) => (
           <div key={s.label} className="bg-card p-4 rounded-xl shadow-sm border border-border">
             <div className={`p-2 rounded-lg ${s.bg} w-fit mb-2`}>

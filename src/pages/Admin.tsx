@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import {
   LayoutDashboard, Package, ShoppingCart, Users, CreditCard,
   Megaphone, Settings, ArrowLeft, Menu, X, LogOut, Moon, Sun, Tag, Award, Ticket, MessageSquare,
+  Warehouse, Wallet, BarChart3,
 } from "lucide-react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import AdminDashboard from "@/components/admin/AdminDashboard";
@@ -20,6 +21,9 @@ import AdminCategories from "@/components/admin/AdminCategories";
 import AdminBrands from "@/components/admin/AdminBrands";
 import AdminCoupons from "@/components/admin/AdminCoupons";
 import AdminReviews from "@/components/admin/AdminReviews";
+import AdminInventory from "@/components/admin/AdminInventory";
+import AdminExpenses from "@/components/admin/AdminExpenses";
+import AdminReports from "@/components/admin/AdminReports";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n/index";
 
@@ -52,8 +56,11 @@ const Admin = () => {
     { id: "categories", label: t("admin.categories"), icon: Tag },
     { id: "brands", label: t("admin.brands"), icon: Award },
     { id: "orders", label: t("admin.orders"), icon: ShoppingCart },
+    { id: "inventory", label: "ইনভেন্টরি", icon: Warehouse },
     { id: "customers", label: t("admin.customers"), icon: Users },
     { id: "payments", label: t("admin.payments"), icon: CreditCard },
+    { id: "expenses", label: "খরচ", icon: Wallet },
+    { id: "reports", label: "রিপোর্ট", icon: BarChart3 },
     { id: "coupons", label: "কুপন", icon: Ticket },
     { id: "reviews", label: "রিভিউ", icon: MessageSquare },
     { id: "marketing", label: t("admin.marketing"), icon: Megaphone },
@@ -94,9 +101,12 @@ const Admin = () => {
       case "categories": return <AdminCategories />;
       case "brands": return <AdminBrands />;
       case "orders": return <AdminOrders />;
+      case "inventory": return <AdminInventory />;
       case "customers": return <AdminCustomers />;
       case "payments": return <AdminPayments />;
       case "coupons": return <AdminCoupons />;
+      case "expenses": return <AdminExpenses />;
+      case "reports": return <AdminReports />;
       case "reviews": return <AdminReviews />;
       case "marketing": return <AdminMarketing />;
       case "settings": return <AdminSettings />;
