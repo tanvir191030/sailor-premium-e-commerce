@@ -40,7 +40,7 @@ const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [mobileExpandedCat, setMobileExpandedCat] = useState<string | null>(null);
+  const [mobileExpandedCats, setMobileExpandedCats] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
@@ -434,29 +434,36 @@ const Header = () => {
                 <nav className="flex-1 overflow-y-auto overscroll-contain py-2 min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
                   {navLinks.map((link, i) => {
                     const subs = link.catId ? subCategories.filter((s: any) => s.category_id === link.catId) : [];
-                    const isExpanded = mobileExpandedCat === link.name;
+                    const isExpanded = mobileExpandedCats.has(link.name);
+                    const toggleExpand = () => {
+                      setMobileExpandedCats(prev => {
+                        const next = new Set(prev);
+                        if (next.has(link.name)) next.delete(link.name);
+                        else next.add(link.name);
+                        return next;
+                      });
+                    };
                     return (
                       <div key={link.name} className={i < navLinks.length - 1 ? "border-b border-border/40" : ""}>
-                        <div className="flex items-center">
+                        {subs.length > 0 ? (
+                          <button
+                            onClick={toggleExpand}
+                            className="w-full flex items-center justify-between px-6 py-3.5 text-[13px] uppercase tracking-[0.12em] font-medium text-foreground/80 hover:bg-secondary/60 hover:text-foreground transition-colors"
+                          >
+                            <span>{link.name}</span>
+                            <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.25 }}>
+                              <ChevronDown size={16} className="text-primary" />
+                            </motion.div>
+                          </button>
+                        ) : (
                           <Link
                             to={link.href}
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className="flex-1 px-6 py-3.5 text-[13px] uppercase tracking-[0.12em] font-medium text-foreground/80 hover:bg-secondary/60 hover:text-foreground transition-colors"
+                            className="block px-6 py-3.5 text-[13px] uppercase tracking-[0.12em] font-medium text-foreground/80 hover:bg-secondary/60 hover:text-foreground transition-colors"
                           >
                             {link.name}
                           </Link>
-                          {subs.length > 0 && (
-                            <button
-                              onClick={() => setMobileExpandedCat(isExpanded ? null : link.name)}
-                              className="px-4 py-3.5 text-muted-foreground hover:text-foreground transition-colors"
-                              aria-label={`Toggle ${link.name} sub-categories`}
-                            >
-                              <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                                <ChevronDown size={16} />
-                              </motion.div>
-                            </button>
-                          )}
-                        </div>
+                        )}
                         <AnimatePresence initial={false}>
                           {subs.length > 0 && isExpanded && (
                             <motion.div
@@ -467,6 +474,13 @@ const Header = () => {
                               className="overflow-hidden"
                             >
                               <div className="pl-10 pr-4 pb-2 space-y-0">
+                                <Link
+                                  to={link.href}
+                                  onClick={() => setIsMobileMenuOpen(false)}
+                                  className="block py-2 text-[12px] tracking-[0.1em] text-primary font-medium hover:text-foreground transition-colors"
+                                >
+                                  সব দেখুন
+                                </Link>
                                 {subs.map((sub: any) => (
                                   <Link
                                     key={sub.id}
