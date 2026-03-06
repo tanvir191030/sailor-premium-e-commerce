@@ -554,8 +554,8 @@ const Checkout = () => {
                             </div>
                           )}
                           <div className="flex justify-between text-sm text-muted-foreground">
-                            <span>ডেলিভারি ({deliveryZone === "inside_dhaka" ? "ঢাকা" : "ঢাকার বাইরে"})</span>
-                            <span>{formatPrice(deliveryCharge)}</span>
+                            <span>ডেলিভারি {isFreeDelivery && <span className="text-primary font-medium">(ফ্রি!)</span>}</span>
+                            <span>{isFreeDelivery ? <span className="text-primary font-medium line-through-none">ফ্রি</span> : formatPrice(deliveryCharge)}</span>
                           </div>
                           <div className="flex justify-between font-bold text-base pt-2 border-t border-border text-foreground"><span>মোট</span><span>{formatPrice(grandTotal)}</span></div>
                         </div>
