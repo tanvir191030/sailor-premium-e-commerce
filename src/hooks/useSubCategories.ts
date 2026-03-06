@@ -1,0 +1,49 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
+export interface SubCategory {
+  id: string;
+  name: string;
+  category_id: string;
+  measurement_template: string;
+  created_at: string;
+}
+
+export const MEASUREMENT_TEMPLATES: Record<string, { label: string; fields: string[] }> = {
+  none: { label: "কোনো সাইজ নেই (Bags, Others)", fields: [] },
+  clothing: { label: "পোশাক (Chest, Length, Shoulder)", fields: ["bust", "length", "shoulder"] },
+  hijab: { label: "হিজাব/ওড়না (Width × Length)", fields: ["width", "length"] },
+  shoes: { label: "জুতা (EU Size)", fields: [] },
+  panjabi: { label: "পাঞ্জাবি (Chest, Length)", fields: ["chest", "length"] },
+  pants: { label: "প্যান্ট (Waist, Length)", fields: ["waist", "length"] },
+};
+
+export const useSubCategories = () => {
+  return useQuery({
+    queryKey: ["sub-categories"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("sub_categories")
+        .select("*")
+        .order("name");
+      if (error) throw error;
+      return data as SubCategory[];
+    },
+  });
+};
+
+export const useSubCategoriesByCategory = (categoryId: string | undefined) => {
+  return useQuery({
+    queryKey: ["sub-categories", categoryId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("sub_categories")
+        .select("*")
+        .eq("category_id", categoryId)
+        .order("name");
+      if (error) throw error;
+      return data as SubCategory[];
+    },
+    enabled: !!categoryId,
+  });
+};

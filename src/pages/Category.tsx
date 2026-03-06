@@ -1,6 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronRight } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
@@ -8,16 +8,25 @@ import PageTransition from "@/components/PageTransition";
 import { useProducts } from "@/hooks/useProducts";
 
 const Category = () => {
-  const { categoryName } = useParams<{ categoryName: string }>();
+  const { categoryName, subCategoryName } = useParams<{ categoryName: string; subCategoryName?: string }>();
   const { data: products = [], isLoading } = useProducts();
 
   const displayName = categoryName
     ? categoryName.charAt(0).toUpperCase() + categoryName.slice(1).toLowerCase()
     : "";
 
-  const filtered = products.filter(
-    (p) => p.category?.toLowerCase() === categoryName?.toLowerCase()
-  );
+  const displaySubName = subCategoryName
+    ? subCategoryName.charAt(0).toUpperCase() + subCategoryName.slice(1).toLowerCase()
+    : "";
+
+  const filtered = products.filter((p) => {
+    const matchesCategory = p.category?.toLowerCase() === categoryName?.toLowerCase();
+    if (!matchesCategory) return false;
+    if (subCategoryName) {
+      return p.sub_category?.toLowerCase() === subCategoryName.toLowerCase();
+    }
+    return true;
+  });
 
   if (isLoading) {
     return (
@@ -40,10 +49,27 @@ const Category = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <span className="text-label mb-4 block">Collection</span>
-              <h1 className="heading-display mb-4">{displayName}</h1>
+              {/* Breadcrumb */}
+              <div className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground mb-4">
+                <Link to="/" className="hover:text-foreground transition-colors">Home</Link>
+                <ChevronRight size={14} />
+                {subCategoryName ? (
+                  <>
+                    <Link to={`/category/${categoryName}`} className="hover:text-foreground transition-colors">{displayName}</Link>
+                    <ChevronRight size={14} />
+                    <span className="text-foreground font-medium">{displaySubName}</span>
+                  </>
+                ) : (
+                  <span className="text-foreground font-medium">{displayName}</span>
+                )}
+              </div>
+              <h1 className="heading-display mb-4">
+                {subCategoryName ? displaySubName : displayName}
+              </h1>
               <p className="text-body max-w-lg mx-auto">
-                Explore our curated {displayName.toLowerCase()} collection.
+                {subCategoryName
+                  ? `${displayName} > ${displaySubName} collection`
+                  : `Explore our curated ${displayName.toLowerCase()} collection.`}
               </p>
             </motion.div>
           </div>

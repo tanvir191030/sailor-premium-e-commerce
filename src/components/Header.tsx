@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Heart, ShoppingBag, Menu, X, Moon, Sun, MapPin } from "lucide-react";
+import { Search, Heart, ShoppingBag, Menu, X, Moon, Sun, MapPin, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useProducts } from "@/hooks/useProducts";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -9,6 +9,9 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n/index";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useSubCategories } from "@/hooks/useSubCategories";
 
 const LanguageSwitcher = () => {
   const { i18n: i18nInstance } = useTranslation();
@@ -86,12 +89,26 @@ const Header = () => {
         .slice(0, 5)
     : [];
 
+  const { data: categories = [] } = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("categories").select("*").order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+  const { data: subCategories = [] } = useSubCategories();
+  const [hoveredCat, setHoveredCat] = useState<string | null>(null);
+
+  // Build dynamic nav links from categories
   const navLinks = [
-    { name: t("nav.newIn"), href: "/category/new" },
-    { name: t("nav.women"), href: "/category/women" },
-    { name: t("nav.men"), href: "/category/men" },
-    { name: t("nav.kids"), href: "/category/kids" },
-    { name: t("nav.sale"), href: "/category/sale" },
+    { name: t("nav.newIn"), href: "/category/new", catId: null },
+    ...categories.map((c: any) => ({
+      name: c.name,
+      href: `/category/${c.name.toLowerCase()}`,
+      catId: c.id,
+    })),
+    { name: t("nav.sale"), href: "/category/sale", catId: null },
   ];
 
   return (
@@ -110,11 +127,47 @@ const Header = () => {
 
             {/* LEFT — Nav links (desktop) */}
             <nav className="hidden md:flex items-center gap-6 flex-1">
-              {navLinks.map((link) => (
-                <Link key={link.name} to={link.href} className="nav-link">
-                  {link.name}
-                </Link>
-              ))}
+              {navLinks.map((link) => {
+                const subs = link.catId ? subCategories.filter((s: any) => s.category_id === link.catId) : [];
+                return (
+                  <div
+                    key={link.name}
+                    className="relative"
+                    onMouseEnter={() => subs.length > 0 ? setHoveredCat(link.name) : undefined}
+                    onMouseLeave={() => setHoveredCat(null)}
+                  >
+                    <Link to={link.href} className="nav-link flex items-center gap-1">
+                      {link.name}
+                      {subs.length > 0 && <ChevronDown size={12} className="opacity-50" />}
+                    </Link>
+                    {/* Dropdown */}
+                    {subs.length > 0 && hoveredCat === link.name && (
+                      <div className="absolute top-full left-0 pt-2 z-50">
+                        <div className="bg-background border border-border shadow-lg rounded-lg py-2 min-w-[160px]">
+                          <Link
+                            to={link.href}
+                            className="block px-4 py-2 text-sm text-foreground/80 hover:bg-secondary hover:text-foreground transition-colors font-medium"
+                            onClick={() => setHoveredCat(null)}
+                          >
+                            সব {link.name}
+                          </Link>
+                          <div className="border-t border-border/50 my-1" />
+                          {subs.map((sub: any) => (
+                            <Link
+                              key={sub.id}
+                              to={`/category/${link.name.toLowerCase()}/${sub.name.toLowerCase()}`}
+                              className="block px-4 py-2 text-sm text-foreground/70 hover:bg-secondary hover:text-foreground transition-colors"
+                              onClick={() => setHoveredCat(null)}
+                            >
+                              {sub.name}
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </nav>
 
             {/* Mobile hamburger */}
@@ -376,20 +429,38 @@ const Header = () => {
                   </button>
                 </div>
 
-                {/* Nav links */}
+                {/* Nav links with sub-categories */}
                 <nav className="flex-1 overflow-y-auto py-2">
-                  {navLinks.map((link, i) => (
-                    <Link
-                      key={link.name}
-                      to={link.href}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className={`block px-6 py-3.5 text-[13px] uppercase tracking-[0.12em] font-medium text-foreground/80 hover:bg-secondary/60 hover:text-foreground transition-colors ${
-                        i < navLinks.length - 1 ? "border-b border-border/40" : ""
-                      }`}
-                    >
-                      {link.name}
-                    </Link>
-                  ))}
+                  {navLinks.map((link, i) => {
+                    const subs = link.catId ? subCategories.filter((s: any) => s.category_id === link.catId) : [];
+                    return (
+                      <div key={link.name}>
+                        <Link
+                          to={link.href}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className={`block px-6 py-3.5 text-[13px] uppercase tracking-[0.12em] font-medium text-foreground/80 hover:bg-secondary/60 hover:text-foreground transition-colors ${
+                            i < navLinks.length - 1 && subs.length === 0 ? "border-b border-border/40" : ""
+                          }`}
+                        >
+                          {link.name}
+                        </Link>
+                        {subs.length > 0 && (
+                          <div className="pl-10 pb-2 space-y-0.5 border-b border-border/40">
+                            {subs.map((sub: any) => (
+                              <Link
+                                key={sub.id}
+                                to={`/category/${link.name.toLowerCase()}/${sub.name.toLowerCase()}`}
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className="block py-2 text-[12px] tracking-[0.1em] text-muted-foreground hover:text-foreground transition-colors"
+                              >
+                                {sub.name}
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
 
                   <div className="border-t border-border my-1" />
 

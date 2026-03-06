@@ -6,26 +6,15 @@ import { formatPrice } from "@/lib/currency";
 import { Plus, Pencil, Trash2, X, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
-
-// Sub-category definitions per category
-const SUB_CATEGORIES: Record<string, string[]> = {
-  Women: ["Borkha", "Kameez", "Hijab", "Orna", "Shoes", "Bags", "Others"],
-  Men: ["Panjabi", "Shirt", "T-Shirt", "Pants", "Shoes", "Bags", "Others"],
-  Kids: ["Shirt", "T-Shirt", "Pants", "Shoes", "Others"],
-};
-
-const CLOTHING_SUBS = ["Borkha", "Kameez", "Panjabi", "Shirt", "T-Shirt", "Pants"];
-const HIJAB_SUBS = ["Hijab", "Orna"];
-const SHOE_SUBS = ["Shoes"];
-const NO_SIZE_SUBS = ["Bags", "Others"];
+import { useSubCategories, MEASUREMENT_TEMPLATES } from "@/hooks/useSubCategories";
 
 const LETTER_SIZES = ["S", "M", "L", "XL", "XXL"];
 const SHOE_SIZES = ["36", "37", "38", "39", "40", "41", "42", "43", "44", "45"];
 
-const getSubCategoryType = (sub: string): "clothing" | "hijab" | "shoes" | "none" => {
-  if (CLOTHING_SUBS.includes(sub)) return "clothing";
-  if (HIJAB_SUBS.includes(sub)) return "hijab";
-  if (SHOE_SUBS.includes(sub)) return "shoes";
+const getTemplateType = (template: string): "clothing" | "hijab" | "shoes" | "none" => {
+  if (template === "clothing" || template === "panjabi" || template === "pants") return "clothing";
+  if (template === "hijab") return "hijab";
+  if (template === "shoes") return "shoes";
   return "none";
 };
 
@@ -45,6 +34,7 @@ const AdminProducts = () => {
   const [existingImages, setExistingImages] = useState<string[]>([]); // URLs from DB
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { data: allSubCategories = [] } = useSubCategories();
   const { t } = useTranslation();
 
   const { data: products = [], isLoading } = useQuery({
@@ -82,7 +72,8 @@ const AdminProducts = () => {
         image_url = await uploadProductImage(imageFiles[0]);
       }
 
-      const subType = form.sub_category ? getSubCategoryType(form.sub_category) : "none";
+      const selectedSub = allSubCategories.find((s: any) => s.name === form.sub_category);
+      const subType = selectedSub ? getTemplateType(selectedSub.measurement_template) : "none";
       let finalSizes: any = null;
       let totalStockFromSizes = 0;
 
@@ -240,8 +231,10 @@ const AdminProducts = () => {
 
   const inputCls = "w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none bg-transparent text-foreground placeholder:text-muted-foreground";
 
-  const subType = form.sub_category ? getSubCategoryType(form.sub_category) : "none";
-  const availableSubCats = SUB_CATEGORIES[form.category] || [];
+  const selectedSubCat = allSubCategories.find((s: any) => s.name === form.sub_category);
+  const subType = selectedSubCat ? getTemplateType(selectedSubCat.measurement_template) : "none";
+  const selectedCatObj = categories.find((c: any) => c.name === form.category);
+  const availableSubCats = selectedCatObj ? allSubCategories.filter((s: any) => s.category_id === selectedCatObj.id) : [];
 
   const renderSizeFields = () => {
     if (!form.sub_category || subType === "none") {
@@ -440,7 +433,7 @@ const AdminProducts = () => {
                 {availableSubCats.length > 0 ? (
                   <select value={form.sub_category} onChange={(e) => setForm({ ...form, sub_category: e.target.value, sizes: {} })} className="px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none bg-card text-foreground">
                     <option value="">Sub-category</option>
-                    {availableSubCats.map((sc) => <option key={sc} value={sc}>{sc}</option>)}
+                    {availableSubCats.map((sc: any) => <option key={sc.id} value={sc.name}>{sc.name}</option>)}
                   </select>
                 ) : (
                   <select value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} className="px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none bg-card text-foreground">
