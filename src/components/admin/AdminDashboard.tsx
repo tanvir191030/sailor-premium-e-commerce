@@ -118,7 +118,7 @@ const AdminDashboard = () => {
   return (
     <div className="space-y-6">
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-4">
         {stats.map((s) => (
           <div key={s.label} className="bg-card p-4 rounded-xl shadow-sm border border-border">
             <div className={`p-2 rounded-lg ${s.bg} w-fit mb-2`}>
