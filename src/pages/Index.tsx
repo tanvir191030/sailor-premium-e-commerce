@@ -94,6 +94,21 @@ const Index = () => {
   return (
     <PageTransition>
       <div className="min-h-screen">
+        <SEOHead
+          title={settings.site_title || "Modest Mart - Premium Fashion Bangladesh"}
+          description={settings.meta_description || "বাংলাদেশের সেরা প্রিমিয়াম ফ্যাশন ব্র্যান্ড।"}
+          canonical={baseUrl}
+          jsonLd={[
+            organizationSchema(settings.store_name || "Modest Mart", baseUrl, settings.logo_url || undefined),
+            siteNavigationSchema([
+              { name: "Shop", url: `${baseUrl}/shop` },
+              { name: "Men", url: `${baseUrl}/category/men` },
+              { name: "Women", url: `${baseUrl}/category/women` },
+              { name: "Kids", url: `${baseUrl}/category/kids` },
+              { name: "Contact", url: `${baseUrl}/contact` },
+            ]),
+          ]}
+        />
         <Header />
         <main>
           <HeroSlider slides={slides} />
