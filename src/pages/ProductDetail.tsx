@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -13,6 +13,7 @@ import Footer from "@/components/Footer";
 import PageTransition from "@/components/PageTransition";
 import ProductCard from "@/components/ProductCard";
 import SizeChartModal from "@/components/SizeChartModal";
+import SEOHead, { productSchema, breadcrumbSchema } from "@/components/SEOHead";
 import { useProduct, useProducts } from "@/hooks/useProducts";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -20,6 +21,7 @@ import { formatPrice } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { optimizeProductImage } from "@/lib/imageOptimizer";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const SIZES = ["S", "M", "L", "XL", "XXL"];
 const SHOE_SIZES = ["36", "37", "38", "39", "40", "41", "42", "43", "44", "45"];
