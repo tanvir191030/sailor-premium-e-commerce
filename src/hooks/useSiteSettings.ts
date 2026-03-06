@@ -79,6 +79,7 @@ const DEFAULTS: SiteSettings = {
   hero_image_url: "",
   hero_title: "",
   hero_subtitle: "",
+  free_delivery: "false",
 };
 
 export const useSiteSettings = () => {
