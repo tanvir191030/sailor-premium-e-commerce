@@ -416,10 +416,10 @@ const Header = () => {
                 animate={{ x: 0 }}
                 exit={{ x: "-100%" }}
                 transition={{ type: "spring", stiffness: 350, damping: 30 }}
-                className="fixed top-0 left-0 bottom-0 w-[280px] bg-background z-[80] flex flex-col shadow-2xl md:hidden overflow-hidden"
+                className="fixed top-0 left-0 w-[280px] h-[100dvh] max-h-[100dvh] bg-background z-[80] flex flex-col shadow-2xl md:hidden overflow-y-auto overscroll-contain"
               >
                 {/* Drawer header */}
-                <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+                <div className="sticky top-0 z-10 bg-background flex items-center justify-between px-5 py-4 border-b border-border">
                   <span className="font-serif text-lg tracking-[0.1em]">{storeName}</span>
                   <button
                     onClick={() => setIsMobileMenuOpen(false)}
@@ -431,7 +431,7 @@ const Header = () => {
                 </div>
 
                 {/* Nav links with accordion sub-categories */}
-                <nav className="flex-1 overflow-y-auto overscroll-contain py-2 min-h-0 h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
+                <nav className="py-2" style={{ WebkitOverflowScrolling: 'touch' }}>
                   {navLinks.map((link, i) => {
                     const subs = link.catId ? subCategories.filter((s: any) => s.category_id === link.catId) : [];
                     const isExpanded = mobileExpandedCats.has(link.name);
