@@ -358,6 +358,16 @@ const ProductDetail = () => {
 
   return (
     <PageTransition>
+      {product && (
+        <SEOHead
+          title={`${product.name} | Modest Mart`}
+          description={product.description || `${product.name} — Modest Mart এ সেরা দামে কিনুন।`}
+          canonical={`${baseUrl}/product/${product.id}`}
+          image={product.image_url || undefined}
+          type="product"
+          jsonLd={seoJsonLd}
+        />
+      )}
       <SizeChartModal open={sizeChartOpen} onClose={() => setSizeChartOpen(false)} product={product} />
       <div className="min-h-screen bg-background">
         <Header />
