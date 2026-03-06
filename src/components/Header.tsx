@@ -430,7 +430,7 @@ const Header = () => {
                 </div>
 
                 {/* Nav links with sub-categories */}
-                <nav className="flex-1 overflow-y-auto py-2">
+                <nav className="flex-1 overflow-y-auto overscroll-contain py-2 min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
                   {navLinks.map((link, i) => {
                     const subs = link.catId ? subCategories.filter((s: any) => s.category_id === link.catId) : [];
                     return (
