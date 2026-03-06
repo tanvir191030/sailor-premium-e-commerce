@@ -69,6 +69,16 @@ const Header = () => {
     }
   }, [isSearchOpen]);
 
+  // Escape key to close search
+  useEffect(() => {
+    if (!isSearchOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsSearchOpen(false);
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [isSearchOpen]);
+
   useEffect(() => {
     if (!isSearchOpen) return;
     const handler = (e: MouseEvent) => {
