@@ -433,7 +433,7 @@ const AdminProducts = () => {
                 {availableSubCats.length > 0 ? (
                   <select value={form.sub_category} onChange={(e) => setForm({ ...form, sub_category: e.target.value, sizes: {} })} className="px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none bg-card text-foreground">
                     <option value="">Sub-category</option>
-                    {availableSubCats.map((sc) => <option key={sc} value={sc}>{sc}</option>)}
+                    {availableSubCats.map((sc: any) => <option key={sc.id} value={sc.name}>{sc.name}</option>)}
                   </select>
                 ) : (
                   <select value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} className="px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none bg-card text-foreground">
