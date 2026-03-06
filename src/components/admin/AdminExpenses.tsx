@@ -130,6 +130,29 @@ const AdminExpenses = () => {
     doc.save(`expenses-${new Date().toISOString().split("T")[0]}.pdf`);
   };
 
+  const { settings } = useSiteSettings();
+  const storeName = settings.store_name || "Modest Mart";
+
+  const handlePrint = () => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+    const rows = expenses.map((e: any) => `
+      <tr>
+        <td style="padding:6px 10px;border-bottom:1px solid #eee">${new Date(e.expense_date).toLocaleDateString("en-GB")}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #eee">${e.title}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #eee">${EXPENSE_CATEGORIES.find((c) => c.value === e.category)?.label || e.category}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right;font-weight:bold">৳${Number(e.amount).toLocaleString()}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #eee">${e.description || ""}</td>
+      </tr>`).join("");
+    printWindow.document.write(`<!DOCTYPE html><html><head><title>Expense Report</title><style>body{font-family:Arial,sans-serif;padding:30px}table{width:100%;border-collapse:collapse;margin-top:20px}th{background:#f5f5f5;padding:8px 10px;text-align:left;border-bottom:2px solid #ddd;font-size:12px}td{font-size:12px}h1{font-size:20px;margin:0}p{color:#666;font-size:12px;margin:4px 0}@media print{body{padding:15px}}</style></head><body>
+      <h1>${storeName} — Expense Report</h1>
+      <p>Date: ${new Date().toLocaleDateString("en-GB")} | Total Expenses: ৳${totalExpenses.toLocaleString()}</p>
+      <table><thead><tr><th>Date</th><th>Title</th><th>Category</th><th style="text-align:right">Amount</th><th>Description</th></tr></thead><tbody>${rows}</tbody></table>
+    </body></html>`);
+    printWindow.document.close();
+    printWindow.print();
+  };
+
   const timeLabels: Record<TimeFilter, string> = { today: "আজকের", week: "সাপ্তাহিক", month: "মাসিক", year: "বাৎসরিক", all: "সব" };
 
   return (
