@@ -164,14 +164,35 @@ const ProductDetail = () => {
   const touchEndX = useRef(0);
   const sliderRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (product) {
-      document.title = `${product.name} | SAILOR`;
-      const meta = document.querySelector('meta[name="description"]');
-      if (meta) meta.setAttribute("content", product.description || product.name);
-    }
-    return () => { document.title = "SAILOR"; };
-  }, [product]);
+  const { settings } = useSiteSettings();
+  const baseUrl = settings.website_url || "https://modestmart.com";
+
+  const seoJsonLd = useMemo(() => {
+    if (!product) return undefined;
+    const avgRating = reviews.length > 0 ? reviews.reduce((s: number, r: any) => s + r.rating, 0) / reviews.length : 0;
+    const breadcrumbs = [
+      { name: "Home", url: baseUrl },
+      { name: "Shop", url: `${baseUrl}/shop` },
+    ];
+    if (product.category) breadcrumbs.push({ name: product.category, url: `${baseUrl}/category/${product.category.toLowerCase()}` });
+    if (product.sub_category) breadcrumbs.push({ name: product.sub_category, url: `${baseUrl}/category/${(product.category || "").toLowerCase()}/${product.sub_category.toLowerCase()}` });
+    breadcrumbs.push({ name: product.name, url: `${baseUrl}/product/${product.id}` });
+
+    return [
+      productSchema({
+        name: product.name,
+        description: product.description || undefined,
+        image: product.image_url || undefined,
+        price: product.price,
+        url: `${baseUrl}/product/${product.id}`,
+        brand: (product as any).brand || "Modest Mart",
+        availability: product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+        ratingValue: avgRating,
+        reviewCount: reviews.length,
+      }),
+      breadcrumbSchema(breadcrumbs),
+    ];
+  }, [product, reviews, baseUrl]);
 
   useEffect(() => {
     if (!product) return;
