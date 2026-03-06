@@ -189,6 +189,9 @@ const AdminExpenses = () => {
             <button onClick={exportPDF} className="flex items-center gap-1.5 px-3 py-2 bg-secondary text-foreground border border-border rounded-lg text-xs font-medium hover:bg-secondary/80">
               <Download size={12} /> PDF
             </button>
+            <button onClick={handlePrint} className="flex items-center gap-1.5 px-3 py-2 bg-secondary text-foreground border border-border rounded-lg text-xs font-medium hover:bg-secondary/80">
+              <Printer size={12} /> Print
+            </button>
           </div>
         </div>
 

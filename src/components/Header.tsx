@@ -364,14 +364,23 @@ const Header = () => {
                 ref={searchContainerRef}
               >
                 <div className="px-4 py-3 relative">
-                  <input
-                    ref={searchInputRef}
-                    type="text"
-                    placeholder={t("nav.search")}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-secondary/50 border border-border rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
-                  />
+                  <div className="relative">
+                    <input
+                      ref={searchInputRef}
+                      type="text"
+                      placeholder={t("nav.search")}
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full bg-secondary/50 border border-border rounded-lg px-4 py-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
+                    />
+                    <button
+                      onClick={() => setIsSearchOpen(false)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-secondary rounded-full transition-colors"
+                      aria-label="Close search"
+                    >
+                      <X size={16} className="text-muted-foreground" />
+                    </button>
+                  </div>
                   {/* Mobile search results */}
                   {searchQuery.trim() && (
                     <div className="mt-2 bg-background border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
