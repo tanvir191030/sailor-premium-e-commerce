@@ -1,7 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { SlidersHorizontal } from "lucide-react";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import ProductCard from "@/components/ProductCard";
+import Pagination from "@/components/Pagination";
+import PageTransition from "@/components/PageTransition";
+import SortSelect, { SortOption } from "@/components/SortSelect";
+import FilterSidebar, { FilterState, PRICE_MAX } from "@/components/FilterSidebar";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import Pagination from "@/components/Pagination";
