@@ -42,13 +42,12 @@ const AdminNewsletter = () => {
     }
   };
 
-  const handleExport = async (format: "xlsx" | "csv" = "xlsx") => {
-    // Always fetch fresh data before export
+  const doExport = async (format: "xlsx" | "csv") => {
     const { data } = await supabase
       .from("newsletter_subscribers" as any)
       .select("*")
       .order("subscribed_at", { ascending: false });
-    const fresh = (data || []) as Subscriber[];
+    const fresh = (data as unknown as Subscriber[]) || [];
     const rows = fresh.map((s) => ({
       "Email Address": s.email,
       "Subscribed Date": new Date(s.subscribed_at).toISOString().slice(0, 10),
