@@ -276,3 +276,14 @@
   .stagger-3 { animation-delay: 0.3s; }
   .stagger-4 { animation-delay: 0.4s; }
 }
+
+/* Native select/option dark mode fix */
+.dark select option {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
