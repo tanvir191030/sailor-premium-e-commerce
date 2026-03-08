@@ -1,12 +1,14 @@
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, ChevronRight } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
+import Pagination from "@/components/Pagination";
 import PageTransition from "@/components/PageTransition";
 import SEOHead, { breadcrumbSchema, siteNavigationSchema } from "@/components/SEOHead";
-import { useProducts } from "@/hooks/useProducts";
+import { useCategoryProducts, PAGE_SIZE } from "@/hooks/useCategoryProducts";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const CATEGORY_META: Record<string, { title: string; description: string }> = {
@@ -26,8 +28,23 @@ const CATEGORY_META: Record<string, { title: string; description: string }> = {
 
 const Category = () => {
   const { categoryName, subCategoryName } = useParams<{ categoryName: string; subCategoryName?: string }>();
-  const { data: products = [], isLoading } = useProducts();
+  const [page, setPage] = useState(1);
+  const { data, isLoading } = useCategoryProducts(categoryName, subCategoryName, page);
   const { settings } = useSiteSettings();
+
+  // Reset to page 1 when category/subcategory changes
+  useEffect(() => {
+    setPage(1);
+  }, [categoryName, subCategoryName]);
+
+  const products = data?.products ?? [];
+  const totalProducts = data?.total ?? 0;
+  const totalPages = Math.ceil(totalProducts / PAGE_SIZE);
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const displayName = categoryName
     ? categoryName.charAt(0).toUpperCase() + categoryName.slice(1).toLowerCase()
@@ -36,15 +53,6 @@ const Category = () => {
   const displaySubName = subCategoryName
     ? subCategoryName.charAt(0).toUpperCase() + subCategoryName.slice(1).toLowerCase()
     : "";
-
-  const filtered = products.filter((p) => {
-    const matchesCategory = p.category?.toLowerCase() === categoryName?.toLowerCase();
-    if (!matchesCategory) return false;
-    if (subCategoryName) {
-      return p.sub_category?.toLowerCase() === subCategoryName.toLowerCase();
-    }
-    return true;
-  });
 
   const baseUrl = settings.website_url || "https://modestmart.com";
   const catKey = categoryName?.toLowerCase() || "";
@@ -104,7 +112,6 @@ const Category = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
               >
-                {/* Breadcrumb */}
                 <nav aria-label="Breadcrumb" className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground mb-4">
                   <Link to="/" className="hover:text-foreground transition-colors">Home</Link>
                   <ChevronRight size={14} />
@@ -126,6 +133,9 @@ const Category = () => {
                     ? `${displayName} > ${displaySubName} collection`
                     : `Explore our curated ${displayName.toLowerCase()} collection.`}
                 </p>
+                {totalProducts > 0 && (
+                  <p className="text-sm text-muted-foreground mt-3">{totalProducts} টি পণ্য</p>
+                )}
               </motion.div>
             </div>
           </section>
@@ -133,26 +143,33 @@ const Category = () => {
           {/* Products */}
           <section className="py-16 md:py-24">
             <div className="container mx-auto px-4 md:px-6">
-              {filtered.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-                  {filtered.map((product, index) => (
-                    <motion.div
-                      key={product.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: index * 0.08 }}
-                    >
-                      <ProductCard
-                        id={product.id}
-                        name={product.name}
-                        price={product.price}
-                        image={product.image_url || "/placeholder.svg"}
-                        category={product.category || undefined}
-                        isNew={index < 4}
-                      />
-                    </motion.div>
-                  ))}
-                </div>
+              {products.length > 0 ? (
+                <>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                    {products.map((product, index) => (
+                      <motion.div
+                        key={product.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, delay: index * 0.08 }}
+                      >
+                        <ProductCard
+                          id={product.id}
+                          name={product.name}
+                          price={product.price}
+                          image={product.image_url || "/placeholder.svg"}
+                          category={product.category || undefined}
+                          isNew={index < 4 && page === 1}
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
+                  <Pagination
+                    currentPage={page}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                  />
+                </>
               ) : (
                 <motion.div
                   initial={{ opacity: 0 }}
