@@ -142,6 +142,14 @@ const Checkout = () => {
     }
   }, [form.district]);
 
+  // Auto-select bkash when advance payment mode and still on cod
+  useEffect(() => {
+    if (requiresAdvance && paymentMethod === "cod" && !paymentMethodSet) {
+      setPaymentMethod("bkash");
+      setPaymentMethodSet(true);
+    }
+  }, [requiresAdvance, paymentMethod, paymentMethodSet]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim() || !form.phone.trim() || !form.address.trim()) {
