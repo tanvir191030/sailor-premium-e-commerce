@@ -272,13 +272,12 @@ const AdminProducts = () => {
                   setForm({ ...form, sizes: newSizes });
                 }} className="text-destructive hover:text-destructive/80 p-1"><X size={14} /></button>
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-4 gap-2">
                 <input type="number" value={data?.stock || ""} onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, [sizeKey]: { ...data, stock: e.target.value } } })} className={inputCls} placeholder="Stock" />
+                <input type="number" value={data?.price || ""} onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, [sizeKey]: { ...data, price: e.target.value } } })} className={inputCls} placeholder="দাম (৳)" />
                 <input type="text" value={data?.measurements?.width || ""} onChange={(e) => {
-                  // Update measurement only, don't change key during typing
                   setForm({ ...form, sizes: { ...form.sizes, [sizeKey]: { ...data, measurements: { ...data?.measurements, width: e.target.value } } } });
                 }} onBlur={() => {
-                  // Rebuild key on blur
                   const w = data?.measurements?.width || "";
                   const l = data?.measurements?.length || "";
                   const newKey = `${w}x${l}`;
