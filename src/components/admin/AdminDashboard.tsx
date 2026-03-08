@@ -144,6 +144,32 @@ const AdminDashboard = () => {
         ))}
       </div>
 
+      {/* Today's Verified Invoices Download Card */}
+      <div className="bg-card p-5 rounded-xl shadow-sm border border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h3 className="font-serif text-base text-foreground flex items-center gap-2">
+            <FileDown size={18} className="text-emerald-500" />
+            আজকের ভেরিফাইড ইনভয়েস
+          </h3>
+          <p className="text-xs text-muted-foreground mt-1">
+            আজ {todayVerified.length} টি ভেরিফাইড অর্ডার · মোট {formatPrice(todayVerifiedTotal)}
+          </p>
+        </div>
+        <button
+          onClick={() => {
+            if (todayVerified.length === 0) {
+              toast({ title: "আজকে কোনো ভেরিফাইড অর্ডার নেই", variant: "destructive" });
+              return;
+            }
+            openBulkInvoicesInNewTab(todayVerified as any, siteSettings.store_name || "Modest Mart", siteSettings.website_url || "");
+          }}
+          disabled={todayVerified.length === 0}
+          className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <FileDown size={16} /> আজকের ইনভয়েস ডাউনলোড করুন
+        </button>
+      </div>
+
       {/* Revenue Chart */}
       <div className="bg-card p-5 rounded-xl shadow-sm border border-border">
         <div className="flex items-center justify-between mb-4">
