@@ -432,6 +432,8 @@ export type Database = {
           id: string
           measurement_template: string
           name: string
+          size_chart_data: Json | null
+          size_chart_image: string | null
         }
         Insert: {
           category_id: string
@@ -439,6 +441,8 @@ export type Database = {
           id?: string
           measurement_template?: string
           name: string
+          size_chart_data?: Json | null
+          size_chart_image?: string | null
         }
         Update: {
           category_id?: string
@@ -446,6 +450,8 @@ export type Database = {
           id?: string
           measurement_template?: string
           name?: string
+          size_chart_data?: Json | null
+          size_chart_image?: string | null
         }
         Relationships: [
           {
