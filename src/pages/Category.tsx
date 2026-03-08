@@ -147,6 +147,10 @@ const Category = () => {
             <div className="container mx-auto px-4 md:px-6">
               {products.length > 0 ? (
                 <>
+                  <div className="flex items-center justify-between mb-6">
+                    <p className="text-sm text-muted-foreground">{totalProducts} টি পণ্য</p>
+                    <SortSelect value={sort} onChange={setSort} />
+                  </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                     {products.map((product, index) => (
                       <motion.div
