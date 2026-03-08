@@ -6,6 +6,8 @@ export interface SubCategory {
   name: string;
   category_id: string;
   measurement_template: string;
+  size_chart_image?: string | null;
+  size_chart_data?: any[] | null;
   created_at: string;
 }
 
@@ -27,7 +29,7 @@ export const useSubCategories = () => {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("sub_categories")
-        .select("id,name,category_id,measurement_template")
+        .select("id,name,category_id,measurement_template,size_chart_image,size_chart_data")
         .order("name");
       if (error) throw error;
       return data as SubCategory[];
@@ -43,7 +45,7 @@ export const useSubCategoriesByCategory = (categoryId: string | undefined) => {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("sub_categories")
-        .select("id,name,category_id,measurement_template")
+        .select("id,name,category_id,measurement_template,size_chart_image,size_chart_data")
         .eq("category_id", categoryId)
         .order("name");
       if (error) throw error;

@@ -60,6 +60,7 @@ const NewArrivals = ({ products }: NewArrivalsProps) => {
                 originalPrice={product.original_price ?? undefined}
                 image={product.image_url || "/placeholder.svg"}
                 category={product.category || undefined}
+                sub_category={(product as any).sub_category || undefined}
                 isNew={index < 4}
               />
             </motion.div>

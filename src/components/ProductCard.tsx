@@ -16,6 +16,7 @@ interface ProductCardProps {
   originalPrice?: number;
   image: string;
   category?: string;
+  sub_category?: string;
   isNew?: boolean;
 }
 
@@ -26,6 +27,7 @@ const ProductCard = ({
   originalPrice,
   image,
   category,
+  sub_category,
   isNew = false,
 }: ProductCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -186,7 +188,7 @@ const ProductCard = ({
         </div>
       </motion.div>
 
-      <SizeChartModal open={sizeChartOpen} onClose={() => setSizeChartOpen(false)} />
+      <SizeChartModal open={sizeChartOpen} onClose={() => setSizeChartOpen(false)} product={{ id, name, category, sub_category }} />
     </>
   );
 };
