@@ -1,6 +1,7 @@
 import { X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 
 interface Props {
   open: boolean;
@@ -54,7 +55,7 @@ const SizeChartModal = ({ open, onClose, product }: Props) => {
 
   const hasDynamicData = dynamicHeaders.length > 0 && dynamicRows.length > 0;
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {open && (
         <>
@@ -185,7 +186,8 @@ const SizeChartModal = ({ open, onClose, product }: Props) => {
           </div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
 
