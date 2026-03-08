@@ -281,7 +281,8 @@ const AdminExpenses = () => {
 
   const isPurchaseCategory = form.category === "purchase";
 
-  const inputCls = "w-full px-3 py-2.5 border border-border rounded-lg text-sm bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30";
+  const inputCls = "w-full px-3 py-2.5 border border-border rounded-lg text-sm bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 hover:border-primary/50 transition-colors";
+  const selectCls = `${inputCls} [&>option]:bg-background [&>option]:text-foreground`;
 
   // Exports
   const exportExcel = () => {
@@ -423,7 +424,7 @@ const AdminExpenses = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               <div>
                 <label className="text-xs text-muted-foreground mb-1 block">খরচের ধরন *</label>
-                <select value={form.category} onChange={(e) => handleFormChange("category", e.target.value)} className={inputCls}>
+                <select value={form.category} onChange={(e) => handleFormChange("category", e.target.value)} className={selectCls}>
                   {EXPENSE_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
               </div>
@@ -439,23 +440,23 @@ const AdminExpenses = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">ক্যাটাগরি</label>
-                    <select value={form.product_category} onChange={(e) => handleFormChange("product_category", e.target.value)} className={inputCls}>
+                    <select value={form.product_category} onChange={(e) => handleFormChange("product_category", e.target.value)} className={selectCls}>
                       <option value="">সব ক্যাটাগরি</option>
                       {categories.map((c: any) => <option key={c.id} value={c.name}>{c.name}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">সাব-ক্যাটাগরি</label>
-                    <select value={form.product_sub_category} onChange={(e) => handleFormChange("product_sub_category", e.target.value)} className={inputCls} disabled={!form.product_category}>
+                    <select value={form.product_sub_category} onChange={(e) => handleFormChange("product_sub_category", e.target.value)} className={selectCls} disabled={!form.product_category}>
                       <option value="">সব সাব-ক্যাটাগরি</option>
                       {filteredSubCategories.map((sc: any) => <option key={sc.id} value={sc.name}>{sc.name}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">পণ্য নির্বাচন করুন *</label>
-                    <select value={form.product_id} onChange={(e) => handleFormChange("product_id", e.target.value)} className={inputCls}>
+                    <select value={form.product_id} onChange={(e) => handleFormChange("product_id", e.target.value)} className={selectCls}>
                       <option value="">-- পণ্য বেছে নিন --</option>
-                      {filteredProducts.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                      {filteredProducts.map((p: any) => <option key={p.id} value={p.id}>{p.name} ({formatPrice(p.price)})</option>)}
                     </select>
                   </div>
                 </div>
