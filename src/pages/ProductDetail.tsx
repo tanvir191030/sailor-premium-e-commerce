@@ -219,11 +219,23 @@ const ProductDetail = () => {
     .filter((p) => p.id !== id && p.category === product?.category)
     .slice(0, 6);
 
+  // Compute dynamic price for hijab variants
+  const getActivePrice = () => {
+    if (!product) return 0;
+    if (sizeType === "hijab" && selectedSize && sizeVariants[selectedSize]) {
+      const variantPrice = Number(sizeVariants[selectedSize]?.price);
+      if (variantPrice > 0) return variantPrice;
+    }
+    return product.price;
+  };
+
+  const activePrice = product ? getActivePrice() : 0;
+
   const cartPayload = product
     ? {
       id: product.id,
       name: product.name,
-      price: product.price,
+      price: activePrice,
       image: galleryImages[0] || "/placeholder.svg",
       category: product.category || undefined,
       size: selectedSize || undefined,
@@ -532,14 +544,14 @@ const ProductDetail = () => {
                   </button>
                 </div>
 
-                {/* Price */}
+                {/* Price — dynamic for hijab */}
                 <div className="flex items-baseline gap-3 flex-wrap">
-                  <span className="text-2xl md:text-3xl font-bold tracking-tight">{formatPrice(product.price)}</span>
-                  {(product as any).original_price && (product as any).original_price > product.price && (
+                  <span className="text-2xl md:text-3xl font-bold tracking-tight">{formatPrice(activePrice)}</span>
+                  {(product as any).original_price && (product as any).original_price > activePrice && (
                     <>
                       <span className="text-base md:text-lg text-muted-foreground line-through">{formatPrice((product as any).original_price)}</span>
                       <span className="text-xs md:text-sm font-bold text-green-600 bg-green-500/10 px-2 py-0.5 rounded">
-                        -{Math.round((((product as any).original_price - product.price) / (product as any).original_price) * 100)}% OFF
+                        -{Math.round((((product as any).original_price - activePrice) / (product as any).original_price) * 100)}% OFF
                       </span>
                     </>
                   )}
@@ -584,6 +596,7 @@ const ProductDetail = () => {
                         const stockCount = Number(data?.stock) || 0;
                         const isOutOfStock = stockCount === 0;
                         const label = m.width && m.length ? `${m.width}×${m.length}"` : sizeKey;
+                        const variantPrice = Number(data?.price) || 0;
 
                         return (
                           <div key={sizeKey} className="flex flex-col items-center gap-1">
@@ -606,6 +619,9 @@ const ProductDetail = () => {
                             >
                               {label}
                             </button>
+                            {variantPrice > 0 && (
+                              <span className="text-[10px] font-semibold text-primary">৳{variantPrice.toLocaleString()}</span>
+                            )}
                             <span className={`text-[10px] ${stockCount > 0 ? "text-muted-foreground" : "text-destructive font-medium"}`}>
                               {stockCount > 0 ? `${stockCount} pcs` : "Out"}
                             </span>

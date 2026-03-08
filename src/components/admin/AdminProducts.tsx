@@ -80,11 +80,15 @@ const AdminProducts = () => {
       if (subType === "clothing" || subType === "hijab" || subType === "shoes") {
         const variants: any = {};
         Object.entries(form.sizes).forEach(([size, data]: any) => {
-          if (data && data.stock && parseInt(data.stock) > 0) {
-            variants[size] = {
+        if (data && data.stock && parseInt(data.stock) > 0) {
+            const variant: any = {
               stock: parseInt(data.stock),
               measurements: data.measurements || {}
             };
+            if (data.price && parseFloat(data.price) > 0) {
+              variant.price = parseFloat(data.price);
+            }
+            variants[size] = variant;
             totalStockFromSizes += parseInt(data.stock);
           }
         });
@@ -188,7 +192,7 @@ const AdminProducts = () => {
     if (p.sizes) {
       if (p.sizes.variants) {
         Object.entries(p.sizes.variants).forEach(([k, v]: any) => {
-          initialSizes[k] = { stock: String(v.stock), measurements: v.measurements || {} };
+          initialSizes[k] = { stock: String(v.stock), measurements: v.measurements || {}, price: v.price ? String(v.price) : "" };
         });
       } else {
         Object.entries(p.sizes).forEach(([k, v]) => {
@@ -259,7 +263,7 @@ const AdminProducts = () => {
 
       return (
         <div className="space-y-4 border border-border p-3 rounded-lg bg-secondary/20">
-          <p className="text-xs font-medium text-muted-foreground">হিজাব/ওড়না — কাস্টম সাইজ যোগ করুন (Width × Length ইঞ্চি)</p>
+          <p className="text-xs font-medium text-muted-foreground">হিজাব/ওড়না — কাস্টম সাইজ, দাম ও স্টক যোগ করুন</p>
           
           {/* Existing sizes — use stable index-based keys */}
           {Object.entries(form.sizes).map(([sizeKey, data]: [string, any], idx) => (
@@ -272,13 +276,12 @@ const AdminProducts = () => {
                   setForm({ ...form, sizes: newSizes });
                 }} className="text-destructive hover:text-destructive/80 p-1"><X size={14} /></button>
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-4 gap-2">
                 <input type="number" value={data?.stock || ""} onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, [sizeKey]: { ...data, stock: e.target.value } } })} className={inputCls} placeholder="Stock" />
+                <input type="number" value={data?.price || ""} onChange={(e) => setForm({ ...form, sizes: { ...form.sizes, [sizeKey]: { ...data, price: e.target.value } } })} className={inputCls} placeholder="দাম (৳)" />
                 <input type="text" value={data?.measurements?.width || ""} onChange={(e) => {
-                  // Update measurement only, don't change key during typing
                   setForm({ ...form, sizes: { ...form.sizes, [sizeKey]: { ...data, measurements: { ...data?.measurements, width: e.target.value } } } });
                 }} onBlur={() => {
-                  // Rebuild key on blur
                   const w = data?.measurements?.width || "";
                   const l = data?.measurements?.length || "";
                   const newKey = `${w}x${l}`;
@@ -311,7 +314,7 @@ const AdminProducts = () => {
           {/* Add new size button */}
           <button type="button" onClick={() => {
             const newKey = `new_${Date.now()}`;
-            setForm({ ...form, sizes: { ...form.sizes, [newKey]: { stock: "", measurements: { width: "", length: "" } } } });
+            setForm({ ...form, sizes: { ...form.sizes, [newKey]: { stock: "", price: "", measurements: { width: "", length: "" } } } });
           }} className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 font-medium py-2">
             <Plus size={14} /> নতুন সাইজ যোগ করুন
           </button>
