@@ -8,11 +8,6 @@ import Pagination from "@/components/Pagination";
 import PageTransition from "@/components/PageTransition";
 import SortSelect, { SortOption } from "@/components/SortSelect";
 import FilterSidebar, { FilterState, PRICE_MAX } from "@/components/FilterSidebar";
-import Footer from "@/components/Footer";
-import ProductCard from "@/components/ProductCard";
-import Pagination from "@/components/Pagination";
-import PageTransition from "@/components/PageTransition";
-import FilterSidebar, { FilterState, PRICE_MAX } from "@/components/FilterSidebar";
 import { useProducts } from "@/hooks/useProducts";
 import { useTranslation } from "react-i18next";
 
