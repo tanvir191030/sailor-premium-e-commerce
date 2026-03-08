@@ -4,18 +4,37 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { supabase } from "@/integrations/supabase/client";
 
 const Footer = () => {
   const [email, setEmail] = useState("");
+  const [subscribing, setSubscribing] = useState(false);
   const { toast } = useToast();
   const { t } = useTranslation();
   const { settings } = useSiteSettings();
 
-  const handleNewsletterSubmit = (e: React.FormEvent) => {
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) {
-      toast({ title: "Subscribed!", description: "Thank you for subscribing to our newsletter." });
+    if (!email) return;
+    setSubscribing(true);
+    try {
+      const { error } = await supabase
+        .from("newsletter_subscribers" as any)
+        .insert([{ email: email.trim().toLowerCase() }] as any);
+      if (error) {
+        if (error.code === "23505") {
+          toast({ title: "ইতিমধ্যে সাবস্ক্রাইব করা হয়েছে!", description: "এই ইমেইল দিয়ে আগেই সাবস্ক্রাইব করা হয়েছে।" });
+        } else {
+          throw error;
+        }
+      } else {
+        toast({ title: "ধন্যবাদ!", description: "আপনি সফলভাবে সাবস্ক্রাইব করেছেন।" });
+      }
       setEmail("");
+    } catch {
+      toast({ title: "Error", description: "সাবস্ক্রাইব করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।", variant: "destructive" });
+    } finally {
+      setSubscribing(false);
     }
   };
 
