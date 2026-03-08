@@ -6,6 +6,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   product?: any;
+  anchorPoint?: { x: number; y: number } | null;
 }
 
 const defaultMeasurements = [
@@ -18,8 +19,7 @@ const defaultMeasurements = [
   { size: "3XL", chest: "44-46", waist: "36-38", hip: "46-48", height: "180-185" },
 ];
 
-const SizeChartModal = ({ open, onClose, product }: Props) => {
-  // Lock body scroll when modal is open
+const SizeChartModal = ({ open, onClose, product, anchorPoint }: Props) => {
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
@@ -43,16 +43,16 @@ const SizeChartModal = ({ open, onClose, product }: Props) => {
 
   if (sizeVariants) {
     const allKeys = new Set<string>();
-    Object.entries(sizeVariants).forEach(([sizeKey, data]: any) => {
-      if (data && typeof data === 'object' && data.measurements) {
-        Object.keys(data.measurements).forEach(k => allKeys.add(k));
+    Object.entries(sizeVariants).forEach(([, data]: any) => {
+      if (data && typeof data === "object" && data.measurements) {
+        Object.keys(data.measurements).forEach((k) => allKeys.add(k));
       }
     });
 
     dynamicHeaders = Array.from(allKeys);
 
     Object.entries(sizeVariants).forEach(([sizeKey, data]: any) => {
-      if (data && typeof data === 'object' && data.measurements && Object.keys(data.measurements).length > 0) {
+      if (data && typeof data === "object" && data.measurements && Object.keys(data.measurements).length > 0) {
         dynamicRows.push({ size: sizeKey, ...data.measurements });
       }
     });
@@ -60,11 +60,30 @@ const SizeChartModal = ({ open, onClose, product }: Props) => {
 
   const hasDynamicData = dynamicHeaders.length > 0 && dynamicRows.length > 0;
 
+  const modalPositionStyle = (() => {
+    if (!anchorPoint || typeof window === "undefined") {
+      return {
+        left: "50%",
+        top: "50%",
+        transform: "translate(-50%, -50%)",
+      } as const;
+    }
+
+    const safeMargin = 24;
+    const safeX = Math.min(Math.max(anchorPoint.x, safeMargin), window.innerWidth - safeMargin);
+    const safeY = Math.min(Math.max(anchorPoint.y, safeMargin), window.innerHeight - safeMargin);
+
+    return {
+      left: `${safeX}px`,
+      top: `${safeY}px`,
+      transform: "translate(-50%, -50%)",
+    } as const;
+  })();
+
   return (
     <AnimatePresence>
       {open && (
         <>
-          {/* Overlay */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -73,23 +92,19 @@ const SizeChartModal = ({ open, onClose, product }: Props) => {
             style={{ zIndex: 1000 }}
             onClick={onClose}
           />
-          {/* Modal */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-            className="fixed top-1/2 left-1/2 w-[90vw] max-w-lg"
-            style={{ zIndex: 1001, transform: "translate(-50%, -50%)" }}
+
+          <div
+            className="fixed w-[90vw] max-w-lg"
+            style={{ ...modalPositionStyle, zIndex: 1001 }}
             onClick={(e) => e.stopPropagation()}
           >
             <motion.div
-              initial={{ y: 20 }}
-              animate={{ y: 0 }}
-              exit={{ y: 20 }}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2 }}
               className="bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
             >
-              {/* Header */}
               <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-border">
                 <h2 className="font-serif text-base sm:text-lg text-foreground truncate pr-4">
                   {product?.name ? `${product.name} - সাইজ চার্ট` : "সাইজ চার্ট"}
@@ -99,20 +114,18 @@ const SizeChartModal = ({ open, onClose, product }: Props) => {
                 </button>
               </div>
 
-              {/* Content */}
               <div className="p-4 sm:p-6 space-y-5 overflow-y-auto max-h-[65vh]">
                 <p className="text-xs text-muted-foreground">
                   সঠিক সাইজ নির্বাচনের জন্য নিচের পরিমাপ অনুসরণ করুন। সব পরিমাপ ইঞ্চিতে।
                 </p>
 
-                {/* Table */}
                 <div className="overflow-x-auto rounded-xl border border-border">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-secondary text-xs text-muted-foreground uppercase tracking-wide">
                         <th className="px-3 sm:px-4 py-3 text-left font-semibold text-foreground">সাইজ</th>
                         {hasDynamicData ? (
-                          dynamicHeaders.map(h => (
+                          dynamicHeaders.map((h) => (
                             <th key={h} className="px-3 sm:px-4 py-3 text-center capitalize">{h}</th>
                           ))
                         ) : (
@@ -141,7 +154,7 @@ const SizeChartModal = ({ open, onClose, product }: Props) => {
                             <td className="px-3 sm:px-4 py-3">
                               <span className="font-bold text-primary text-sm">{row.size}</span>
                             </td>
-                            {dynamicHeaders.map(h => (
+                            {dynamicHeaders.map((h) => (
                               <td key={h} className="px-3 sm:px-4 py-3 text-center text-foreground text-xs">{row[h] || "-"}</td>
                             ))}
                           </tr>
@@ -204,7 +217,7 @@ const SizeChartModal = ({ open, onClose, product }: Props) => {
                 </p>
               </div>
             </motion.div>
-          </motion.div>
+          </div>
         </>
       )}
     </AnimatePresence>

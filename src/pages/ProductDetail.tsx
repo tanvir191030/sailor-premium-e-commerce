@@ -648,7 +648,10 @@ const ProductDetail = () => {
                       </span>
                       {sizeType !== "shoes" && (
                         <button
-                          onClick={() => setSizeChartOpen(true)}
+                          onClick={(e) => {
+                            setSizeChartAnchor({ x: e.clientX, y: e.clientY });
+                            setSizeChartOpen(true);
+                          }}
                           className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors min-h-[44px] px-2"
                         >
                           <Ruler size={12} /> সাইজ গাইড
