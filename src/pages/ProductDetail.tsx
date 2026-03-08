@@ -596,6 +596,7 @@ const ProductDetail = () => {
                         const stockCount = Number(data?.stock) || 0;
                         const isOutOfStock = stockCount === 0;
                         const label = m.width && m.length ? `${m.width}×${m.length}"` : sizeKey;
+                        const variantPrice = Number(data?.price) || 0;
 
                         return (
                           <div key={sizeKey} className="flex flex-col items-center gap-1">
@@ -618,6 +619,9 @@ const ProductDetail = () => {
                             >
                               {label}
                             </button>
+                            {variantPrice > 0 && (
+                              <span className="text-[10px] font-semibold text-primary">৳{variantPrice.toLocaleString()}</span>
+                            )}
                             <span className={`text-[10px] ${stockCount > 0 ? "text-muted-foreground" : "text-destructive font-medium"}`}>
                               {stockCount > 0 ? `${stockCount} pcs` : "Out"}
                             </span>
