@@ -598,6 +598,12 @@ const Checkout = () => {
                             <span>{isFreeDelivery ? <span className="text-primary font-medium line-through-none">ফ্রি</span> : formatPrice(deliveryCharge)}</span>
                           </div>
                           <div className="flex justify-between font-bold text-base pt-2 border-t border-border text-foreground"><span>মোট</span><span>{formatPrice(grandTotal)}</span></div>
+                          {requiresAdvance && payableNow > 0 && (
+                            <div className="flex justify-between text-sm font-bold pt-1 text-amber-600 dark:text-amber-400">
+                              <span>এখন পে করুন</span>
+                              <span>{formatPrice(payableNow)}</span>
+                            </div>
+                          )}
                         </div>
                       </>
                     )}
