@@ -77,7 +77,10 @@ const Checkout = () => {
 
   const discount = appliedCoupon
     ? appliedCoupon.discount_type === "percentage"
-      ? Math.round(totalPrice * appliedCoupon.discount_value / 100)
+      ? (() => {
+          const calc = Math.round(totalPrice * appliedCoupon.discount_value / 100);
+          return appliedCoupon.max_discount > 0 ? Math.min(calc, appliedCoupon.max_discount) : calc;
+        })()
       : appliedCoupon.discount_value
     : 0;
 
