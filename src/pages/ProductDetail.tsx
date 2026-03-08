@@ -31,6 +31,9 @@ const SHOE_SUBS = ["Shoes"];
 const NO_SIZE_SUBS = ["Bags", "Others"];
 
 const ProductDetail = () => {
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [showStickyBar, setShowStickyBar] = useState(false);
+  const ctaRef = useRef<HTMLDivElement>(null);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: product, isLoading } = useProduct(id!);
