@@ -16,6 +16,7 @@ interface ProductCardProps {
   originalPrice?: number;
   image: string;
   category?: string;
+  sub_category?: string;
   isNew?: boolean;
 }
 
