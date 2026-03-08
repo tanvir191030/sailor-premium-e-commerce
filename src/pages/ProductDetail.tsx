@@ -5,7 +5,8 @@ import {
   ArrowLeft, ShoppingCart, Zap, Heart, Share2, Facebook,
   MessageCircle, ZoomIn, ChevronLeft, ChevronRight, Ruler,
   Package, Tag, CheckCircle, XCircle, Plus, Minus,
-  Star, Send, Camera, BadgeCheck
+  Star, Send, Camera, BadgeCheck, Shield, Truck, RefreshCw,
+  CreditCard, ChevronDown, Sparkles, Layers, Award, HelpCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
@@ -30,6 +31,9 @@ const SHOE_SUBS = ["Shoes"];
 const NO_SIZE_SUBS = ["Bags", "Others"];
 
 const ProductDetail = () => {
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [showStickyBar, setShowStickyBar] = useState(false);
+  const ctaRef = useRef<HTMLDivElement>(null);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: product, isLoading } = useProduct(id!);
@@ -166,6 +170,17 @@ const ProductDetail = () => {
 
   const { settings } = useSiteSettings();
   const baseUrl = settings.website_url || "https://modestmart.com";
+  const isFreeDelivery = settings.free_delivery === "true";
+
+  // Sticky desktop bar: show when CTA buttons scroll out of view
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowStickyBar(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+    if (ctaRef.current) observer.observe(ctaRef.current);
+    return () => observer.disconnect();
+  }, [product]);
 
   const seoJsonLd = useMemo(() => {
     if (!product) return undefined;
@@ -702,7 +717,7 @@ const ProductDetail = () => {
                 )}
 
                 {/* Quantity Selector + CTA Buttons */}
-                <div className="space-y-3 pt-1">
+                <div ref={ctaRef} className="space-y-3 pt-1">
                   {/* Quantity */}
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-medium">পরিমাণ</span>
@@ -756,6 +771,26 @@ const ProductDetail = () => {
                     >
                       <ShoppingCart size={16} /> {isInStock ? "কার্টে যোগ করুন" : "স্টক নেই"}
                     </motion.button>
+                  </div>
+
+                  {/* Trust Badges */}
+                  <div className="grid grid-cols-2 gap-2 pt-2">
+                    <div className="flex items-center gap-2 p-2.5 bg-secondary/50 rounded-lg border border-border/50">
+                      <CreditCard size={16} className="text-primary flex-shrink-0" />
+                      <span className="text-[11px] text-foreground font-medium leading-tight">ক্যাশ অন ডেলিভারি</span>
+                    </div>
+                    <div className="flex items-center gap-2 p-2.5 bg-secondary/50 rounded-lg border border-border/50">
+                      <Shield size={16} className="text-primary flex-shrink-0" />
+                      <span className="text-[11px] text-foreground font-medium leading-tight">নিরাপদ পেমেন্ট</span>
+                    </div>
+                    <div className="flex items-center gap-2 p-2.5 bg-secondary/50 rounded-lg border border-border/50">
+                      <Truck size={16} className="text-primary flex-shrink-0" />
+                      <span className="text-[11px] text-foreground font-medium leading-tight">{isFreeDelivery ? "ফ্রি ডেলিভারি" : "দ্রুত ডেলিভারি"}</span>
+                    </div>
+                    <div className="flex items-center gap-2 p-2.5 bg-secondary/50 rounded-lg border border-border/50">
+                      <RefreshCw size={16} className="text-primary flex-shrink-0" />
+                      <span className="text-[11px] text-foreground font-medium leading-tight">ইজি রিটার্ন</span>
+                    </div>
                   </div>
                 </div>
 
@@ -969,7 +1004,97 @@ const ProductDetail = () => {
             </div>
           </section>
 
-          {/* Related Products */}
+          {/* Product Features / Benefits */}
+          <section className="border-t border-border py-10 md:py-16 bg-secondary/20">
+            <div className="container mx-auto px-4 md:px-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="text-center mb-8"
+              >
+                <span className="text-label mb-2 block">কেন বেছে নেবেন</span>
+                <h2 className="heading-section text-lg md:text-xl">পণ্যের বৈশিষ্ট্য ও সুবিধা</h2>
+              </motion.div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+                {[
+                  { icon: Award, title: "প্রিমিয়াম কোয়ালিটি", desc: "সেরা মানের কাপড় ও উপকরণ ব্যবহার" },
+                  { icon: Truck, title: "দ্রুত ডেলিভারি", desc: "সারা বাংলাদেশে ২-৫ দিনে ডেলিভারি" },
+                  { icon: RefreshCw, title: "ইজি রিটার্ন", desc: "পণ্যে সমস্যা থাকলে সহজ রিটার্ন পলিসি" },
+                  { icon: Shield, title: "১০০% অথেনটিক", desc: "প্রতিটি পণ্য কোয়ালিটি চেক করা" },
+                ].map((feat, i) => (
+                  <motion.div
+                    key={feat.title}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1 }}
+                    className="text-center p-4 md:p-6 bg-card rounded-xl border border-border"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                      <feat.icon size={18} className="text-primary" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-foreground mb-1">{feat.title}</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{feat.desc}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* FAQ Section */}
+          <section className="border-t border-border py-10 md:py-16">
+            <div className="container mx-auto px-4 md:px-6 max-w-3xl">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="text-center mb-8"
+              >
+                <span className="text-label mb-2 block flex items-center justify-center gap-1.5"><HelpCircle size={14} /> সাধারণ প্রশ্ন</span>
+                <h2 className="heading-section text-lg md:text-xl">প্রায়শই জিজ্ঞাসিত প্রশ্ন</h2>
+              </motion.div>
+              <div className="space-y-2">
+                {[
+                  { q: "ডেলিভারিতে কতদিন সময় লাগে?", a: "ঢাকার ভিতরে ১-২ দিন এবং ঢাকার বাইরে ৩-৫ কার্যদিবস সময় লাগে। অর্ডার কনফার্মেশনের পর ট্র্যাকিং আইডি প্রদান করা হয়।" },
+                  { q: "ক্যাশ অন ডেলিভারি আছে কি?", a: "হ্যাঁ! আমরা সম্পূর্ণ ক্যাশ অন ডেলিভারি সাপোর্ট করি। পণ্য হাতে পেয়ে টাকা দিন।" },
+                  { q: "পণ্যের সাইজ না মিললে কী করব?", a: "সাইজ সমস্যা হলে আমাদের সাথে যোগাযোগ করুন। আমরা এক্সচেঞ্জ বা রিটার্নের ব্যবস্থা করব।" },
+                  { q: "পণ্যের রঙ আসলটার সাথে মিলবে?", a: "আমরা সর্বোচ্চ চেষ্টা করি আসল রঙ দেখাতে। তবে ডিভাইসের স্ক্রিন সেটিংসের কারণে সামান্য পার্থক্য হতে পারে।" },
+                  { q: "অর্ডার কিভাবে ট্র্যাক করব?", a: "অর্ডার দেওয়ার পর আপনি একটি ট্র্যাকিং আইডি পাবেন। আমাদের ওয়েবসাইটের 'অর্ডার ট্র্যাক' পেজে গিয়ে আপনার অর্ডারের অবস্থা জানতে পারবেন।" },
+                ].map((faq, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    viewport={{ once: true }}
+                    className="border border-border rounded-lg overflow-hidden"
+                  >
+                    <button
+                      onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                      className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-secondary/30 transition-colors"
+                    >
+                      <span className="text-sm font-medium text-foreground pr-4">{faq.q}</span>
+                      <ChevronDown size={16} className={`text-muted-foreground flex-shrink-0 transition-transform duration-200 ${openFaq === i ? "rotate-180" : ""}`} />
+                    </button>
+                    <AnimatePresence>
+                      {openFaq === i && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="overflow-hidden"
+                        >
+                          <p className="px-4 pb-4 text-sm text-muted-foreground leading-relaxed">{faq.a}</p>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </section>
+
           {related.length > 0 && (
             <section className="border-t border-border py-10 md:py-16">
               <div className="container mx-auto px-4 md:px-6">
@@ -1009,10 +1134,50 @@ const ProductDetail = () => {
           )}
         </main>
 
+        {/* Sticky Desktop Top Bar — shown when scrolled past CTA */}
+        <AnimatePresence>
+          {showStickyBar && product && (
+            <motion.div
+              initial={{ y: -60, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -60, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-border shadow-sm hidden lg:block"
+            >
+              <div className="container mx-auto px-6 py-2.5 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  {galleryImages[0] && <img src={galleryImages[0]} alt="" className="w-10 h-10 object-cover rounded flex-shrink-0" />}
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{product.name}</p>
+                    <p className="text-lg font-bold text-primary">{formatPrice(activePrice)}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <motion.button
+                    onClick={handleBuyNow}
+                    disabled={!isInStock}
+                    whileTap={{ scale: 0.95 }}
+                    className="bg-primary text-primary-foreground px-6 h-10 text-xs uppercase tracking-[0.12em] font-bold hover:bg-primary/90 flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    <Zap size={14} /> এখনই কিনুন
+                  </motion.button>
+                  <motion.button
+                    onClick={handleAddToCart}
+                    disabled={!isInStock}
+                    whileTap={{ scale: 0.95 }}
+                    className="bg-transparent text-foreground border-2 border-primary px-6 h-10 text-xs uppercase tracking-[0.12em] font-bold flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-primary hover:text-primary-foreground transition-colors"
+                  >
+                    <ShoppingCart size={14} /> কার্টে যোগ
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Sticky CTA Bar — mobile only, above bottom nav */}
         <div className="fixed bottom-[52px] left-0 right-0 z-40 bg-background/95 backdrop-blur-md border-t border-border px-3 py-2 md:hidden safe-bottom">
           <div className="flex items-center gap-2">
-            {/* Mini quantity selector */}
             <div className="flex items-center border border-border flex-shrink-0 overflow-hidden">
               <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="w-8 h-10 flex items-center justify-center hover:bg-muted active:bg-muted/80 transition-colors" disabled={!isInStock}>
                 <Minus size={13} />
