@@ -54,6 +54,12 @@ const AdminDashboard = () => {
   const processingOrders = orders.filter((o) => o.status === "processing").length;
   const shippedOrders = orders.filter((o) => o.status === "shipped").length;
   const deliveredOrders = orders.filter((o) => o.status === "delivered").length;
+  const todayStr = new Date().toISOString().split("T")[0];
+  const todayVerified = orders.filter(
+    (o: any) => o.created_at?.startsWith(todayStr) && (o as any).is_payment_verified === true && !(o as any).is_deleted
+  );
+  const todayVerifiedTotal = todayVerified.reduce((s, o) => s + Number(o.total), 0);
+
   const lowStockProducts = products.filter((p: any) => (p.stock ?? 0) < 5);
   const totalProducts = products.length;
   const uniqueCustomers = new Set(orders.map((o: any) => `${o.customer_name}-${o.phone}`)).size;
