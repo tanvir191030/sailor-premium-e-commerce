@@ -141,6 +141,9 @@ const AdminSettings = () => {
     setMessengerId(getSetting("messenger_id", ""));
     setPrivacyPolicy(getSetting("privacy_policy", ""));
     setTermsConditions(getSetting("terms_conditions", ""));
+    setCatImageMen(getSetting("category_image_men", ""));
+    setCatImageWomen(getSetting("category_image_women", ""));
+    setCatImageKids(getSetting("category_image_kids", ""));
     setLoaded(true);
   }
 
