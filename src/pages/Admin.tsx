@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import {
   LayoutDashboard, Package, ShoppingCart, Users, CreditCard,
   Megaphone, Settings, ArrowLeft, Menu, X, LogOut, Moon, Sun, Tag, Award, Ticket, MessageSquare,
-  Warehouse, Wallet, BarChart3,
+  Warehouse, Wallet, BarChart3, Mail,
 } from "lucide-react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import AdminDashboard from "@/components/admin/AdminDashboard";
@@ -24,6 +24,7 @@ import AdminReviews from "@/components/admin/AdminReviews";
 import AdminInventory from "@/components/admin/AdminInventory";
 import AdminExpenses from "@/components/admin/AdminExpenses";
 import AdminReports from "@/components/admin/AdminReports";
+import AdminNewsletter from "@/components/admin/AdminNewsletter";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n/index";
 
@@ -64,6 +65,7 @@ const Admin = () => {
     { id: "coupons", label: "কুপন", icon: Ticket },
     { id: "reviews", label: "রিভিউ", icon: MessageSquare },
     { id: "marketing", label: t("admin.marketing"), icon: Megaphone },
+    { id: "newsletter", label: "নিউজলেটার", icon: Mail },
     { id: "settings", label: t("admin.settings"), icon: Settings },
   ];
 
@@ -109,6 +111,7 @@ const Admin = () => {
       case "reports": return <AdminReports />;
       case "reviews": return <AdminReviews />;
       case "marketing": return <AdminMarketing />;
+      case "newsletter": return <AdminNewsletter />;
       case "settings": return <AdminSettings />;
       default: return <AdminDashboard />;
     }
