@@ -86,7 +86,7 @@ const Shop = () => {
             <div className="container mx-auto px-4 md:px-6">
               {/* Mobile filter toggle */}
               <div className="flex items-center justify-between mb-6 lg:hidden">
-                <p className="text-sm text-muted-foreground">{sorted.length} পণ্য</p>
+                <SortSelect value={sort} onChange={setSort} />
                 <button
                   onClick={() => setMobileFilterOpen(true)}
                   className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-xl text-sm font-medium text-foreground hover:bg-secondary transition-colors"
