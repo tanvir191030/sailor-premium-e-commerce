@@ -30,7 +30,8 @@ const CATEGORY_META: Record<string, { title: string; description: string }> = {
 const Category = () => {
   const { categoryName, subCategoryName } = useParams<{ categoryName: string; subCategoryName?: string }>();
   const [page, setPage] = useState(1);
-  const { data, isLoading } = useCategoryProducts(categoryName, subCategoryName, page);
+  const [sort, setSort] = useState<SortOption>("newest");
+  const { data, isLoading } = useCategoryProducts(categoryName, subCategoryName, page, sort);
   const { settings } = useSiteSettings();
 
   // Reset to page 1 when category/subcategory changes
