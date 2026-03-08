@@ -42,15 +42,26 @@ const AdminNewsletter = () => {
     }
   };
 
-  const handleExport = () => {
-    const rows = subscribers.map((s) => ({
-      Email: s.email,
-      "Subscribed At": new Date(s.subscribed_at).toLocaleString("bn-BD"),
+  const doExport = async (format: "xlsx" | "csv") => {
+    const { data } = await supabase
+      .from("newsletter_subscribers" as any)
+      .select("*")
+      .order("subscribed_at", { ascending: false });
+    const fresh = (data as unknown as Subscriber[]) || [];
+    const rows = fresh.map((s) => ({
+      "Email Address": s.email,
+      "Subscribed Date": new Date(s.subscribed_at).toISOString().slice(0, 10),
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Subscribers");
-    XLSX.writeFile(wb, `newsletter_subscribers_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    const dateStr = new Date().toISOString().slice(0, 10);
+    if (format === "csv") {
+      XLSX.writeFile(wb, `newsletter_subscribers_${dateStr}.csv`, { bookType: "csv" });
+    } else {
+      XLSX.writeFile(wb, `newsletter_subscribers_${dateStr}.xlsx`);
+    }
+    toast({ title: "ডাউনলোড সম্পন্ন", description: `${fresh.length}টি সাবস্ক্রাইবার এক্সপোর্ট হয়েছে।` });
   };
 
   const filtered = subscribers.filter((s) =>
@@ -66,9 +77,14 @@ const AdminNewsletter = () => {
             নিউজলেটার সাবস্ক্রাইবার ({subscribers.length})
           </h2>
         </div>
-        <Button onClick={handleExport} size="sm" className="gap-2" disabled={subscribers.length === 0}>
-          <Download size={14} /> Excel এ ডাউনলোড
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => doExport("xlsx")} size="sm" className="gap-2" disabled={subscribers.length === 0}>
+            <Download size={14} /> Excel
+          </Button>
+          <Button onClick={() => doExport("csv")} size="sm" variant="outline" className="gap-2" disabled={subscribers.length === 0}>
+            <Download size={14} /> CSV (Mailchimp/Brevo)
+          </Button>
+        </div>
       </div>
 
       <div className="relative max-w-xs">
