@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Download, Trash2, Search, Mail } from "lucide-react";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 interface Subscriber {
   id: string;
@@ -48,52 +48,84 @@ const AdminNewsletter = () => {
       .select("*")
       .order("subscribed_at", { ascending: false });
     const fresh = (data as unknown as Subscriber[]) || [];
-    const rows = fresh.map((s, i) => ({
-      "#": i + 1,
-      "Email Address": s.email,
-      "Subscribed Date": new Date(s.subscribed_at).toISOString().slice(0, 10),
-    }));
-    const ws = XLSX.utils.json_to_sheet(rows);
 
-    // Auto-fit column widths
-    const colWidths = [
-      { wch: 5 },  // #
-      { wch: Math.max(15, ...fresh.map(s => s.email.length + 2)) }, // Email
-      { wch: 16 }, // Date
+    const wb = new ExcelJS.Workbook();
+    wb.creator = "Modest Mart";
+    const ws = wb.addWorksheet("Subscribers");
+
+    // Define columns with auto-fit widths
+    const maxEmailLen = Math.max(15, ...fresh.map(s => s.email.length + 2));
+    ws.columns = [
+      { header: "#", key: "index", width: 6 },
+      { header: "Email Address", key: "email", width: maxEmailLen },
+      { header: "Subscribed Date", key: "date", width: 18 },
     ];
-    ws["!cols"] = colWidths;
 
-    // Style header + zebra rows (xlsx supports cell styles)
-    const range = XLSX.utils.decode_range(ws["!ref"] || "A1");
-    const headerStyle = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "1B4332" } }, border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }, alignment: { horizontal: "center" } };
-    const borderStyle = { top: { style: "thin", color: { rgb: "CCCCCC" } }, bottom: { style: "thin", color: { rgb: "CCCCCC" } }, left: { style: "thin", color: { rgb: "CCCCCC" } }, right: { style: "thin", color: { rgb: "CCCCCC" } } };
+    // Style header row
+    const headerRow = ws.getRow(1);
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 12 };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1B4332" } };
+      cell.alignment = { horizontal: "center", vertical: "middle" };
+      cell.border = {
+        top: { style: "thin", color: { argb: "FF1B4332" } },
+        bottom: { style: "thin", color: { argb: "FF1B4332" } },
+        left: { style: "thin", color: { argb: "FF1B4332" } },
+        right: { style: "thin", color: { argb: "FF1B4332" } },
+      };
+    });
+    headerRow.height = 28;
 
-    for (let C = range.s.c; C <= range.e.c; C++) {
-      // Header row
-      const headerAddr = XLSX.utils.encode_cell({ r: 0, c: C });
-      if (ws[headerAddr]) ws[headerAddr].s = headerStyle;
-      // Data rows with zebra + borders
-      for (let R = 1; R <= range.e.r; R++) {
-        const addr = XLSX.utils.encode_cell({ r: R, c: C });
-        if (ws[addr]) {
-          ws[addr].s = {
-            border: borderStyle,
-            fill: R % 2 === 0 ? { fgColor: { rgb: "F0F4F0" } } : undefined,
-            alignment: C === 0 ? { horizontal: "center" } : undefined,
-          };
+    // Add data rows with zebra striping
+    fresh.forEach((s, i) => {
+      const row = ws.addRow({
+        index: i + 1,
+        email: s.email,
+        date: new Date(s.subscribed_at).toISOString().slice(0, 10),
+      });
+
+      const isEven = i % 2 === 0;
+      row.eachCell((cell, colNumber) => {
+        cell.border = {
+          top: { style: "thin", color: { argb: "FFCCCCCC" } },
+          bottom: { style: "thin", color: { argb: "FFCCCCCC" } },
+          left: { style: "thin", color: { argb: "FFCCCCCC" } },
+          right: { style: "thin", color: { argb: "FFCCCCCC" } },
+        };
+        if (isEven) {
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF0F4F0" } };
         }
-      }
-    }
+        if (colNumber === 1) {
+          cell.alignment = { horizontal: "center" };
+        }
+        cell.font = { size: 11 };
+      });
+    });
 
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Subscribers");
+    // Generate and download
     const dateStr = new Date().toISOString().slice(0, 10);
     const fileName = `Modest_Mart_Newsletter_List_${dateStr}`;
+
     if (format === "csv") {
-      XLSX.writeFile(wb, `${fileName}.csv`, { bookType: "csv" });
+      const csvBuf = await wb.csv.writeBuffer();
+      const blob = new Blob([csvBuf], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${fileName}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
     } else {
-      XLSX.writeFile(wb, `${fileName}.xlsx`);
+      const xlsxBuf = await wb.xlsx.writeBuffer();
+      const blob = new Blob([xlsxBuf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${fileName}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
     }
+
     toast({ title: "ডাউনলোড সম্পন্ন", description: `${fresh.length}টি সাবস্ক্রাইবার এক্সপোর্ট হয়েছে।` });
   };
 
