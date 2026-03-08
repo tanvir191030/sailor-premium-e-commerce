@@ -86,11 +86,12 @@ export const useSiteSettings = () => {
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["site-settings"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("site_settings").select("*");
+      const { data, error } = await supabase.from("site_settings").select("key,value");
       if (error) throw error;
       return data;
     },
-    staleTime: 1000 * 60 * 5, // 5 min cache
+    staleTime: 1000 * 60 * 10, // 10 min cache
+    gcTime: 1000 * 60 * 30,
   });
 
   const settings: SiteSettings = { ...DEFAULTS };

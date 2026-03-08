@@ -15,28 +15,31 @@ const AdminDashboard = () => {
   const { data: products = [] } = useQuery({
     queryKey: ["admin-products"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("products").select("*");
+      const { data, error } = await supabase.from("products").select("id,name,price,stock,category,created_at");
       if (error) throw error;
       return data;
     },
+    staleTime: 1000 * 60 * 2,
   });
 
   const { data: orders = [] } = useQuery({
     queryKey: ["admin-orders"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("orders").select("id,customer_name,total,status,created_at,delivery_charge").order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
+    staleTime: 1000 * 60 * 1,
   });
 
   const { data: expenses = [] } = useQuery({
     queryKey: ["admin-expenses-dashboard"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).from("expenses").select("*");
+      const { data, error } = await (supabase as any).from("expenses").select("id,amount,category,expense_date");
       if (error) throw error;
       return data as any[];
     },
+    staleTime: 1000 * 60 * 2,
   });
 
   const totalRevenue = orders.filter((o) => o.status === "delivered").reduce((sum, o) => sum + Number(o.total), 0);
