@@ -424,7 +424,7 @@ const AdminExpenses = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               <div>
                 <label className="text-xs text-muted-foreground mb-1 block">খরচের ধরন *</label>
-                <select value={form.category} onChange={(e) => handleFormChange("category", e.target.value)} className={inputCls}>
+                <select value={form.category} onChange={(e) => handleFormChange("category", e.target.value)} className={selectCls}>
                   {EXPENSE_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
               </div>
