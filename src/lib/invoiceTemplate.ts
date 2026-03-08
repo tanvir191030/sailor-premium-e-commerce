@@ -14,6 +14,8 @@ interface InvoiceData {
   deliveryCharge: number;
   total: number;
   courierTrackingId?: string;
+  couponCode?: string;
+  discountAmount?: number;
 }
 
 export function generateInvoiceHTML(data: InvoiceData): string {
