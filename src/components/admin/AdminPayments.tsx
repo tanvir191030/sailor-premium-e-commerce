@@ -1,9 +1,17 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { CreditCard, Save, Truck, Gift } from "lucide-react";
+import { CreditCard, Save, Truck, Gift, ShieldCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+
+const ORDER_MODES = [
+  { value: "cod", label: "ফুল ক্যাশ অন ডেলিভারি (COD)", desc: "অগ্রিম পেমেন্ট লাগবে না" },
+  { value: "delivery_charge_advance", label: "শুধু ডেলিভারি চার্জ অগ্রিম", desc: "কাস্টমার শুধু ডেলিভারি ফি bKash/Nagad এ পে করবে" },
+  { value: "full_advance", label: "সম্পূর্ণ অগ্রিম পেমেন্ট", desc: "পুরো মূল্য + ডেলিভারি ফি আগেই পে করতে হবে" },
+];
 
 const AdminPayments = () => {
   const queryClient = useQueryClient();
@@ -21,12 +29,14 @@ const AdminPayments = () => {
   const [defaultCourier, setDefaultCourier] = useState("");
   const [shippingCost, setShippingCost] = useState("");
   const [freeDelivery, setFreeDelivery] = useState(false);
+  const [orderMode, setOrderMode] = useState("cod");
   const [loaded, setLoaded] = useState(false);
 
   if (settings.length > 0 && !loaded) {
     setBkashNumber(getSetting("bkash_number")); setNagadNumber(getSetting("nagad_number")); setRocketNumber(getSetting("rocket_number"));
     setDefaultCourier(getSetting("default_courier")); setShippingCost(getSetting("shipping_cost"));
     setFreeDelivery(getSetting("free_delivery") === "true");
+    setOrderMode(getSetting("order_confirmation_mode") || "cod");
     setLoaded(true);
   }
 
@@ -43,6 +53,7 @@ const AdminPayments = () => {
     saveSetting.mutate({ key: "bkash_number", value: bkashNumber }); saveSetting.mutate({ key: "nagad_number", value: nagadNumber });
     saveSetting.mutate({ key: "rocket_number", value: rocketNumber }); saveSetting.mutate({ key: "default_courier", value: defaultCourier });
     saveSetting.mutate({ key: "shipping_cost", value: shippingCost }); saveSetting.mutate({ key: "free_delivery", value: freeDelivery ? "true" : "false" });
+    saveSetting.mutate({ key: "order_confirmation_mode", value: orderMode });
     toast({ title: "সেটিংস সেভ হয়েছে" });
   };
 
@@ -101,6 +112,23 @@ const AdminPayments = () => {
           <div><label className="text-xs text-muted-foreground mb-1 block">ডিফল্ট কুরিয়ার</label><input value={defaultCourier} onChange={(e) => setDefaultCourier(e.target.value)} placeholder="যেমন: পাঠাও" className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none bg-transparent text-foreground placeholder:text-muted-foreground" /></div>
           <div><label className="text-xs text-muted-foreground mb-1 block">শিপিং খরচ (৳)</label><input value={shippingCost} onChange={(e) => setShippingCost(e.target.value)} placeholder="120" type="number" className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none bg-transparent text-foreground placeholder:text-muted-foreground" /></div>
         </div>
+      </div>
+
+      {/* Order Confirmation Mode */}
+      <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
+        <div className="flex items-center gap-2 mb-1"><ShieldCheck size={18} className="text-muted-foreground" /><h3 className="font-serif text-base text-foreground">অর্ডার কনফার্মেশন মোড</h3></div>
+        <p className="text-xs text-muted-foreground mb-4">কাস্টমার কিভাবে অর্ডার প্লেস করবে সেটি নির্ধারণ করুন।</p>
+        <RadioGroup value={orderMode} onValueChange={setOrderMode} className="space-y-3">
+          {ORDER_MODES.map((mode) => (
+            <label key={mode.value} className={`flex items-start gap-3 border rounded-xl p-4 cursor-pointer transition-colors ${orderMode === mode.value ? "border-primary bg-primary/5" : "border-border hover:border-ring"}`}>
+              <RadioGroupItem value={mode.value} id={mode.value} className="mt-0.5" />
+              <div>
+                <Label htmlFor={mode.value} className="text-sm font-medium text-foreground cursor-pointer">{mode.label}</Label>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{mode.desc}</p>
+              </div>
+            </label>
+          ))}
+        </RadioGroup>
       </div>
 
       <button onClick={handleSave} className="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 rounded-full text-sm font-medium hover:opacity-90 transition-opacity">

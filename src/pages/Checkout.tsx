@@ -40,6 +40,7 @@ const Checkout = () => {
     name: "", phone: "", email: "", district: "", thana: "", address: "",
   });
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "bkash" | "nagad" | "rocket">("cod");
+  const [paymentMethodSet, setPaymentMethodSet] = useState(false);
   const [transactionId, setTransactionId] = useState("");
   const [deliveryZone, setDeliveryZone] = useState<"inside_dhaka" | "outside_dhaka">("inside_dhaka");
   const [submitting, setSubmitting] = useState(false);
@@ -55,7 +56,7 @@ const Checkout = () => {
       const { data, error } = await supabase
         .from("site_settings")
         .select("key, value")
-        .in("key", ["delivery_inside_dhaka", "delivery_outside_dhaka", "bkash_number", "nagad_number", "rocket_number", "free_delivery"]);
+        .in("key", ["delivery_inside_dhaka", "delivery_outside_dhaka", "bkash_number", "nagad_number", "rocket_number", "free_delivery", "order_confirmation_mode"]);
       if (error) throw error;
       const map: Record<string, string> = {};
       data?.forEach((s) => { map[s.key] = s.value || ""; });
@@ -66,10 +67,12 @@ const Checkout = () => {
         nagad_number: map["nagad_number"] || "",
         rocket_number: map["rocket_number"] || "",
         free_delivery: map["free_delivery"] === "true",
+        order_mode: (map["order_confirmation_mode"] || "cod") as "cod" | "delivery_charge_advance" | "full_advance",
       };
     },
   });
 
+  const orderMode = deliverySettings?.order_mode ?? "cod";
   const isFreeDelivery = deliverySettings?.free_delivery ?? false;
   const deliveryCharge = isFreeDelivery ? 0 : (deliveryZone === "inside_dhaka"
     ? (deliverySettings?.inside_dhaka ?? 80)
@@ -85,6 +88,11 @@ const Checkout = () => {
     : 0;
 
   const grandTotal = totalPrice - discount + deliveryCharge;
+
+  // Amount the customer must pay NOW based on order mode
+  const payableNow = orderMode === "cod" ? 0 : orderMode === "delivery_charge_advance" ? deliveryCharge : grandTotal;
+  // Must use mobile payment if advance is required
+  const requiresAdvance = orderMode !== "cod";
 
   const applyCoupon = async () => {
     if (!couponCode.trim()) return;
@@ -133,6 +141,14 @@ const Checkout = () => {
       setDeliveryZone("outside_dhaka");
     }
   }, [form.district]);
+
+  // Auto-select bkash when advance payment mode and still on cod
+  useEffect(() => {
+    if (requiresAdvance && paymentMethod === "cod" && !paymentMethodSet) {
+      setPaymentMethod("bkash");
+      setPaymentMethodSet(true);
+    }
+  }, [requiresAdvance, paymentMethod, paymentMethodSet]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -453,9 +469,21 @@ const Checkout = () => {
                       <label className="text-xs font-medium text-muted-foreground mb-3 block flex items-center gap-1.5">
                         <Smartphone size={14} /> পেমেন্ট মেথড *
                       </label>
+
+                      {/* Advance payment info banner */}
+                      {requiresAdvance && (
+                        <div className="mb-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+                          <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                            {orderMode === "delivery_charge_advance"
+                              ? `⚡ শুধুমাত্র ডেলিভারি চার্জ (${formatPrice(deliveryCharge)}) অগ্রিম পে করুন`
+                              : `⚡ সম্পূর্ণ অর্ডার মূল্য (${formatPrice(grandTotal)}) অগ্রিম পে করুন`}
+                          </p>
+                        </div>
+                      )}
+
                       <div className="grid grid-cols-2 gap-2">
                         {[
-                          { value: "cod", label: "ক্যাশ অন ডেলিভারি", icon: <Truck size={16} /> },
+                          ...(!requiresAdvance ? [{ value: "cod", label: "ক্যাশ অন ডেলিভারি", icon: <Truck size={16} /> }] : []),
                           { value: "bkash", label: "bKash", icon: <img src={bkashLogo} alt="bKash" className="w-5 h-5 object-contain" /> },
                           { value: "nagad", label: "Nagad", icon: <img src={nagadLogo} alt="Nagad" className="w-5 h-5 object-contain" /> },
                           { value: "rocket", label: "Rocket", icon: <img src={rocketLogo} alt="Rocket" className="w-5 h-5 object-contain" /> },
@@ -483,10 +511,11 @@ const Checkout = () => {
                         };
                         const displayNumber = numberMap[paymentMethod];
                         const methodLabel = paymentMethod === "bkash" ? "bKash" : paymentMethod === "nagad" ? "Nagad" : "Rocket";
+                        const amountToSend = requiresAdvance ? formatPrice(payableNow) : formatPrice(grandTotal);
                         return (
                           <div className="mt-3 p-3 bg-secondary/50 rounded-xl border border-border space-y-2">
                             <p className="text-xs text-muted-foreground">
-                              নিচের {methodLabel} নম্বরে <strong className="text-foreground">{formatPrice(grandTotal)}</strong> Send Money করুন:
+                              নিচের {methodLabel} নম্বরে <strong className="text-foreground">{amountToSend}</strong> Send Money করুন:
                             </p>
                             <p className="text-sm font-mono font-bold text-foreground">
                               {displayNumber || <span className="text-destructive text-xs font-sans">নম্বর সেট করা হয়নি (Admin Settings এ দিন)</span>}
@@ -569,6 +598,12 @@ const Checkout = () => {
                             <span>{isFreeDelivery ? <span className="text-primary font-medium line-through-none">ফ্রি</span> : formatPrice(deliveryCharge)}</span>
                           </div>
                           <div className="flex justify-between font-bold text-base pt-2 border-t border-border text-foreground"><span>মোট</span><span>{formatPrice(grandTotal)}</span></div>
+                          {requiresAdvance && payableNow > 0 && (
+                            <div className="flex justify-between text-sm font-bold pt-1 text-amber-600 dark:text-amber-400">
+                              <span>এখন পে করুন</span>
+                              <span>{formatPrice(payableNow)}</span>
+                            </div>
+                          )}
                         </div>
                       </>
                     )}
