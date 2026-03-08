@@ -194,6 +194,7 @@ export type Database = {
           district: string | null
           email: string | null
           id: string
+          is_deleted: boolean
           is_payment_verified: boolean | null
           payment_method: string | null
           payment_rejection_reason: string | null
@@ -217,6 +218,7 @@ export type Database = {
           district?: string | null
           email?: string | null
           id?: string
+          is_deleted?: boolean
           is_payment_verified?: boolean | null
           payment_method?: string | null
           payment_rejection_reason?: string | null
@@ -240,6 +242,7 @@ export type Database = {
           district?: string | null
           email?: string | null
           id?: string
+          is_deleted?: boolean
           is_payment_verified?: boolean | null
           payment_method?: string | null
           payment_rejection_reason?: string | null
