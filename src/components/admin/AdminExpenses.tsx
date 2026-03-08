@@ -294,7 +294,7 @@ const AdminExpenses = () => {
       return data;
     },
     onSuccess: (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ["all-products-for-expense"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-products-list"] });
       setForm((prev) => ({ ...prev, product_id: data.id, title: prev.title || data.name }));
       setQuickProduct({ name: "", price: "" });
       setShowQuickAdd(false);
