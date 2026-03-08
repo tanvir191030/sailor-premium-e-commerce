@@ -503,12 +503,57 @@ const AdminExpenses = () => {
                       {filteredSubCategories.map((sc: any) => <option key={sc.id} value={sc.name}>{sc.name}</option>)}
                     </select>
                   </div>
-                  <div>
+                  <div ref={productDropdownRef} className="relative">
                     <label className="text-xs text-muted-foreground mb-1 block">পণ্য নির্বাচন করুন *</label>
-                    <select value={form.product_id} onChange={(e) => handleFormChange("product_id", e.target.value)} className={selectCls}>
-                      <option value="">-- পণ্য বেছে নিন --</option>
-                      {filteredProducts.map((p: any) => <option key={p.id} value={p.id}>{p.name} ({formatPrice(p.price)})</option>)}
-                    </select>
+                    <button
+                      type="button"
+                      onClick={() => { setProductDropdownOpen(!productDropdownOpen); setProductSearch(""); }}
+                      className={`${inputCls} text-left flex items-center justify-between gap-2`}
+                    >
+                      <span className={selectedProduct ? "text-foreground" : "text-muted-foreground"}>
+                        {selectedProduct ? `${selectedProduct.name} (${formatPrice(selectedProduct.price)})` : "-- পণ্য বেছে নিন --"}
+                      </span>
+                      <ChevronDown size={14} className="text-muted-foreground flex-shrink-0" />
+                    </button>
+                    {productDropdownOpen && (
+                      <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-background border border-border rounded-lg shadow-xl max-h-64 overflow-hidden">
+                        <div className="p-2 border-b border-border">
+                          <div className="relative">
+                            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                            <input
+                              autoFocus
+                              value={productSearch}
+                              onChange={(e) => setProductSearch(e.target.value)}
+                              placeholder="পণ্য খুঁজুন..."
+                              className="w-full pl-8 pr-3 py-2 border border-border rounded-md text-sm bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+                            />
+                          </div>
+                        </div>
+                        <div className="overflow-y-auto max-h-48">
+                          <button
+                            type="button"
+                            onClick={() => { handleFormChange("product_id", ""); setProductDropdownOpen(false); }}
+                            className="w-full text-left px-3 py-2 text-sm text-muted-foreground hover:bg-secondary transition-colors"
+                          >
+                            -- পণ্য বেছে নিন --
+                          </button>
+                          {searchableProducts.length === 0 ? (
+                            <p className="px-3 py-4 text-xs text-muted-foreground text-center">কোনো পণ্য পাওয়া যায়নি</p>
+                          ) : searchableProducts.map((p: any) => (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => { handleFormChange("product_id", p.id); setProductDropdownOpen(false); setProductSearch(""); }}
+                              className={`w-full text-left px-3 py-2 text-sm hover:bg-secondary transition-colors flex items-center gap-2 ${form.product_id === p.id ? "bg-primary/10 text-primary font-medium" : "text-foreground"}`}
+                            >
+                              {p.image_url && <img src={p.image_url} alt="" className="w-6 h-6 rounded object-cover flex-shrink-0" />}
+                              <span className="truncate">{p.name}</span>
+                              <span className="text-xs text-muted-foreground ml-auto flex-shrink-0">{formatPrice(p.price)}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     <button type="button" onClick={() => setShowQuickAdd(!showQuickAdd)} className="mt-1.5 text-[11px] text-primary hover:underline flex items-center gap-1">
                       <Plus size={10} /> {showQuickAdd ? "বাতিল" : "নতুন পণ্য যোগ করুন"}
                     </button>
