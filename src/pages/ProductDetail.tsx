@@ -999,6 +999,7 @@ const ProductDetail = () => {
                         price={p.price}
                         image={p.image_url || "/placeholder.svg"}
                         category={p.category || undefined}
+                        sub_category={(p as any).sub_category || undefined}
                       />
                     </motion.div>
                   ))}

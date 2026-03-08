@@ -165,6 +165,7 @@ const Category = () => {
                           price={product.price}
                           image={product.image_url || "/placeholder.svg"}
                           category={product.category || undefined}
+                          sub_category={(product as any).sub_category || undefined}
                           isNew={index < 4 && page === 1}
                         />
                       </motion.div>

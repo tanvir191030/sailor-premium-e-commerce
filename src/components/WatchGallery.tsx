@@ -67,6 +67,7 @@ const WatchGallery = () => {
                 originalPrice={(product as any).original_price ?? undefined}
                 image={product.image_url || "/placeholder.svg"}
                 category={product.category || undefined}
+                sub_category={(product as any).sub_category || undefined}
               />
             </motion.div>
           ))}
