@@ -80,11 +80,15 @@ const AdminProducts = () => {
       if (subType === "clothing" || subType === "hijab" || subType === "shoes") {
         const variants: any = {};
         Object.entries(form.sizes).forEach(([size, data]: any) => {
-          if (data && data.stock && parseInt(data.stock) > 0) {
-            variants[size] = {
+        if (data && data.stock && parseInt(data.stock) > 0) {
+            const variant: any = {
               stock: parseInt(data.stock),
               measurements: data.measurements || {}
             };
+            if (data.price && parseFloat(data.price) > 0) {
+              variant.price = parseFloat(data.price);
+            }
+            variants[size] = variant;
             totalStockFromSizes += parseInt(data.stock);
           }
         });
