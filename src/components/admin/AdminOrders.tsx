@@ -177,7 +177,21 @@ const AdminOrders = () => {
               {Array.isArray(o.cart_items) && o.cart_items.length > 3 && <span> +{o.cart_items.length - 3} আরও</span>}
             </div>
             <p className="text-xs text-muted-foreground mb-3">📍 {o.address}</p>
-            {o.payment_method && <p className="text-xs text-muted-foreground mb-3">💳 {o.payment_method} {o.transaction_id ? `· TxnID: ${o.transaction_id}` : ""}</p>}
+            {o.payment_method && (
+              <p className="text-xs text-muted-foreground mb-1">
+                💳 {o.payment_method} {o.transaction_id ? `· TxnID: ${o.transaction_id}` : ""}
+              </p>
+            )}
+            {o.payment_method && o.payment_method !== "Cash on Delivery" && o.transaction_id && (
+              <span className="inline-block px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded text-[11px] font-medium mb-3">
+                ✅ অগ্রিম পেমেন্ট সম্পন্ন {o.delivery_charge > 0 && `(ডেলিভারি চার্জ: ${formatPrice(o.delivery_charge)})`}
+              </span>
+            )}
+            {o.payment_method === "Cash on Delivery" && (
+              <span className="inline-block px-2 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded text-[11px] font-medium mb-3">
+                ⏳ ক্যাশ অন ডেলিভারি — অগ্রিম পেমেন্ট নেই
+              </span>
+            )}
             <div className="flex flex-col md:flex-row gap-2 items-stretch md:items-center">
               <select
                 value={o.status || "pending"}
