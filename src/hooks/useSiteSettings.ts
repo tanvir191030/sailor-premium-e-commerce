@@ -87,6 +87,7 @@ const DEFAULTS: SiteSettings = {
   category_image_men: "",
   category_image_women: "",
   category_image_kids: "",
+  order_confirmation_mode: "cod",
 };
 
 export const useSiteSettings = () => {
