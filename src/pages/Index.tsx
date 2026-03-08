@@ -23,12 +23,13 @@ const Index = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("banners")
-        .select("*")
+        .select("id,title,subtitle,image_url,link,sort_order")
         .eq("is_active", true)
         .order("sort_order");
       if (error) throw error;
       return data;
     },
+    staleTime: 1000 * 60 * 5,
   });
 
   const bannerSlides = banners.map((b: any) => ({

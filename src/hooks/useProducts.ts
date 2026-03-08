@@ -7,18 +7,23 @@ export type Product = Tables<"products"> & { is_featured?: boolean };
 export type ProductInsert = TablesInsert<"products"> & { is_featured?: boolean };
 export type ProductUpdate = TablesUpdate<"products"> & { is_featured?: boolean };
 
+// Columns needed for public product cards/listing
+const PUBLIC_PRODUCT_COLS = "id,name,price,original_price,image_url,category,sub_category,created_at,is_featured,stock" as const;
+
 export const useProducts = () => {
   return useQuery({
     queryKey: ["products"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("*")
+        .select(PUBLIC_PRODUCT_COLS)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data as Product[];
     },
+    staleTime: 1000 * 60 * 3, // 3 min cache
+    gcTime: 1000 * 60 * 10,   // 10 min garbage collection
   });
 };
 
@@ -28,13 +33,15 @@ export const useFeaturedProducts = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("*")
+        .select(PUBLIC_PRODUCT_COLS)
         .eq("is_featured", true)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data as Product[];
     },
+    staleTime: 1000 * 60 * 3,
+    gcTime: 1000 * 60 * 10,
   });
 };
 
@@ -52,6 +59,7 @@ export const useProduct = (id: string) => {
       return data as Product;
     },
     enabled: !!id,
+    staleTime: 1000 * 60 * 2,
   });
 };
 
@@ -111,7 +119,6 @@ export const useDeleteProduct = () => {
 };
 
 export const uploadProductImage = async (file: File): Promise<string> => {
-  // Optimize: resize to 1200px, compress to WebP ~200KB
   const optimized = await optimizeProductImage(file);
   
   const fileName = `${crypto.randomUUID()}.webp`;

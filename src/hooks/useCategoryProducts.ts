@@ -4,6 +4,9 @@ import { Product } from "./useProducts";
 
 const PAGE_SIZE = 16;
 
+// Only fetch columns needed for product cards
+const LISTING_COLS = "id,name,price,original_price,image_url,category,sub_category,created_at,is_featured,stock" as const;
+
 export const useCategoryProducts = (
   category: string | undefined,
   subCategory: string | undefined,
@@ -17,7 +20,7 @@ export const useCategoryProducts = (
       // Count query
       let countQuery = supabase
         .from("products")
-        .select("*", { count: "exact", head: true })
+        .select("id", { count: "exact", head: true })
         .ilike("category", category);
       if (subCategory) countQuery = countQuery.ilike("sub_category", subCategory);
       const { count, error: countErr } = await countQuery;
@@ -27,10 +30,10 @@ export const useCategoryProducts = (
       const from = (page - 1) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
 
-      // Data query
+      // Data query — only listing columns
       let dataQuery = supabase
         .from("products")
-        .select("*")
+        .select(LISTING_COLS)
         .ilike("category", category)
         .order("created_at", { ascending: false })
         .range(from, to);
@@ -41,6 +44,8 @@ export const useCategoryProducts = (
       return { products: (data ?? []) as Product[], total };
     },
     enabled: !!category,
+    staleTime: 1000 * 60 * 3,
+    gcTime: 1000 * 60 * 10,
   });
 };
 
