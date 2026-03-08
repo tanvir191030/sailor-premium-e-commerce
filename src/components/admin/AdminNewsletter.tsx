@@ -77,9 +77,14 @@ const AdminNewsletter = () => {
             নিউজলেটার সাবস্ক্রাইবার ({subscribers.length})
           </h2>
         </div>
-        <Button onClick={handleExport} size="sm" className="gap-2" disabled={subscribers.length === 0}>
-          <Download size={14} /> Excel এ ডাউনলোড
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => doExport("xlsx")} size="sm" className="gap-2" disabled={subscribers.length === 0}>
+            <Download size={14} /> Excel
+          </Button>
+          <Button onClick={() => doExport("csv")} size="sm" variant="outline" className="gap-2" disabled={subscribers.length === 0}>
+            <Download size={14} /> CSV (Mailchimp/Brevo)
+          </Button>
+        </div>
       </div>
 
       <div className="relative max-w-xs">
