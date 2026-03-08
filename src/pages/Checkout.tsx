@@ -40,6 +40,7 @@ const Checkout = () => {
     name: "", phone: "", email: "", district: "", thana: "", address: "",
   });
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "bkash" | "nagad" | "rocket">("cod");
+  const [paymentMethodSet, setPaymentMethodSet] = useState(false);
   const [transactionId, setTransactionId] = useState("");
   const [deliveryZone, setDeliveryZone] = useState<"inside_dhaka" | "outside_dhaka">("inside_dhaka");
   const [submitting, setSubmitting] = useState(false);
