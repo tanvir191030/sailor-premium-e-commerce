@@ -413,6 +413,29 @@ const AdminOrders = () => {
         </div>
       )}
 
+      {/* Courier Confirmation Modal */}
+      {courierTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-card rounded-xl shadow-2xl w-full max-w-sm p-6 border border-border text-center">
+            <Send size={32} className="mx-auto mb-3 text-emerald-500" />
+            <h3 className="font-serif text-lg mb-2 text-foreground">কুরিয়ারে পাঠান</h3>
+            <p className="text-sm text-muted-foreground mb-1">#{courierTarget.id.slice(0, 8)} · {courierTarget.customer_name}</p>
+            <p className="text-xs text-muted-foreground mb-1">📞 {courierTarget.phone}</p>
+            <p className="text-xs text-muted-foreground mb-4">💰 {formatPrice(courierTarget.total)}</p>
+            <p className="text-sm text-foreground mb-6">আপনি কি নিশ্চিত যে আপনি এই অর্ডারটি কুরিয়ারে পাঠাতে চান?</p>
+            <div className="flex gap-3 justify-center">
+              <button onClick={() => setCourierTarget(null)} className="px-5 py-2 border border-border rounded-full text-sm font-medium text-foreground hover:bg-secondary transition-colors">বাতিল</button>
+              <button
+                onClick={() => { sendToCourier.mutate(courierTarget); setCourierTarget(null); }}
+                className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full text-sm font-medium transition-colors"
+              >
+                হ্যাঁ, পাঠান
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Delete Confirmation Modal */}
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
