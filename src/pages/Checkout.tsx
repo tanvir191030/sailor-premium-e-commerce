@@ -296,7 +296,8 @@ const Checkout = () => {
     if (!orderSuccess) return;
     const savedDelivery = orderSuccess.delivery_charge ?? deliveryCharge;
     const cartItems = Array.isArray(orderSuccess.cart_items) ? orderSuccess.cart_items : [];
-    const subtotal = orderSuccess.total - savedDelivery;
+    const savedDiscount = orderSuccess.discount_amount ?? 0;
+    const subtotal = orderSuccess.total + savedDiscount - savedDelivery;
 
     const html = generateInvoiceHTML({
       storeName: siteSettings.store_name || "Modest Mart",
@@ -314,6 +315,8 @@ const Checkout = () => {
       deliveryCharge: savedDelivery,
       total: orderSuccess.total,
       courierTrackingId: "",
+      couponCode: orderSuccess.coupon_code || "",
+      discountAmount: savedDiscount,
     });
 
     const win = window.open("", "_blank");
