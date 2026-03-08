@@ -56,6 +56,8 @@ const AdminExpenses = () => {
   const [editMode, setEditMode] = useState(false);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("month");
   const [form, setForm] = useState<ExpenseForm>({ ...emptyForm });
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [quickProduct, setQuickProduct] = useState({ name: "", price: "" });
 
   // Fetch categories
   const { data: categories = [] } = useQuery({
