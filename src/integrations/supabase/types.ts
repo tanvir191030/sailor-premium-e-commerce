@@ -134,7 +134,12 @@ export type Database = {
           description: string | null
           expense_date: string
           id: string
+          product_category: string | null
+          product_id: string | null
+          product_sub_category: string | null
+          quantity: number | null
           title: string
+          unit_price: number | null
         }
         Insert: {
           amount?: number
@@ -144,7 +149,12 @@ export type Database = {
           description?: string | null
           expense_date?: string
           id?: string
+          product_category?: string | null
+          product_id?: string | null
+          product_sub_category?: string | null
+          quantity?: number | null
           title: string
+          unit_price?: number | null
         }
         Update: {
           amount?: number
@@ -154,9 +164,22 @@ export type Database = {
           description?: string | null
           expense_date?: string
           id?: string
+          product_category?: string | null
+          product_id?: string | null
+          product_sub_category?: string | null
+          quantity?: number | null
           title?: string
+          unit_price?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "expenses_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       orders: {
         Row: {
