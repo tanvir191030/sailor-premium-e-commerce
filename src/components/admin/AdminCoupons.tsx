@@ -46,7 +46,7 @@ const AdminCoupons = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
-      setForm({ code: "", discount_type: "percentage", discount_value: "", min_order: "", max_uses: "", expires_at: "" });
+      setForm({ code: "", discount_type: "percentage", discount_value: "", min_order: "", max_discount: "", max_uses: "", expires_at: "" });
       toast({ title: "কুপন তৈরি হয়েছে ✓" });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
