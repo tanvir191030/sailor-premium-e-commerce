@@ -65,6 +65,7 @@ const Admin = () => {
     { id: "coupons", label: "কুপন", icon: Ticket },
     { id: "reviews", label: "রিভিউ", icon: MessageSquare },
     { id: "marketing", label: t("admin.marketing"), icon: Megaphone },
+    { id: "newsletter", label: "নিউজলেটার", icon: Mail },
     { id: "settings", label: t("admin.settings"), icon: Settings },
   ];
 
