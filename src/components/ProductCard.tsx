@@ -188,7 +188,7 @@ const ProductCard = ({
         </div>
       </motion.div>
 
-      <SizeChartModal open={sizeChartOpen} onClose={() => setSizeChartOpen(false)} />
+      <SizeChartModal open={sizeChartOpen} onClose={() => setSizeChartOpen(false)} product={{ id, name, category, sub_category }} />
     </>
   );
 };
