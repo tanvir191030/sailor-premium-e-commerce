@@ -37,6 +37,7 @@ const AdminCoupons = () => {
         discount_type: form.discount_type,
         discount_value: parseFloat(form.discount_value) || 0,
         min_order: parseFloat(form.min_order) || 0,
+        max_discount: parseFloat(form.max_discount) || 0,
         max_uses: parseInt(form.max_uses) || 0,
         expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : null,
         is_active: true,
