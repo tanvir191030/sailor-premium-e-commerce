@@ -186,7 +186,8 @@ const SizeChartModal = ({ open, onClose, product }: Props) => {
           </div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
 
