@@ -111,6 +111,7 @@ const Admin = () => {
       case "reports": return <AdminReports />;
       case "reviews": return <AdminReviews />;
       case "marketing": return <AdminMarketing />;
+      case "newsletter": return <AdminNewsletter />;
       case "settings": return <AdminSettings />;
       default: return <AdminDashboard />;
     }
