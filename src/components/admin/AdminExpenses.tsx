@@ -281,7 +281,8 @@ const AdminExpenses = () => {
 
   const isPurchaseCategory = form.category === "purchase";
 
-  const inputCls = "w-full px-3 py-2.5 border border-border rounded-lg text-sm bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30";
+  const inputCls = "w-full px-3 py-2.5 border border-border rounded-lg text-sm bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 hover:border-primary/50 transition-colors";
+  const selectCls = `${inputCls} [&>option]:bg-background [&>option]:text-foreground`;
 
   // Exports
   const exportExcel = () => {
