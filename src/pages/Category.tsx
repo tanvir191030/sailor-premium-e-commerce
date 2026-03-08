@@ -8,6 +8,7 @@ import ProductCard from "@/components/ProductCard";
 import Pagination from "@/components/Pagination";
 import PageTransition from "@/components/PageTransition";
 import SEOHead, { breadcrumbSchema, siteNavigationSchema } from "@/components/SEOHead";
+import SortSelect, { SortOption } from "@/components/SortSelect";
 import { useCategoryProducts, PAGE_SIZE } from "@/hooks/useCategoryProducts";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
