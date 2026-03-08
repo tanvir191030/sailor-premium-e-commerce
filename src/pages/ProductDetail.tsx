@@ -717,7 +717,7 @@ const ProductDetail = () => {
                 )}
 
                 {/* Quantity Selector + CTA Buttons */}
-                <div className="space-y-3 pt-1">
+                <div ref={ctaRef} className="space-y-3 pt-1">
                   {/* Quantity */}
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-medium">পরিমাণ</span>
@@ -771,6 +771,26 @@ const ProductDetail = () => {
                     >
                       <ShoppingCart size={16} /> {isInStock ? "কার্টে যোগ করুন" : "স্টক নেই"}
                     </motion.button>
+                  </div>
+
+                  {/* Trust Badges */}
+                  <div className="grid grid-cols-2 gap-2 pt-2">
+                    <div className="flex items-center gap-2 p-2.5 bg-secondary/50 rounded-lg border border-border/50">
+                      <CreditCard size={16} className="text-primary flex-shrink-0" />
+                      <span className="text-[11px] text-foreground font-medium leading-tight">ক্যাশ অন ডেলিভারি</span>
+                    </div>
+                    <div className="flex items-center gap-2 p-2.5 bg-secondary/50 rounded-lg border border-border/50">
+                      <Shield size={16} className="text-primary flex-shrink-0" />
+                      <span className="text-[11px] text-foreground font-medium leading-tight">নিরাপদ পেমেন্ট</span>
+                    </div>
+                    <div className="flex items-center gap-2 p-2.5 bg-secondary/50 rounded-lg border border-border/50">
+                      <Truck size={16} className="text-primary flex-shrink-0" />
+                      <span className="text-[11px] text-foreground font-medium leading-tight">{isFreeDelivery ? "ফ্রি ডেলিভারি" : "দ্রুত ডেলিভারি"}</span>
+                    </div>
+                    <div className="flex items-center gap-2 p-2.5 bg-secondary/50 rounded-lg border border-border/50">
+                      <RefreshCw size={16} className="text-primary flex-shrink-0" />
+                      <span className="text-[11px] text-foreground font-medium leading-tight">ইজি রিটার্ন</span>
+                    </div>
                   </div>
                 </div>
 
