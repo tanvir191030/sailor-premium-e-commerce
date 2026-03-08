@@ -8,16 +8,36 @@
     <meta name="author" content="Modest Mart" />
     <link rel="icon" href="/favicon.ico" type="image/x-icon" />
 
+    <!-- Preconnect to critical origins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://kkdoldbjnhcmmeqnjqaf.supabase.co" />
+    <link rel="preconnect" href="https://kkdoldbjnhcmmeqnjqaf.supabase.co" crossorigin />
+
+    <!-- Optimized font loading: swap to prevent FOIT -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" as="style" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" /></noscript>
+
     <meta property="og:title" content="Modest Mart - Premium Fashion Bangladesh" />
     <meta property="og:description" content="Modest Mart - বাংলাদেশের সেরা প্রিমিয়াম ফ্যাশন ব্র্যান্ড।" />
     <meta property="og:type" content="website" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@ModestMart" />
+
+    <!-- Inline critical above-the-fold styles to avoid render-blocking -->
+    <style>
+      body{margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased}
+      #root{min-height:100vh}
+      .loading-spinner{display:flex;align-items:center;justify-content:center;height:100vh}
+      .loading-spinner::after{content:'';width:32px;height:32px;border:2px solid #e5e5e5;border-top-color:#1a1a1a;border-radius:50%;animation:spin .6s linear infinite}
+      @keyframes spin{to{transform:rotate(360deg)}}
+    </style>
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root"><div class="loading-spinner"></div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
