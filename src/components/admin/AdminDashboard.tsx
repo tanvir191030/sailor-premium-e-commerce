@@ -2,12 +2,16 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/lib/currency";
-import { Package, ShoppingCart, Clock, TrendingUp, AlertTriangle, Users, DollarSign, TrendingDown, Wallet, FileDown } from "lucide-react";
+import { Package, ShoppingCart, Clock, TrendingUp, AlertTriangle, Users, DollarSign, TrendingDown, Wallet, FileDown, CalendarIcon } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { openBulkInvoicesInNewTab } from "@/lib/bulkInvoicePdf";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 type TimeRange = "daily" | "weekly" | "monthly";
 
