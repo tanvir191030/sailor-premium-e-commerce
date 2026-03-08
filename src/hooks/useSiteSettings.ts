@@ -43,6 +43,7 @@ export interface SiteSettings {
   category_image_men: string;
   category_image_women: string;
   category_image_kids: string;
+  order_confirmation_mode: string;
 }
 
 const DEFAULTS: SiteSettings = {
