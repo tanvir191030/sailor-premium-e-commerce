@@ -114,6 +114,23 @@ const AdminPayments = () => {
         </div>
       </div>
 
+      {/* Order Confirmation Mode */}
+      <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
+        <div className="flex items-center gap-2 mb-1"><ShieldCheck size={18} className="text-muted-foreground" /><h3 className="font-serif text-base text-foreground">অর্ডার কনফার্মেশন মোড</h3></div>
+        <p className="text-xs text-muted-foreground mb-4">কাস্টমার কিভাবে অর্ডার প্লেস করবে সেটি নির্ধারণ করুন।</p>
+        <RadioGroup value={orderMode} onValueChange={setOrderMode} className="space-y-3">
+          {ORDER_MODES.map((mode) => (
+            <label key={mode.value} className={`flex items-start gap-3 border rounded-xl p-4 cursor-pointer transition-colors ${orderMode === mode.value ? "border-primary bg-primary/5" : "border-border hover:border-ring"}`}>
+              <RadioGroupItem value={mode.value} id={mode.value} className="mt-0.5" />
+              <div>
+                <Label htmlFor={mode.value} className="text-sm font-medium text-foreground cursor-pointer">{mode.label}</Label>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{mode.desc}</p>
+              </div>
+            </label>
+          ))}
+        </RadioGroup>
+      </div>
+
       <button onClick={handleSave} className="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 rounded-full text-sm font-medium hover:opacity-90 transition-opacity">
         <Save size={14} /> সব সেভ করুন
       </button>
