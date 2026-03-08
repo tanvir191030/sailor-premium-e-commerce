@@ -2,11 +2,15 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/lib/currency";
-import { FileDown, Search, Trash2, Send, ShieldCheck, CheckCircle2, XCircle, ShieldX, RotateCcw, Archive, Undo2, Printer } from "lucide-react";
+import { FileDown, Search, Trash2, Send, ShieldCheck, CheckCircle2, XCircle, ShieldX, RotateCcw, Archive, Undo2, Printer, CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { generateInvoiceHTML } from "@/lib/invoiceTemplate";
 import { openBulkInvoicesInNewTab } from "@/lib/bulkInvoicePdf";
+import { format } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 const statusColors: Record<string, string> = {
   pending:    "bg-amber-500/10 text-amber-500",
@@ -39,6 +43,8 @@ const AdminOrders = () => {
   const [courierTarget, setCourierTarget] = useState<any>(null);
   const [permanentDeleteTarget, setPermanentDeleteTarget] = useState<any>(null);
   const [viewMode, setViewMode] = useState<"orders" | "trash">("orders");
+  const [bulkDateFrom, setBulkDateFrom] = useState<Date | undefined>(new Date());
+  const [bulkDateTo, setBulkDateTo] = useState<Date | undefined>(new Date());
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { settings: siteSettings } = useSiteSettings();
@@ -282,22 +288,55 @@ const AdminOrders = () => {
           {filtered.length} টি অর্ডার · মোট {formatPrice(totalFiltered)}
         </span>
         {viewMode === "orders" && (
-          <button
-            onClick={() => {
-              const verifiedToday = filtered.filter((o: any) => {
-                const todayStr = new Date().toISOString().split("T")[0];
-                return o.created_at?.startsWith(todayStr) && (o as any).is_payment_verified === true;
-              });
-              if (verifiedToday.length === 0) {
-                toast({ title: "আজকে কোনো ভেরিফাইড অর্ডার নেই", variant: "destructive" });
-                return;
-              }
-              openBulkInvoicesInNewTab(verifiedToday as any, siteSettings.store_name || "Modest Mart", siteSettings.website_url || "");
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition-colors"
-          >
-            <Printer size={14} /> আজকের ভেরিফাইড ইনভয়েস
-          </button>
+          <>
+            {/* Date range pickers */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className={cn("flex items-center gap-1.5 px-3 py-1.5 bg-card border border-border rounded-lg text-xs font-medium transition-colors hover:bg-secondary text-foreground", !bulkDateFrom && "text-muted-foreground")}>
+                  <CalendarIcon size={13} />
+                  {bulkDateFrom ? format(bulkDateFrom, "dd/MM/yyyy") : "শুরুর তারিখ"}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={bulkDateFrom} onSelect={setBulkDateFrom} initialFocus className="p-3 pointer-events-auto" />
+              </PopoverContent>
+            </Popover>
+            <span className="text-xs text-muted-foreground">→</span>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className={cn("flex items-center gap-1.5 px-3 py-1.5 bg-card border border-border rounded-lg text-xs font-medium transition-colors hover:bg-secondary text-foreground", !bulkDateTo && "text-muted-foreground")}>
+                  <CalendarIcon size={13} />
+                  {bulkDateTo ? format(bulkDateTo, "dd/MM/yyyy") : "শেষের তারিখ"}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={bulkDateTo} onSelect={setBulkDateTo} initialFocus className="p-3 pointer-events-auto" />
+              </PopoverContent>
+            </Popover>
+            <button
+              onClick={() => {
+                if (!bulkDateFrom || !bulkDateTo) {
+                  toast({ title: "তারিখ নির্বাচন করুন", variant: "destructive" });
+                  return;
+                }
+                const fromStr = format(bulkDateFrom, "yyyy-MM-dd");
+                const toStr = format(bulkDateTo, "yyyy-MM-dd");
+                const verifiedInRange = activeOrders.filter((o: any) => {
+                  const dateStr = o.created_at?.split("T")[0];
+                  return dateStr >= fromStr && dateStr <= toStr && (o as any).is_payment_verified === true;
+                });
+                if (verifiedInRange.length === 0) {
+                  toast({ title: "নির্বাচিত তারিখে কোনো ভেরিফাইড অর্ডার নেই", variant: "destructive" });
+                  return;
+                }
+                const dateLabel = fromStr === toStr ? format(bulkDateFrom, "dd/MM/yyyy") : `${format(bulkDateFrom, "dd/MM/yyyy")} — ${format(bulkDateTo, "dd/MM/yyyy")}`;
+                openBulkInvoicesInNewTab(verifiedInRange as any, siteSettings.store_name || "Modest Mart", siteSettings.website_url || "", dateLabel);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition-colors"
+            >
+              <Printer size={14} /> ভেরিফাইড ইনভয়েস ডাউনলোড
+            </button>
+          </>
         )}
       </div>
 

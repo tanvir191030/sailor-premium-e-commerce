@@ -1,5 +1,3 @@
-import jsPDF from "jspdf";
-import "jspdf-autotable";
 import { generateInvoiceHTML } from "./invoiceTemplate";
 
 interface BulkOrder {
@@ -23,55 +21,51 @@ interface BulkOrder {
 export function openBulkInvoicesInNewTab(
   orders: BulkOrder[],
   storeName: string,
-  websiteUrl: string
+  websiteUrl: string,
+  dateLabel?: string
 ) {
   if (orders.length === 0) return;
 
-  const today = new Date().toLocaleDateString("en-GB");
+  const displayDate = dateLabel || new Date().toLocaleDateString("en-GB");
   const totalAmount = orders.reduce((s, o) => s + Number(o.total), 0);
   const totalDelivery = orders.reduce((s, o) => s + Number(o.delivery_charge || 0), 0);
 
-  // Build cover page + all invoices in one HTML document
+  // Cover page
   const coverPage = `
-    <div style="page-break-after:always;padding:60px 40px;font-family:'Noto Sans Bengali','Noto Sans',Inter,sans-serif;text-align:center">
-      <div style="background:#064E3B;color:#fff;padding:32px 40px;border-radius:12px;margin-bottom:40px">
-        <h1 style="font-size:28px;margin:0 0 6px;letter-spacing:1px">${storeName.toUpperCase()}</h1>
-        <p style="font-size:12px;opacity:0.7;letter-spacing:1px;text-transform:uppercase">Daily Verified Invoice Summary</p>
+    <div class="cover-page">
+      <div style="background:#064E3B;color:#fff;padding:20px 28px;border-radius:8px;margin-bottom:24px;text-align:center">
+        <h1 style="font-size:20px;margin:0 0 4px;letter-spacing:1px">${storeName.toUpperCase()}</h1>
+        <p style="font-size:10px;opacity:0.7;letter-spacing:1px;text-transform:uppercase">Verified Invoice Summary</p>
       </div>
-      <div style="text-align:left;max-width:500px;margin:0 auto">
-        <table style="width:100%;font-size:15px;border-collapse:collapse">
-          <tr><td style="padding:12px 0;color:#666;border-bottom:1px solid #eee">📅 তারিখ</td><td style="padding:12px 0;font-weight:700;text-align:right;border-bottom:1px solid #eee">${today}</td></tr>
-          <tr><td style="padding:12px 0;color:#666;border-bottom:1px solid #eee">📦 মোট অর্ডার</td><td style="padding:12px 0;font-weight:700;text-align:right;border-bottom:1px solid #eee">${orders.length} টি</td></tr>
-          <tr><td style="padding:12px 0;color:#666;border-bottom:1px solid #eee">🚚 মোট ডেলিভারি চার্জ</td><td style="padding:12px 0;font-weight:700;text-align:right;border-bottom:1px solid #eee">BDT ${totalDelivery.toLocaleString()}</td></tr>
-          <tr><td style="padding:12px 0;color:#666">💰 মোট আদায়যোগ্য</td><td style="padding:12px 0;font-weight:700;font-size:20px;color:#064E3B;text-align:right">BDT ${totalAmount.toLocaleString()}</td></tr>
-        </table>
-      </div>
-      <div style="margin-top:40px">
-        <h3 style="font-size:14px;color:#333;margin-bottom:16px;text-align:left">অর্ডার তালিকা:</h3>
-        <table style="width:100%;font-size:12px;border-collapse:collapse;text-align:left">
-          <thead><tr style="background:#064E3B;color:#fff">
-            <th style="padding:8px 12px;border-radius:6px 0 0 0">#</th>
-            <th style="padding:8px 12px">Order ID</th>
-            <th style="padding:8px 12px">কাস্টমার</th>
-            <th style="padding:8px 12px">ফোন</th>
-            <th style="padding:8px 12px;text-align:right;border-radius:0 6px 0 0">মোট</th>
-          </tr></thead>
-          <tbody>
-            ${orders.map((o, i) => `<tr style="background:${i % 2 === 0 ? '#f9fafb' : '#fff'}">
-              <td style="padding:8px 12px">${i + 1}</td>
-              <td style="padding:8px 12px;font-family:monospace">#${o.id.slice(0, 8)}</td>
-              <td style="padding:8px 12px">${o.customer_name}</td>
-              <td style="padding:8px 12px">${o.phone}</td>
-              <td style="padding:8px 12px;text-align:right;font-weight:600">BDT ${Number(o.total).toLocaleString()}</td>
-            </tr>`).join("")}
-          </tbody>
-        </table>
-      </div>
+      <table style="width:100%;font-size:12px;border-collapse:collapse;margin-bottom:16px">
+        <tr><td style="padding:8px 0;color:#666;border-bottom:1px solid #eee">📅 তারিখ</td><td style="padding:8px 0;font-weight:700;text-align:right;border-bottom:1px solid #eee">${displayDate}</td></tr>
+        <tr><td style="padding:8px 0;color:#666;border-bottom:1px solid #eee">📦 মোট অর্ডার</td><td style="padding:8px 0;font-weight:700;text-align:right;border-bottom:1px solid #eee">${orders.length} টি</td></tr>
+        <tr><td style="padding:8px 0;color:#666;border-bottom:1px solid #eee">🚚 ডেলিভারি চার্জ</td><td style="padding:8px 0;font-weight:700;text-align:right;border-bottom:1px solid #eee">BDT ${totalDelivery.toLocaleString()}</td></tr>
+        <tr><td style="padding:8px 0;color:#666">💰 মোট আদায়যোগ্য</td><td style="padding:8px 0;font-weight:700;font-size:16px;color:#064E3B;text-align:right">BDT ${totalAmount.toLocaleString()}</td></tr>
+      </table>
+      <table style="width:100%;font-size:10px;border-collapse:collapse">
+        <thead><tr style="background:#064E3B;color:#fff">
+          <th style="padding:6px 8px;border-radius:4px 0 0 0;text-align:left">#</th>
+          <th style="padding:6px 8px;text-align:left">Order ID</th>
+          <th style="padding:6px 8px;text-align:left">কাস্টমার</th>
+          <th style="padding:6px 8px;text-align:left">ফোন</th>
+          <th style="padding:6px 8px;text-align:right;border-radius:0 4px 0 0">মোট</th>
+        </tr></thead>
+        <tbody>
+          ${orders.map((o, i) => `<tr style="background:${i % 2 === 0 ? '#f9fafb' : '#fff'}">
+            <td style="padding:5px 8px">${i + 1}</td>
+            <td style="padding:5px 8px;font-family:monospace">#${o.id.slice(0, 8)}</td>
+            <td style="padding:5px 8px">${o.customer_name}</td>
+            <td style="padding:5px 8px">${o.phone}</td>
+            <td style="padding:5px 8px;text-align:right;font-weight:600">BDT ${Number(o.total).toLocaleString()}</td>
+          </tr>`).join("")}
+        </tbody>
+      </table>
     </div>
   `;
 
-  // Generate individual invoices (without auto-print script)
-  const invoicePages = orders.map((order) => {
+  // Generate individual invoices — extract body content
+  const invoiceBodies = orders.map((order) => {
     const items = Array.isArray(order.cart_items) ? order.cart_items : [];
     const deliveryCharge = order.delivery_charge ?? 0;
     const discountAmount = order.discount_amount ?? 0;
@@ -106,57 +100,76 @@ export function openBulkInvoicesInNewTab(
       isPaymentVerified: order.is_payment_verified ?? false,
     });
 
-    // Extract just the body content (between <body> and </body>), remove the auto-print script
     const bodyMatch = html.match(/<body>([\s\S]*)<\/body>/);
     const bodyContent = bodyMatch ? bodyMatch[1].replace(/<script[\s\S]*?<\/script>/gi, "") : "";
-    return `<div style="page-break-before:always">${bodyContent}</div>`;
+    return bodyContent;
   });
 
-  const fullHTML = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Bulk Invoices - ${today}</title>
+  // Build 2-per-page layout
+  const invoicePages: string[] = [];
+  for (let i = 0; i < invoiceBodies.length; i += 2) {
+    const first = invoiceBodies[i];
+    const second = invoiceBodies[i + 1];
+    invoicePages.push(`
+      <div class="a4-page">
+        <div class="half-invoice">${first}</div>
+        ${second ? `<div class="half-divider"></div><div class="half-invoice">${second}</div>` : ""}
+      </div>
+    `);
+  }
+
+  const fullHTML = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Bulk Invoices - ${displayDate}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Noto Sans Bengali','Noto Sans',Inter,'Segoe UI',Tahoma,sans-serif;color:#1a1a1a;max-width:800px;margin:auto;line-height:1.6;background:#fff}
-.invoice-wrap{padding:0}
-.header{background:#064E3B;padding:28px 40px 24px;text-align:center}
-.header h1{color:#fff;font-size:24px;font-weight:700;letter-spacing:1.5px;margin-bottom:4px}
-.header .tagline{color:rgba(255,255,255,0.7);font-size:11px;letter-spacing:1px;text-transform:uppercase}
-.header-accent{height:4px;background:linear-gradient(90deg,#047857,#064E3B,#047857)}
-.order-meta{display:flex;justify-content:space-between;align-items:flex-start;padding:20px 40px;font-size:12px;color:#555;border-bottom:1px solid #f0f0f0}
-.order-meta .left div,.order-meta .right div{margin-bottom:3px}
-.order-meta .right{text-align:right}
-.status-badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600;color:#fff}
-.payment-badge{display:inline-block;padding:3px 12px;border-radius:20px;font-size:10px;font-weight:700;color:#fff;margin-top:6px}
-.content{padding:0 40px 40px}
-.customer-box{background:#ECFDF5;border-left:4px solid #064E3B;border-radius:0 8px 8px 0;padding:16px 20px;margin:20px 0}
-.customer-box .label{font-size:13px;font-weight:700;color:#064E3B;margin-bottom:8px;text-transform:uppercase}
-.customer-box .detail{font-size:13px;color:#333;line-height:1.9}
-table{width:100%;border-collapse:collapse;margin-top:20px;font-size:13px;border-radius:8px;overflow:hidden}
-thead tr{background:#064E3B;color:#fff}
-th{text-align:left;padding:11px 16px;font-weight:600;font-size:12px}
-td{padding:11px 16px;border-bottom:1px solid #f0f0f0;color:#333}
-tbody tr:nth-child(even){background:#f9fafb}
-tbody tr:nth-child(odd){background:#fff}
-th:nth-child(2),td:nth-child(2){text-align:center;width:60px}
-th:nth-child(3),td:nth-child(3){text-align:right;width:100px}
-th:nth-child(4),td:nth-child(4){text-align:right;width:110px}
-.summary{margin-top:20px;text-align:right;font-size:13px;line-height:2.2}
-.summary .row{display:flex;justify-content:flex-end;gap:20px}
-.summary .row .lbl{color:#777;min-width:120px;text-align:right}
-.summary .row .val{min-width:100px;text-align:right;font-weight:500}
-.summary .divider{border-top:1px dashed #ddd;margin:6px 0}
-.grand-total-box{margin-top:12px;padding:14px 20px;background:#064E3B;border-radius:8px;text-align:right;color:#fff;font-size:20px;font-weight:700}
-.due-box{margin-top:8px;padding:12px 20px;background:#FEF2F2;border:2px solid #FECACA;border-radius:8px;text-align:right;color:#DC2626;font-size:16px;font-weight:700}
-.paid-box{margin-top:8px;padding:10px 20px;background:#ECFDF5;border:2px solid #D1FAE5;border-radius:8px;text-align:right;color:#059669;font-size:13px;font-weight:600}
-.footer{margin-top:32px;padding-top:20px;border-top:2px solid #D1FAE5;text-align:center}
-.footer .thanks{font-size:14px;color:#064E3B;font-weight:600;margin-bottom:4px}
-.footer .sub{font-size:11px;color:#999}
-@media print{body{padding:0}thead tr,tbody tr:nth-child(even),.grand-total-box,.due-box,.paid-box,.customer-box,.status-badge,.payment-badge,.header{-webkit-print-color-adjust:exact;print-color-adjust:exact}button,.no-print{display:none!important}}
+body{font-family:'Noto Sans Bengali','Noto Sans',Inter,'Segoe UI',Tahoma,sans-serif;color:#1a1a1a;background:#fff}
+
+/* Print-friendly A4 layout */
+.cover-page{max-width:700px;margin:0 auto;padding:30px 28px;page-break-after:always}
+.a4-page{max-width:700px;margin:0 auto;padding:10px 16px;page-break-after:always;display:flex;flex-direction:column;min-height:calc(100vh - 20px)}
+.half-invoice{flex:1;overflow:hidden;transform-origin:top left}
+.half-divider{border-top:1px dashed #ccc;margin:6px 0}
+
+/* Scale down the invoice content to fit half A4 */
+.half-invoice .invoice-wrap{transform:scale(0.62);transform-origin:top left;width:161.3%;/* 1/0.62 */}
+.half-invoice .header{padding:16px 24px 14px !important}
+.half-invoice .header h1{font-size:16px !important}
+.half-invoice .header .tagline{font-size:9px !important}
+.half-invoice .header-accent{height:2px !important}
+.half-invoice .order-meta{padding:10px 24px !important;font-size:10px !important}
+.half-invoice .content{padding:0 24px 16px !important}
+.half-invoice .customer-box{padding:8px 12px !important;margin:10px 0 !important}
+.half-invoice .customer-box .label{font-size:10px !important;margin-bottom:4px !important}
+.half-invoice .customer-box .detail{font-size:10px !important;line-height:1.6 !important}
+.half-invoice table{margin-top:10px !important;font-size:10px !important}
+.half-invoice th{padding:6px 10px !important;font-size:9px !important}
+.half-invoice td{padding:6px 10px !important}
+.half-invoice .summary{margin-top:10px !important;font-size:10px !important;line-height:1.8 !important}
+.half-invoice .grand-total-box{margin-top:6px !important;padding:8px 12px !important;font-size:14px !important}
+.half-invoice .due-box,.half-invoice .paid-box{margin-top:4px !important;padding:6px 12px !important;font-size:10px !important}
+.half-invoice .footer{margin-top:10px !important;padding-top:8px !important}
+.half-invoice .footer .thanks{font-size:10px !important}
+.half-invoice .footer .sub{font-size:8px !important}
+.half-invoice .footer img{width:60px !important;height:60px !important}
+.half-invoice .status-badge{font-size:8px !important;padding:1px 6px !important}
+.half-invoice .payment-badge{font-size:7px !important;padding:2px 8px !important}
+
+/* Top bar */
+.no-print{text-align:center;padding:12px;background:#064E3B;color:#fff}
+.no-print button{padding:8px 24px;background:#fff;color:#064E3B;border:none;border-radius:6px;font-weight:700;font-size:13px;cursor:pointer}
+
+@media print{
+  body{padding:0}
+  .no-print{display:none!important}
+  .a4-page{padding:4mm 6mm;page-break-after:always;min-height:auto}
+  .cover-page{padding:10mm}
+  thead tr,tbody tr:nth-child(even),.grand-total-box,.due-box,.paid-box,.customer-box,.status-badge,.payment-badge,.header{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
 </head><body>
-<div class="no-print" style="text-align:center;padding:16px;background:#064E3B;color:#fff">
-  <button onclick="window.print()" style="padding:10px 32px;background:#fff;color:#064E3B;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer">🖨️ প্রিন্ট / PDF ডাউনলোড</button>
-  <span style="margin-left:16px;font-size:13px">${orders.length} টি ইনভয়েস</span>
+<div class="no-print">
+  <button onclick="window.print()">🖨️ প্রিন্ট / PDF ডাউনলোড</button>
+  <span style="margin-left:12px;font-size:12px">${orders.length} টি ইনভয়েস · ${displayDate}</span>
 </div>
 ${coverPage}
 ${invoicePages.join("")}
