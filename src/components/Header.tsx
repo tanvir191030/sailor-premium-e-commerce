@@ -124,12 +124,11 @@ const Header = () => {
 
   return (
     <>
-      <div className="bg-primary text-primary-foreground py-2 text-xs tracking-[0.15em] uppercase overflow-hidden">
-        <div className="animate-marquee whitespace-nowrap">
-          <span className="mx-8">{announcementBar}</span>
-          <span className="mx-8">{announcementBar}</span>
-          <span className="mx-8">{announcementBar}</span>
-          <span className="mx-8">{announcementBar}</span>
+      <div className="bg-primary text-primary-foreground py-2 text-xs tracking-[0.15em] uppercase overflow-hidden relative">
+        <div className="marquee-track">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <span key={i} className="mx-6 inline-block">{announcementBar}</span>
+          ))}
         </div>
       </div>
 
