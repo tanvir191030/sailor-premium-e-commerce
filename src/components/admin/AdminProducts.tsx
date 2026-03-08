@@ -263,7 +263,7 @@ const AdminProducts = () => {
 
       return (
         <div className="space-y-4 border border-border p-3 rounded-lg bg-secondary/20">
-          <p className="text-xs font-medium text-muted-foreground">হিজাব/ওড়না — কাস্টম সাইজ যোগ করুন (Width × Length ইঞ্চি)</p>
+          <p className="text-xs font-medium text-muted-foreground">হিজাব/ওড়না — কাস্টম সাইজ, দাম ও স্টক যোগ করুন</p>
           
           {/* Existing sizes — use stable index-based keys */}
           {Object.entries(form.sizes).map(([sizeKey, data]: [string, any], idx) => (
