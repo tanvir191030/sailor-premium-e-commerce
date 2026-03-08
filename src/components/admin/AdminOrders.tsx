@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/lib/currency";
-import { FileDown, Search, Trash2, Send } from "lucide-react";
+import { FileDown, Search, Trash2, Send, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { generateInvoiceHTML } from "@/lib/invoiceTemplate";
@@ -50,6 +50,18 @@ const AdminOrders = () => {
       if (error) throw error;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-orders"] }); toast({ title: "ট্র্যাকিং ID আপডেট হয়েছে" }); },
+  });
+
+  const verifyPayment = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("orders").update({ is_payment_verified: true, status: "paid" } as any).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      toast({ title: "✅ পেমেন্ট ভেরিফাই হয়েছে", description: "অর্ডার এখন প্রসেস করা যাবে।" });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const deleteOrderMutation = useMutation({
@@ -131,6 +143,13 @@ const AdminOrders = () => {
     if (win) { win.document.write(html); win.document.close(); }
   };
 
+  // Helper: does this order have advance payment that needs verification?
+  const hasAdvancePayment = (o: any) =>
+    o.payment_method && o.payment_method !== "Cash on Delivery" && o.transaction_id;
+
+  const needsVerification = (o: any) =>
+    hasAdvancePayment(o) && !(o as any).is_payment_verified;
+
   const filtered = orders.filter((o: any) => {
     const matchesSearch = o.customer_name.toLowerCase().includes(search.toLowerCase()) || o.phone.includes(search) || o.id.toLowerCase().includes(search.toLowerCase());
     return (statusFilter === "all" || o.status === statusFilter) && matchesSearch;
@@ -158,79 +177,117 @@ const AdminOrders = () => {
       </div>
 
       <div className="space-y-3">
-        {filtered.map((o: any) => (
-          <div key={o.id} className="bg-card p-4 rounded-xl shadow-sm border border-border">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
-              <div>
-                <p className="font-medium text-sm text-foreground">#{o.id.slice(0, 8)} · {o.customer_name}</p>
-                <p className="text-xs text-muted-foreground">📞 {o.phone} · 📅 {new Date(o.created_at).toLocaleDateString("bn-BD")}</p>
+        {filtered.map((o: any) => {
+          const awaitingVerification = needsVerification(o);
+          const isVerified = hasAdvancePayment(o) && (o as any).is_payment_verified;
+
+          return (
+            <div key={o.id} className={`bg-card p-4 rounded-xl shadow-sm border ${awaitingVerification ? "border-amber-500/50" : "border-border"}`}>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
+                <div>
+                  <p className="font-medium text-sm text-foreground">#{o.id.slice(0, 8)} · {o.customer_name}</p>
+                  <p className="text-xs text-muted-foreground">📞 {o.phone} · 📅 {new Date(o.created_at).toLocaleDateString("bn-BD")}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${statusColors[o.status || "pending"]}`}>{o.status || "pending"}</span>
+                  <span className="font-bold text-sm text-foreground">{formatPrice(o.total)}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${statusColors[o.status || "pending"]}`}>{o.status || "pending"}</span>
-                <span className="font-bold text-sm text-foreground">{formatPrice(o.total)}</span>
+
+              <div className="text-xs text-muted-foreground mb-2">
+                {Array.isArray(o.cart_items) && o.cart_items.slice(0, 3).map((item: any, i: number) => (
+                  <span key={i}>{item.name} x{item.quantity || 1}{i < Math.min(o.cart_items.length, 3) - 1 ? ", " : ""}</span>
+                ))}
+                {Array.isArray(o.cart_items) && o.cart_items.length > 3 && <span> +{o.cart_items.length - 3} আরও</span>}
+              </div>
+              <p className="text-xs text-muted-foreground mb-3">📍 {o.address}</p>
+
+              {o.payment_method && (
+                <p className="text-xs text-muted-foreground mb-1">
+                  💳 {o.payment_method} {o.transaction_id ? `· TxnID: ${o.transaction_id}` : ""}
+                </p>
+              )}
+
+              {/* Payment status badges */}
+              {isVerified && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded text-[11px] font-medium mb-3">
+                  <CheckCircle2 size={12} /> পেমেন্ট ভেরিফাইড {o.delivery_charge > 0 && `(ডেলিভারি চার্জ: ${formatPrice(o.delivery_charge)})`}
+                </span>
+              )}
+              {awaitingVerification && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded text-[11px] font-medium mb-3">
+                  ⏳ পেমেন্ট ভেরিফিকেশন বাকি {o.delivery_charge > 0 && `(ডেলিভারি চার্জ: ${formatPrice(o.delivery_charge)})`}
+                </span>
+              )}
+              {o.payment_method === "Cash on Delivery" && (
+                <span className="inline-block px-2 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded text-[11px] font-medium mb-3">
+                  ⏳ ক্যাশ অন ডেলিভারি — অগ্রিম পেমেন্ট নেই
+                </span>
+              )}
+
+              {/* Verify Payment button for unverified advance payments */}
+              {awaitingVerification && (
+                <div className="mb-3 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mb-2">
+                    ⚠️ এই অর্ডারে অগ্রিম পেমেন্ট আছে। প্রসেস করার আগে পেমেন্ট ভেরিফাই করুন।
+                  </p>
+                  <button
+                    onClick={() => verifyPayment.mutate(o.id)}
+                    disabled={verifyPayment.isPending}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                  >
+                    <ShieldCheck size={14} /> {verifyPayment.isPending ? "ভেরিফাই হচ্ছে..." : "পেমেন্ট ভেরিফাই করুন"}
+                  </button>
+                </div>
+              )}
+
+              <div className="flex flex-col md:flex-row gap-2 items-stretch md:items-center">
+                <select
+                  value={o.status || "pending"}
+                  onChange={(e) => updateStatus.mutate({ id: o.id, status: e.target.value })}
+                  disabled={awaitingVerification}
+                  className={`px-3 py-1.5 border border-border rounded-lg text-xs bg-card text-foreground focus:outline-none ${awaitingVerification ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                >
+                  <option value="pending">⏳ Pending</option>
+                  <option value="paid">💳 Paid</option>
+                  <option value="processing">🔄 Processing</option>
+                  <option value="shipped">🚚 Shipped</option>
+                  <option value="delivered">✅ Delivered</option>
+                  <option value="cancelled">❌ Cancelled</option>
+                  <option value="refunded">↩️ Refunded</option>
+                  <option value="returned">📦 Returned</option>
+                </select>
+                <input
+                  placeholder="কুরিয়ার ট্র্যাকিং ID"
+                  defaultValue={o.courier_tracking_id || ""}
+                  onBlur={(e) => { if (e.target.value !== (o.courier_tracking_id || "")) updateTracking.mutate({ id: o.id, courier_tracking_id: e.target.value }); }}
+                  disabled={awaitingVerification}
+                  className={`px-3 py-1.5 border border-border rounded-lg text-xs focus:outline-none flex-1 bg-transparent text-foreground placeholder:text-muted-foreground ${awaitingVerification ? "opacity-50 cursor-not-allowed" : ""}`}
+                />
+                <button onClick={() => handleGenerateInvoice(o)} className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary hover:bg-muted rounded-lg text-xs font-medium transition-colors text-foreground">
+                  <FileDown size={13} /> ইনভয়েস
+                </button>
+                {!o.courier_tracking_id && !awaitingVerification && (
+                  <button
+                    onClick={() => sendToCourier.mutate(o)}
+                    disabled={sendingOrderId === o.id}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                  >
+                    <Send size={13} /> {sendingOrderId === o.id ? "পাঠানো হচ্ছে..." : "কুরিয়ারে পাঠান"}
+                  </button>
+                )}
+                {o.courier_tracking_id && (
+                  <span className="px-3 py-1.5 bg-emerald-500/10 text-emerald-500 rounded-lg text-xs font-medium">
+                    ✅ CID: {o.courier_tracking_id}
+                  </span>
+                )}
+                <button onClick={() => setDeleteTarget(o)} className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-destructive/10 text-destructive rounded-lg text-xs font-medium transition-colors">
+                  <Trash2 size={13} /> ডিলিট
+                </button>
               </div>
             </div>
-            <div className="text-xs text-muted-foreground mb-2">
-              {Array.isArray(o.cart_items) && o.cart_items.slice(0, 3).map((item: any, i: number) => (
-                <span key={i}>{item.name} x{item.quantity || 1}{i < Math.min(o.cart_items.length, 3) - 1 ? ", " : ""}</span>
-              ))}
-              {Array.isArray(o.cart_items) && o.cart_items.length > 3 && <span> +{o.cart_items.length - 3} আরও</span>}
-            </div>
-            <p className="text-xs text-muted-foreground mb-3">📍 {o.address}</p>
-            {o.payment_method && (
-              <p className="text-xs text-muted-foreground mb-1">
-                💳 {o.payment_method} {o.transaction_id ? `· TxnID: ${o.transaction_id}` : ""}
-              </p>
-            )}
-            {o.payment_method && o.payment_method !== "Cash on Delivery" && o.transaction_id && (
-              <span className="inline-block px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded text-[11px] font-medium mb-3">
-                ✅ অগ্রিম পেমেন্ট সম্পন্ন {o.delivery_charge > 0 && `(ডেলিভারি চার্জ: ${formatPrice(o.delivery_charge)})`}
-              </span>
-            )}
-            {o.payment_method === "Cash on Delivery" && (
-              <span className="inline-block px-2 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded text-[11px] font-medium mb-3">
-                ⏳ ক্যাশ অন ডেলিভারি — অগ্রিম পেমেন্ট নেই
-              </span>
-            )}
-            <div className="flex flex-col md:flex-row gap-2 items-stretch md:items-center">
-              <select
-                value={o.status || "pending"}
-                onChange={(e) => updateStatus.mutate({ id: o.id, status: e.target.value })}
-                className="px-3 py-1.5 border border-border rounded-lg text-xs bg-card text-foreground focus:outline-none cursor-pointer"
-              >
-                <option value="pending">⏳ Pending</option>
-                <option value="paid">💳 Paid</option>
-                <option value="processing">🔄 Processing</option>
-                <option value="shipped">🚚 Shipped</option>
-                <option value="delivered">✅ Delivered</option>
-                <option value="cancelled">❌ Cancelled</option>
-                <option value="refunded">↩️ Refunded</option>
-                <option value="returned">📦 Returned</option>
-              </select>
-              <input placeholder="কুরিয়ার ট্র্যাকিং ID" defaultValue={o.courier_tracking_id || ""} onBlur={(e) => { if (e.target.value !== (o.courier_tracking_id || "")) updateTracking.mutate({ id: o.id, courier_tracking_id: e.target.value }); }} className="px-3 py-1.5 border border-border rounded-lg text-xs focus:outline-none flex-1 bg-transparent text-foreground placeholder:text-muted-foreground" />
-              <button onClick={() => handleGenerateInvoice(o)} className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary hover:bg-muted rounded-lg text-xs font-medium transition-colors text-foreground">
-                <FileDown size={13} /> ইনভয়েস
-              </button>
-               {!o.courier_tracking_id && (
-                 <button
-                   onClick={() => sendToCourier.mutate(o)}
-                   disabled={sendingOrderId === o.id}
-                   className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
-                 >
-                   <Send size={13} /> {sendingOrderId === o.id ? "পাঠানো হচ্ছে..." : "কুরিয়ারে পাঠান"}
-                 </button>
-               )}
-               {o.courier_tracking_id && (
-                 <span className="px-3 py-1.5 bg-emerald-500/10 text-emerald-500 rounded-lg text-xs font-medium">
-                   ✅ CID: {o.courier_tracking_id}
-                 </span>
-               )}
-              <button onClick={() => setDeleteTarget(o)} className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-destructive/10 text-destructive rounded-lg text-xs font-medium transition-colors">
-                <Trash2 size={13} /> ডিলিট
-              </button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
         {filtered.length === 0 && <div className="bg-card p-8 rounded-xl shadow-sm text-center text-muted-foreground text-sm border border-border">কোনো অর্ডার পাওয়া যায়নি</div>}
       </div>
 

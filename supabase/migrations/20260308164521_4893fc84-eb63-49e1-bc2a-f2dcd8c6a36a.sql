@@ -1,0 +1,1 @@
+ALTER TABLE public.orders ADD COLUMN is_payment_verified boolean DEFAULT false;
