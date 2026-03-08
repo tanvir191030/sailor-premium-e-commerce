@@ -121,22 +121,13 @@ const AdminOrders = () => {
 
     // Calculate paid amount based on payment method
     const isCOD = order.payment_method === "Cash on Delivery";
-    const isAdvance = !isCOD && order.transaction_id;
+    const hasAdvance = !isCOD && order.transaction_id;
     let paidAmount = 0;
-    if (isAdvance) {
-      // Check order_confirmation_mode context: if delivery_charge paid or full amount
-      // If total minus delivery = product cost, and delivery_charge is small relative to total, likely partial
+    if (hasAdvance) {
       const dc = order.delivery_charge ?? 0;
-      // If the paid amount equals delivery charge, it was delivery_charge_advance mode
-      // Otherwise assume full advance. We detect by checking if transaction exists.
-      // Since we don't store paid_amount separately, infer from mode:
-      // If delivery_charge > 0 and total > delivery_charge, check if it was partial
-      // Best heuristic: if is_payment_verified or has txn, check if total == delivery_charge scenario
-      // For now, use: if order has advance payment, paid = deliveryCharge (partial) or total (full)
-      // We'll use a simple rule: if payment_method != COD and has txnId, the paid amount is at minimum deliveryCharge
-      // But we need the site setting to know. Let's just compute from order data:
-      // If the order total is significantly more than delivery charge, and the advance was just for delivery:
-      paidAmount = dc > 0 && dc < order.total ? dc : order.total;
+      // If delivery charge exists and is less than total, assume partial (delivery charge advance)
+      // Otherwise assume full advance payment
+      paidAmount = (dc > 0 && dc < order.total) ? dc : order.total;
     }
 
     const html = generateInvoiceHTML({
