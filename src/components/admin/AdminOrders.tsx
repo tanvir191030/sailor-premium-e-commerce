@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/lib/currency";
-import { FileDown, Search, Trash2, Send, ShieldCheck, CheckCircle2, XCircle, ShieldX, RotateCcw, Archive } from "lucide-react";
+import { FileDown, Search, Trash2, Send, ShieldCheck, CheckCircle2, XCircle, ShieldX, RotateCcw, Archive, Undo2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { generateInvoiceHTML } from "@/lib/invoiceTemplate";
@@ -138,6 +138,23 @@ const AdminOrders = () => {
       queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
       toast({ title: "অর্ডার স্থায়ীভাবে মুছে ফেলা হয়েছে" });
       setPermanentDeleteTarget(null);
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  // Back to Pending — for cancelled/rejected orders
+  const backToPending = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("orders").update({
+        status: "pending",
+        is_payment_verified: false,
+        payment_rejection_reason: null,
+      } as any).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      toast({ title: "✅ অর্ডারটি আবার পেন্ডিং লিস্টে পাঠানো হয়েছে!" });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
@@ -317,10 +334,22 @@ const AdminOrders = () => {
                 </span>
               )}
               {rejected && (
-                <div className="mb-3">
+                <div className="mb-3 flex flex-wrap items-center gap-2">
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-destructive/10 text-destructive rounded text-[11px] font-medium">
                     <XCircle size={12} /> পেমেন্ট বাতিল — {(o as any).payment_rejection_reason}
                   </span>
+                </div>
+              )}
+              {/* Back to Pending button for cancelled or rejected orders */}
+              {viewMode === "orders" && (o.status === "cancelled" || rejected) && (
+                <div className="mb-3">
+                  <button
+                    onClick={() => backToPending.mutate(o.id)}
+                    disabled={backToPending.isPending}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                  >
+                    <Undo2 size={13} /> {backToPending.isPending ? "প্রসেস হচ্ছে..." : "পেন্ডিং এ ফিরিয়ে নিন"}
+                  </button>
                 </div>
               )}
               {awaitingVerification && (
