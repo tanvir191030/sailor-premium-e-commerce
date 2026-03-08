@@ -5,7 +5,8 @@ import {
   ArrowLeft, ShoppingCart, Zap, Heart, Share2, Facebook,
   MessageCircle, ZoomIn, ChevronLeft, ChevronRight, Ruler,
   Package, Tag, CheckCircle, XCircle, Plus, Minus,
-  Star, Send, Camera, BadgeCheck
+  Star, Send, Camera, BadgeCheck, Shield, Truck, RefreshCw,
+  CreditCard, ChevronDown, Sparkles, Layers, Award, HelpCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
