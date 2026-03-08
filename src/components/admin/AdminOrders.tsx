@@ -119,6 +119,17 @@ const AdminOrders = () => {
     const discountAmount = order.discount_amount ?? 0;
     const subtotal = order.total + discountAmount - deliveryCharge;
 
+    // Calculate paid amount based on payment method
+    const isCOD = order.payment_method === "Cash on Delivery";
+    const hasAdvance = !isCOD && order.transaction_id;
+    let paidAmount = 0;
+    if (hasAdvance) {
+      const dc = order.delivery_charge ?? 0;
+      // If delivery charge exists and is less than total, assume partial (delivery charge advance)
+      // Otherwise assume full advance payment
+      paidAmount = (dc > 0 && dc < order.total) ? dc : order.total;
+    }
+
     const html = generateInvoiceHTML({
       storeName: siteSettings.store_name || "Modest Mart",
       websiteUrl: siteSettings.website_url || "",
@@ -137,6 +148,8 @@ const AdminOrders = () => {
       courierTrackingId: order.courier_tracking_id || "",
       couponCode: order.coupon_code || "",
       discountAmount,
+      paidAmount,
+      isPaymentVerified: (order as any).is_payment_verified ?? false,
     });
 
     const win = window.open("", "_blank");

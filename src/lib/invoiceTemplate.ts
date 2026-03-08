@@ -16,6 +16,8 @@ interface InvoiceData {
   courierTrackingId?: string;
   couponCode?: string;
   discountAmount?: number;
+  paidAmount?: number;
+  isPaymentVerified?: boolean;
 }
 
 export function generateInvoiceHTML(data: InvoiceData): string {
@@ -23,6 +25,12 @@ export function generateInvoiceHTML(data: InvoiceData): string {
   const brandLight = "#ECFDF5";
   const brandMedium = "#D1FAE5";
   const accentColor = "#047857";
+
+  const paidAmount = data.paidAmount ?? 0;
+  const dueAmount = Math.max(0, data.total - paidAmount);
+  const isCOD = data.paymentMethod === "Cash on Delivery";
+  const paymentBadgeLabel = isCOD ? "CASH ON DELIVERY" : paidAmount >= data.total ? "FULLY PAID" : paidAmount > 0 ? "PARTIALLY PAID" : "UNPAID";
+  const paymentBadgeColor = isCOD ? "#D97706" : paidAmount >= data.total ? "#059669" : paidAmount > 0 ? "#2563EB" : "#DC2626";
 
   const qrSection = data.websiteUrl
     ? `<div style="text-align:center;margin-top:32px;padding-top:24px">
@@ -42,6 +50,14 @@ export function generateInvoiceHTML(data: InvoiceData): string {
     : data.status?.toLowerCase() === "pending" ? "#D97706"
     : data.status?.toLowerCase() === "cancelled" ? "#DC2626" : "#6B7280";
 
+  // Build paid/due rows
+  const paidRow = paidAmount > 0
+    ? `<div class="row"><span class="lbl" style="color:#059669">Advance Paid:</span><span class="val" style="color:#059669">-BDT ${paidAmount.toLocaleString()}</span></div>`
+    : "";
+  const dueRow = !isCOD && paidAmount > 0 && dueAmount > 0
+    ? `<div class="row"><span class="lbl" style="color:#DC2626;font-weight:600">Due at Delivery:</span><span class="val" style="color:#DC2626;font-weight:600">BDT ${dueAmount.toLocaleString()}</span></div>`
+    : "";
+
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Invoice - ${data.orderId.slice(0, 8)}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -55,6 +71,7 @@ body{font-family:'Noto Sans Bengali','Noto Sans',Inter,'Segoe UI',Tahoma,sans-se
 .order-meta .left div,.order-meta .right div{margin-bottom:3px}
 .order-meta .right{text-align:right}
 .status-badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600;color:#fff;letter-spacing:0.3px}
+.payment-badge{display:inline-block;padding:3px 12px;border-radius:20px;font-size:10px;font-weight:700;color:#fff;letter-spacing:0.5px;margin-top:6px}
 .content{padding:0 40px 40px}
 .customer-box{background:${brandLight};border-left:4px solid ${brandColor};border-radius:0 8px 8px 0;padding:16px 20px;margin:20px 0}
 .customer-box .label{font-size:13px;font-weight:700;color:${brandColor};margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px}
@@ -70,13 +87,16 @@ th:nth-child(3),td:nth-child(3){text-align:right;width:100px}
 th:nth-child(4),td:nth-child(4){text-align:right;width:110px}
 .summary{margin-top:20px;text-align:right;font-size:13px;line-height:2.2}
 .summary .row{display:flex;justify-content:flex-end;gap:20px}
-.summary .row .lbl{color:#777;min-width:100px;text-align:right}
+.summary .row .lbl{color:#777;min-width:120px;text-align:right}
 .summary .row .val{min-width:100px;text-align:right;font-weight:500}
+.summary .divider{border-top:1px dashed #ddd;margin:6px 0}
 .grand-total-box{margin-top:12px;padding:14px 20px;background:${brandColor};border-radius:8px;text-align:right;color:#fff;font-size:20px;font-weight:700;letter-spacing:0.3px}
+.due-box{margin-top:8px;padding:12px 20px;background:#FEF2F2;border:2px solid #FECACA;border-radius:8px;text-align:right;color:#DC2626;font-size:16px;font-weight:700;letter-spacing:0.3px}
+.paid-box{margin-top:8px;padding:10px 20px;background:${brandLight};border:2px solid ${brandMedium};border-radius:8px;text-align:right;color:#059669;font-size:13px;font-weight:600}
 .footer{margin-top:32px;padding-top:20px;border-top:2px solid ${brandMedium};text-align:center}
 .footer .thanks{font-size:14px;color:${brandColor};font-weight:600;margin-bottom:4px}
 .footer .sub{font-size:11px;color:#999}
-@media print{body{padding:0}.invoice-wrap{padding:0}.header{-webkit-print-color-adjust:exact;print-color-adjust:exact}thead tr{-webkit-print-color-adjust:exact;print-color-adjust:exact}tbody tr:nth-child(even){-webkit-print-color-adjust:exact;print-color-adjust:exact}.grand-total-box{-webkit-print-color-adjust:exact;print-color-adjust:exact}.customer-box{-webkit-print-color-adjust:exact;print-color-adjust:exact}.status-badge{-webkit-print-color-adjust:exact;print-color-adjust:exact}button{display:none!important}}
+@media print{body{padding:0}.invoice-wrap{padding:0}.header{-webkit-print-color-adjust:exact;print-color-adjust:exact}thead tr{-webkit-print-color-adjust:exact;print-color-adjust:exact}tbody tr:nth-child(even){-webkit-print-color-adjust:exact;print-color-adjust:exact}.grand-total-box{-webkit-print-color-adjust:exact;print-color-adjust:exact}.due-box{-webkit-print-color-adjust:exact;print-color-adjust:exact}.paid-box{-webkit-print-color-adjust:exact;print-color-adjust:exact}.customer-box{-webkit-print-color-adjust:exact;print-color-adjust:exact}.status-badge,.payment-badge{-webkit-print-color-adjust:exact;print-color-adjust:exact}button{display:none!important}}
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
 </head><body>
@@ -93,10 +113,12 @@ th:nth-child(4),td:nth-child(4){text-align:right;width:110px}
     <div class="left">
       <div><strong>Order ID:</strong> #${data.orderId.slice(0, 8)}</div>
       <div><strong>Date:</strong> ${data.date}</div>
+      <div style="margin-top:6px"><span class="payment-badge" style="background:${paymentBadgeColor}">${paymentBadgeLabel}</span></div>
     </div>
     <div class="right">
       <div>Status: <span class="status-badge" style="background:${statusColor}">${data.status.toUpperCase()}</span></div>
       <div style="margin-top:6px"><strong>Payment:</strong> ${data.paymentMethod}${txnInfo}</div>
+      ${data.isPaymentVerified ? `<div style="margin-top:4px;color:#059669;font-size:11px;font-weight:600">✅ Payment Verified</div>` : ""}
     </div>
   </div>
 
@@ -130,9 +152,14 @@ th:nth-child(4),td:nth-child(4){text-align:right;width:110px}
       <div class="row"><span class="lbl">Subtotal:</span><span class="val">BDT ${data.subtotal.toLocaleString()}</span></div>
       ${data.couponCode && data.discountAmount ? `<div class="row"><span class="lbl" style="color:#e11d48">Coupon (${data.couponCode}):</span><span class="val" style="color:#e11d48">-BDT ${data.discountAmount.toLocaleString()}</span></div>` : ""}
       <div class="row"><span class="lbl">Delivery:</span><span class="val">BDT ${data.deliveryCharge.toLocaleString()}</span></div>
+      ${paidRow ? `<div class="divider"></div>${paidRow}` : ""}
     </div>
 
     <div class="grand-total-box">Total: BDT ${data.total.toLocaleString()}</div>
+
+    ${paidAmount > 0 ? `<div class="paid-box">✅ Advance Paid: BDT ${paidAmount.toLocaleString()}${data.transactionId ? ` (TxnID: ${data.transactionId})` : ""}</div>` : ""}
+    ${!isCOD && paidAmount > 0 && dueAmount > 0 ? `<div class="due-box">💰 Due at Delivery: BDT ${dueAmount.toLocaleString()}</div>` : ""}
+    ${isCOD ? `<div class="due-box" style="background:#FFFBEB;border-color:#FDE68A;color:#D97706">💰 Payable at Delivery (COD): BDT ${data.total.toLocaleString()}</div>` : ""}
 
     ${courierInfo}
 
