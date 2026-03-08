@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/lib/currency";
-import { FileDown, Search, Trash2, Send, ShieldCheck, CheckCircle2, XCircle, ShieldX, RotateCcw, Archive } from "lucide-react";
+import { FileDown, Search, Trash2, Send, ShieldCheck, CheckCircle2, XCircle, ShieldX, RotateCcw, Archive, Undo2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { generateInvoiceHTML } from "@/lib/invoiceTemplate";
