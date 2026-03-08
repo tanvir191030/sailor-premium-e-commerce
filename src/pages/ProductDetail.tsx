@@ -44,6 +44,7 @@ const ProductDetail = () => {
   const [zoomed, setZoomed] = useState(false);
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
+  const [sizeChartAnchor, setSizeChartAnchor] = useState<{ x: number; y: number } | null>(null);
   const [sizeError, setSizeError] = useState(false);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const { toast } = useToast();
@@ -379,7 +380,15 @@ const ProductDetail = () => {
           jsonLd={seoJsonLd}
         />
       )}
-      <SizeChartModal open={sizeChartOpen} onClose={() => setSizeChartOpen(false)} product={product} />
+      <SizeChartModal
+        open={sizeChartOpen}
+        onClose={() => {
+          setSizeChartOpen(false);
+          setSizeChartAnchor(null);
+        }}
+        product={product}
+        anchorPoint={sizeChartAnchor}
+      />
       <div className="min-h-screen bg-background">
         <Header />
         <main className="pb-20 lg:pb-0">
@@ -639,7 +648,10 @@ const ProductDetail = () => {
                       </span>
                       {sizeType !== "shoes" && (
                         <button
-                          onClick={() => setSizeChartOpen(true)}
+                          onClick={(e) => {
+                            setSizeChartAnchor({ x: e.clientX, y: e.clientY });
+                            setSizeChartOpen(true);
+                          }}
                           className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors min-h-[44px] px-2"
                         >
                           <Ruler size={12} /> সাইজ গাইড
