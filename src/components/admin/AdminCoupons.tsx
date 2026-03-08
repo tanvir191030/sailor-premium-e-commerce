@@ -121,12 +121,25 @@ const AdminCoupons = () => {
             <input
               value={form.min_order}
               onChange={(e) => setForm({ ...form, min_order: e.target.value })}
-              placeholder="যেমন: 500"
+              placeholder="যেমন: 999"
               type="number"
               min="0"
               className={`${inputCls} w-full`}
             />
           </div>
+          {form.discount_type === "percentage" && (
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">সর্বোচ্চ ছাড় সীমা (৳)</label>
+              <input
+                value={form.max_discount}
+                onChange={(e) => setForm({ ...form, max_discount: e.target.value })}
+                placeholder="যেমন: 200"
+                type="number"
+                min="0"
+                className={`${inputCls} w-full`}
+              />
+            </div>
+          )}
           <div>
             <label className="text-xs text-muted-foreground mb-1 block">সর্বোচ্চ ব্যবহার (0 = সীমাহীন)</label>
             <input
