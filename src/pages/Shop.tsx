@@ -30,7 +30,7 @@ const Shop = () => {
   // Reset to page 1 when filters change
   useEffect(() => {
     setPage(1);
-  }, [filters]);
+  }, [filters, sort]);
 
   const filtered = products.filter((p) => {
     const inPrice = p.price >= filters.priceMin && (filters.priceMax >= PRICE_MAX || p.price <= filters.priceMax);
