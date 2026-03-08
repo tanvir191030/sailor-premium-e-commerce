@@ -192,7 +192,7 @@ const AdminProducts = () => {
     if (p.sizes) {
       if (p.sizes.variants) {
         Object.entries(p.sizes.variants).forEach(([k, v]: any) => {
-          initialSizes[k] = { stock: String(v.stock), measurements: v.measurements || {} };
+          initialSizes[k] = { stock: String(v.stock), measurements: v.measurements || {}, price: v.price ? String(v.price) : "" };
         });
       } else {
         Object.entries(p.sizes).forEach(([k, v]) => {
