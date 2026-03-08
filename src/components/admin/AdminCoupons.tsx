@@ -25,6 +25,7 @@ const AdminCoupons = () => {
     discount_type: "percentage",
     discount_value: "",
     min_order: "",
+    max_discount: "",
     max_uses: "",
     expires_at: "",
   });
@@ -36,6 +37,7 @@ const AdminCoupons = () => {
         discount_type: form.discount_type,
         discount_value: parseFloat(form.discount_value) || 0,
         min_order: parseFloat(form.min_order) || 0,
+        max_discount: parseFloat(form.max_discount) || 0,
         max_uses: parseInt(form.max_uses) || 0,
         expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : null,
         is_active: true,
@@ -44,7 +46,7 @@ const AdminCoupons = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
-      setForm({ code: "", discount_type: "percentage", discount_value: "", min_order: "", max_uses: "", expires_at: "" });
+      setForm({ code: "", discount_type: "percentage", discount_value: "", min_order: "", max_discount: "", max_uses: "", expires_at: "" });
       toast({ title: "কুপন তৈরি হয়েছে ✓" });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
@@ -119,12 +121,25 @@ const AdminCoupons = () => {
             <input
               value={form.min_order}
               onChange={(e) => setForm({ ...form, min_order: e.target.value })}
-              placeholder="যেমন: 500"
+              placeholder="যেমন: 999"
               type="number"
               min="0"
               className={`${inputCls} w-full`}
             />
           </div>
+          {form.discount_type === "percentage" && (
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">সর্বোচ্চ ছাড় সীমা (৳)</label>
+              <input
+                value={form.max_discount}
+                onChange={(e) => setForm({ ...form, max_discount: e.target.value })}
+                placeholder="যেমন: 200"
+                type="number"
+                min="0"
+                className={`${inputCls} w-full`}
+              />
+            </div>
+          )}
           <div>
             <label className="text-xs text-muted-foreground mb-1 block">সর্বোচ্চ ব্যবহার (0 = সীমাহীন)</label>
             <input
@@ -190,6 +205,7 @@ const AdminCoupons = () => {
                       <p className="text-sm text-foreground font-medium">
                         {c.discount_type === "percentage" ? `${c.discount_value}% ছাড়` : `৳${c.discount_value} ছাড়`}
                         {c.min_order > 0 && <span className="text-muted-foreground font-normal"> · সর্বনিম্ন ৳{c.min_order}</span>}
+                        {c.discount_type === "percentage" && c.max_discount > 0 && <span className="text-muted-foreground font-normal"> · সর্বোচ্চ ৳{c.max_discount}</span>}
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         ব্যবহার: {c.used_count || 0}{c.max_uses > 0 ? `/${c.max_uses}` : " (সীমাহীন)"}
