@@ -122,6 +122,15 @@ const AdminExpenses = () => {
     return filtered;
   }, [form.product_category, form.product_sub_category, products]);
 
+  // Searchable products
+  const searchableProducts = useMemo(() => {
+    if (!productSearch.trim()) return filteredProducts;
+    const q = productSearch.toLowerCase();
+    return filteredProducts.filter((p: any) => p.name.toLowerCase().includes(q));
+  }, [filteredProducts, productSearch]);
+
+  const selectedProduct = products.find((p: any) => p.id === form.product_id);
+
   // Auto-calc total
   const calcTotal = (qty: string, unitPrice: string) => {
     const q = Number(qty) || 0;
