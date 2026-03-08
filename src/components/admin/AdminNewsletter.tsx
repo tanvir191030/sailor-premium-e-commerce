@@ -48,18 +48,51 @@ const AdminNewsletter = () => {
       .select("*")
       .order("subscribed_at", { ascending: false });
     const fresh = (data as unknown as Subscriber[]) || [];
-    const rows = fresh.map((s) => ({
+    const rows = fresh.map((s, i) => ({
+      "#": i + 1,
       "Email Address": s.email,
       "Subscribed Date": new Date(s.subscribed_at).toISOString().slice(0, 10),
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
+
+    // Auto-fit column widths
+    const colWidths = [
+      { wch: 5 },  // #
+      { wch: Math.max(15, ...fresh.map(s => s.email.length + 2)) }, // Email
+      { wch: 16 }, // Date
+    ];
+    ws["!cols"] = colWidths;
+
+    // Style header + zebra rows (xlsx supports cell styles)
+    const range = XLSX.utils.decode_range(ws["!ref"] || "A1");
+    const headerStyle = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "1B4332" } }, border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }, alignment: { horizontal: "center" } };
+    const borderStyle = { top: { style: "thin", color: { rgb: "CCCCCC" } }, bottom: { style: "thin", color: { rgb: "CCCCCC" } }, left: { style: "thin", color: { rgb: "CCCCCC" } }, right: { style: "thin", color: { rgb: "CCCCCC" } } };
+
+    for (let C = range.s.c; C <= range.e.c; C++) {
+      // Header row
+      const headerAddr = XLSX.utils.encode_cell({ r: 0, c: C });
+      if (ws[headerAddr]) ws[headerAddr].s = headerStyle;
+      // Data rows with zebra + borders
+      for (let R = 1; R <= range.e.r; R++) {
+        const addr = XLSX.utils.encode_cell({ r: R, c: C });
+        if (ws[addr]) {
+          ws[addr].s = {
+            border: borderStyle,
+            fill: R % 2 === 0 ? { fgColor: { rgb: "F0F4F0" } } : undefined,
+            alignment: C === 0 ? { horizontal: "center" } : undefined,
+          };
+        }
+      }
+    }
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Subscribers");
     const dateStr = new Date().toISOString().slice(0, 10);
+    const fileName = `Modest_Mart_Newsletter_List_${dateStr}`;
     if (format === "csv") {
-      XLSX.writeFile(wb, `newsletter_subscribers_${dateStr}.csv`, { bookType: "csv" });
+      XLSX.writeFile(wb, `${fileName}.csv`, { bookType: "csv" });
     } else {
-      XLSX.writeFile(wb, `newsletter_subscribers_${dateStr}.xlsx`);
+      XLSX.writeFile(wb, `${fileName}.xlsx`);
     }
     toast({ title: "ডাউনলোড সম্পন্ন", description: `${fresh.length}টি সাবস্ক্রাইবার এক্সপোর্ট হয়েছে।` });
   };
