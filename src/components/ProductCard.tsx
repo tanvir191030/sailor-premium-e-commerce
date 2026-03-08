@@ -30,6 +30,7 @@ const ProductCard = ({
 }: ProductCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
+  const [sizeChartAnchor, setSizeChartAnchor] = useState<{ x: number; y: number } | null>(null);
   const { toggle, isWishlisted } = useWishlist();
   const { addItem, setIsBuyNowOpen, setIsOpen } = useCart();
   const { settings } = useSiteSettings();

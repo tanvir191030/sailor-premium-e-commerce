@@ -44,6 +44,7 @@ const ProductDetail = () => {
   const [zoomed, setZoomed] = useState(false);
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
+  const [sizeChartAnchor, setSizeChartAnchor] = useState<{ x: number; y: number } | null>(null);
   const [sizeError, setSizeError] = useState(false);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const { toast } = useToast();
