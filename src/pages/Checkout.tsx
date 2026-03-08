@@ -228,6 +228,8 @@ const Checkout = () => {
         delivery_charge: deliveryCharge,
         payment_method: paymentMethod === "cod" ? "Cash on Delivery" : paymentMethod === "bkash" ? "bKash" : paymentMethod === "nagad" ? "Nagad" : "Rocket",
         transaction_id: paymentMethod !== "cod" ? transactionId.trim() : null,
+        coupon_code: appliedCoupon?.code || null,
+        discount_amount: discount,
       }).select().single();
 
       if (error) throw error;
