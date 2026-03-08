@@ -2,27 +2,35 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import AnimatedCtaButton from "./AnimatedCtaButton";
 import { useTranslation } from "react-i18next";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
+
+const DEFAULT_IMAGES: Record<string, string> = {
+  men: "https://images.unsplash.com/photo-1617137968427-85924c800a22?w=800&h=800&fit=crop",
+  women: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=800&h=800&fit=crop",
+  kids: "https://images.unsplash.com/photo-1503919545889-aef636e10ad4?w=800&h=800&fit=crop",
+};
 
 const CategorySection = () => {
   const { t } = useTranslation();
+  const { settings } = useSiteSettings();
 
   const categories = [
     {
       key: "men",
       name: t("home.men"),
-      image: "https://images.unsplash.com/photo-1617137968427-85924c800a22?w=800&h=800&fit=crop",
+      image: (settings as any).category_image_men || DEFAULT_IMAGES.men,
       href: "/category/men",
     },
     {
       key: "women",
       name: t("home.women"),
-      image: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=800&h=800&fit=crop",
+      image: (settings as any).category_image_women || DEFAULT_IMAGES.women,
       href: "/category/women",
     },
     {
       key: "kids",
       name: t("home.kids"),
-      image: "https://images.unsplash.com/photo-1503919545889-aef636e10ad4?w=800&h=800&fit=crop",
+      image: (settings as any).category_image_kids || DEFAULT_IMAGES.kids,
       href: "/category/kids",
     },
   ];
@@ -55,6 +63,7 @@ const CategorySection = () => {
                   src={category.image}
                   alt={category.name}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
                 <div className="absolute inset-0 flex flex-col items-center justify-end pb-6 md:pb-10 p-8">

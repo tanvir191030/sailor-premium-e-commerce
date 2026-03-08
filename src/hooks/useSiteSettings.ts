@@ -40,6 +40,9 @@ export interface SiteSettings {
   hero_title: string;
   hero_subtitle: string;
   free_delivery: string;
+  category_image_men: string;
+  category_image_women: string;
+  category_image_kids: string;
 }
 
 const DEFAULTS: SiteSettings = {
@@ -80,6 +83,9 @@ const DEFAULTS: SiteSettings = {
   hero_title: "",
   hero_subtitle: "",
   free_delivery: "false",
+  category_image_men: "",
+  category_image_women: "",
+  category_image_kids: "",
 };
 
 export const useSiteSettings = () => {
