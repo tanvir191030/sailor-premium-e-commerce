@@ -55,7 +55,7 @@ const Checkout = () => {
       const { data, error } = await supabase
         .from("site_settings")
         .select("key, value")
-        .in("key", ["delivery_inside_dhaka", "delivery_outside_dhaka", "bkash_number", "nagad_number", "rocket_number", "free_delivery"]);
+        .in("key", ["delivery_inside_dhaka", "delivery_outside_dhaka", "bkash_number", "nagad_number", "rocket_number", "free_delivery", "order_confirmation_mode"]);
       if (error) throw error;
       const map: Record<string, string> = {};
       data?.forEach((s) => { map[s.key] = s.value || ""; });
@@ -66,6 +66,7 @@ const Checkout = () => {
         nagad_number: map["nagad_number"] || "",
         rocket_number: map["rocket_number"] || "",
         free_delivery: map["free_delivery"] === "true",
+        order_mode: (map["order_confirmation_mode"] || "cod") as "cod" | "delivery_charge_advance" | "full_advance",
       };
     },
   });
