@@ -440,7 +440,7 @@ const AdminExpenses = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">ক্যাটাগরি</label>
-                    <select value={form.product_category} onChange={(e) => handleFormChange("product_category", e.target.value)} className={inputCls}>
+                    <select value={form.product_category} onChange={(e) => handleFormChange("product_category", e.target.value)} className={selectCls}>
                       <option value="">সব ক্যাটাগরি</option>
                       {categories.map((c: any) => <option key={c.id} value={c.name}>{c.name}</option>)}
                     </select>
