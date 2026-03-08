@@ -111,11 +111,14 @@ const Checkout = () => {
         return;
       }
       if (data.min_order > 0 && totalPrice < data.min_order) {
-        toast({ title: `সর্বনিম্ন অর্ডার ৳${data.min_order} হতে হবে`, variant: "destructive" });
+        toast({ title: `সর্বনিম্ন ৳${data.min_order} টাকার অর্ডার প্রয়োজন এই কুপনের জন্য`, variant: "destructive" });
         return;
       }
       setAppliedCoupon(data);
-      toast({ title: "কুপন প্রযোজ্য হয়েছে! 🎉", description: data.discount_type === "percentage" ? `${data.discount_value}% ছাড় পেয়েছেন` : `৳${data.discount_value} ছাড় পেয়েছেন` });
+      const discDesc = data.discount_type === "percentage"
+        ? `${data.discount_value}% ছাড় পেয়েছেন${data.max_discount > 0 ? ` (সর্বোচ্চ ৳${data.max_discount})` : ''}`
+        : `৳${data.discount_value} ছাড় পেয়েছেন`;
+      toast({ title: "কুপন প্রযোজ্য হয়েছে! 🎉", description: discDesc });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {

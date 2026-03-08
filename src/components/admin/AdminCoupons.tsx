@@ -205,6 +205,7 @@ const AdminCoupons = () => {
                       <p className="text-sm text-foreground font-medium">
                         {c.discount_type === "percentage" ? `${c.discount_value}% ছাড়` : `৳${c.discount_value} ছাড়`}
                         {c.min_order > 0 && <span className="text-muted-foreground font-normal"> · সর্বনিম্ন ৳{c.min_order}</span>}
+                        {c.discount_type === "percentage" && c.max_discount > 0 && <span className="text-muted-foreground font-normal"> · সর্বোচ্চ ৳{c.max_discount}</span>}
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         ব্যবহার: {c.used_count || 0}{c.max_uses > 0 ? `/${c.max_uses}` : " (সীমাহীন)"}
