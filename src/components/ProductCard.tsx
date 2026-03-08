@@ -27,6 +27,7 @@ const ProductCard = ({
   originalPrice,
   image,
   category,
+  sub_category,
   isNew = false,
 }: ProductCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
