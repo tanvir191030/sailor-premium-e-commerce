@@ -17,12 +17,14 @@ const AdminInventory = () => {
   const [filter, setFilter] = useState<"all" | "low" | "out">("all");
 
   const { data: products = [], isLoading } = useQuery({
-    queryKey: ["admin-inventory"],
+    queryKey: ["admin-products-list"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("products").select("id, name, stock, price, category, image_url, sizes");
+      const { data, error } = await supabase.from("products").select("id, name, stock, price, category, sub_category, image_url, sizes");
       if (error) throw error;
       return data;
     },
+    staleTime: 1000 * 30,
+    refetchOnWindowFocus: true,
   });
 
   const filtered = products
@@ -149,7 +151,7 @@ const AdminInventory = () => {
         <div className="flex flex-col sm:flex-row gap-3 mb-4">
           <div className="relative flex-1">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="পণ্য খুঁজুন..." className="w-full pl-9 pr-3 py-2.5 border border-border rounded-lg text-sm bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none" />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="পণ্য খুঁজুন..." className="w-full pl-9 pr-3 py-2.5 border border-border rounded-lg text-sm bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 hover:border-primary/50 transition-colors" />
           </div>
           <div className="flex gap-1 bg-secondary p-1 rounded-lg">
             {([["all", "সব"], ["low", "কম স্টক"], ["out", "স্টক আউট"]] as const).map(([val, label]) => (
