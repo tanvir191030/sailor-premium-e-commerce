@@ -142,6 +142,23 @@ const AdminOrders = () => {
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
+  // Back to Pending — for cancelled/rejected orders
+  const backToPending = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("orders").update({
+        status: "pending",
+        is_payment_verified: false,
+        payment_rejection_reason: null,
+      } as any).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      toast({ title: "✅ অর্ডারটি আবার পেন্ডিং লিস্টে পাঠানো হয়েছে!" });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
   const sendToCourier = useMutation({
     mutationFn: async (order: any) => {
       setSendingOrderId(order.id);
