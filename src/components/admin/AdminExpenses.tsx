@@ -447,7 +447,7 @@ const AdminExpenses = () => {
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">সাব-ক্যাটাগরি</label>
-                    <select value={form.product_sub_category} onChange={(e) => handleFormChange("product_sub_category", e.target.value)} className={inputCls} disabled={!form.product_category}>
+                    <select value={form.product_sub_category} onChange={(e) => handleFormChange("product_sub_category", e.target.value)} className={selectCls} disabled={!form.product_category}>
                       <option value="">সব সাব-ক্যাটাগরি</option>
                       {filteredSubCategories.map((sc: any) => <option key={sc.id} value={sc.name}>{sc.name}</option>)}
                     </select>
