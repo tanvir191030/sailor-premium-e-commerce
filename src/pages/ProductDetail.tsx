@@ -346,6 +346,19 @@ const ProductDetail = () => {
   const sizeVariants = isComplexSize ? rawSizes.variants : (rawSizes || {});
   const isNoSizeProduct = sizeType === "none" || NO_SIZE_SUBS.includes(productSubCategory || "");
 
+  // Dynamic pricing for hijab variants
+  const activePrice = (() => {
+    if (sizeType === "hijab" && selectedSize && sizeVariants[selectedSize]) {
+      const variantPrice = Number(sizeVariants[selectedSize]?.price);
+      if (variantPrice > 0) return variantPrice;
+    }
+    return product.price;
+  })();
+
+  const cartPayload = cartPayloadBase
+    ? { ...cartPayloadBase, price: activePrice, size: selectedSize || undefined }
+    : null;
+
   const hasSpecificSizes = !isNoSizeProduct && sizeVariants && Object.keys(sizeVariants).length > 0;
 
   const displaySizes = hasSpecificSizes ? Object.keys(sizeVariants) : (sizeType === "shoes" ? SHOE_SIZES : SIZES);
