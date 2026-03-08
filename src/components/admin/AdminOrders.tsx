@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/lib/currency";
-import { FileDown, Search, Trash2, Send, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { FileDown, Search, Trash2, Send, ShieldCheck, CheckCircle2, XCircle, ShieldX } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { generateInvoiceHTML } from "@/lib/invoiceTemplate";
@@ -18,10 +18,22 @@ const statusColors: Record<string, string> = {
   returned:   "bg-muted text-muted-foreground",
 };
 
+const REJECTION_REASONS = [
+  "Invalid TxnID",
+  "Amount Mismatch",
+  "Duplicate Transaction",
+  "Fraudulent Payment",
+  "Wrong Sender Number",
+  "Other",
+];
+
 const AdminOrders = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [rejectTarget, setRejectTarget] = useState<any>(null);
+  const [rejectReason, setRejectReason] = useState("Invalid TxnID");
+  const [rejectCustomReason, setRejectCustomReason] = useState("");
   const [sendingOrderId, setSendingOrderId] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -54,12 +66,31 @@ const AdminOrders = () => {
 
   const verifyPayment = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("orders").update({ is_payment_verified: true, status: "paid" } as any).eq("id", id);
+      const { error } = await supabase.from("orders").update({ is_payment_verified: true, status: "paid", payment_rejection_reason: null } as any).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
       toast({ title: "✅ পেমেন্ট ভেরিফাই হয়েছে", description: "অর্ডার এখন প্রসেস করা যাবে।" });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const rejectPayment = useMutation({
+    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
+      const { error } = await supabase.from("orders").update({
+        is_payment_verified: false,
+        status: "cancelled",
+        payment_rejection_reason: reason,
+      } as any).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      toast({ title: "❌ পেমেন্ট বাতিল হয়েছে", description: "অর্ডার ক্যান্সেল করা হয়েছে।" });
+      setRejectTarget(null);
+      setRejectReason("Invalid TxnID");
+      setRejectCustomReason("");
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
@@ -119,14 +150,11 @@ const AdminOrders = () => {
     const discountAmount = order.discount_amount ?? 0;
     const subtotal = order.total + discountAmount - deliveryCharge;
 
-    // Calculate paid amount based on payment method
     const isCOD = order.payment_method === "Cash on Delivery";
     const hasAdvance = !isCOD && order.transaction_id;
     let paidAmount = 0;
     if (hasAdvance) {
       const dc = order.delivery_charge ?? 0;
-      // If delivery charge exists and is less than total, assume partial (delivery charge advance)
-      // Otherwise assume full advance payment
       paidAmount = (dc > 0 && dc < order.total) ? dc : order.total;
     }
 
@@ -156,18 +184,26 @@ const AdminOrders = () => {
     if (win) { win.document.write(html); win.document.close(); }
   };
 
-  // Helper: does this order have advance payment that needs verification?
+  // Helpers
   const hasAdvancePayment = (o: any) =>
     o.payment_method && o.payment_method !== "Cash on Delivery" && o.transaction_id;
 
+  const isPaymentRejected = (o: any) => !!(o as any).payment_rejection_reason;
+
   const needsVerification = (o: any) =>
-    hasAdvancePayment(o) && !(o as any).is_payment_verified;
+    hasAdvancePayment(o) && !(o as any).is_payment_verified && !isPaymentRejected(o);
 
   const filtered = orders.filter((o: any) => {
     const matchesSearch = o.customer_name.toLowerCase().includes(search.toLowerCase()) || o.phone.includes(search) || o.id.toLowerCase().includes(search.toLowerCase());
     return (statusFilter === "all" || o.status === statusFilter) && matchesSearch;
   });
   const totalFiltered = filtered.reduce((s, o) => s + Number(o.total), 0);
+
+  const handleRejectConfirm = () => {
+    if (!rejectTarget) return;
+    const reason = rejectReason === "Other" ? rejectCustomReason.trim() || "Other" : rejectReason;
+    rejectPayment.mutate({ id: rejectTarget.id, reason });
+  };
 
   return (
     <div className="space-y-5">
@@ -193,9 +229,10 @@ const AdminOrders = () => {
         {filtered.map((o: any) => {
           const awaitingVerification = needsVerification(o);
           const isVerified = hasAdvancePayment(o) && (o as any).is_payment_verified;
+          const rejected = isPaymentRejected(o);
 
           return (
-            <div key={o.id} className={`bg-card p-4 rounded-xl shadow-sm border ${awaitingVerification ? "border-amber-500/50" : "border-border"}`}>
+            <div key={o.id} className={`bg-card p-4 rounded-xl shadow-sm border ${awaitingVerification ? "border-amber-500/50" : rejected ? "border-destructive/50" : "border-border"}`}>
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
                 <div>
                   <p className="font-medium text-sm text-foreground">#{o.id.slice(0, 8)} · {o.customer_name}</p>
@@ -227,6 +264,13 @@ const AdminOrders = () => {
                   <CheckCircle2 size={12} /> পেমেন্ট ভেরিফাইড {o.delivery_charge > 0 && `(ডেলিভারি চার্জ: ${formatPrice(o.delivery_charge)})`}
                 </span>
               )}
+              {rejected && (
+                <div className="mb-3">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-destructive/10 text-destructive rounded text-[11px] font-medium">
+                    <XCircle size={12} /> পেমেন্ট বাতিল — {(o as any).payment_rejection_reason}
+                  </span>
+                </div>
+              )}
               {awaitingVerification && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded text-[11px] font-medium mb-3">
                   ⏳ পেমেন্ট ভেরিফিকেশন বাকি {o.delivery_charge > 0 && `(ডেলিভারি চার্জ: ${formatPrice(o.delivery_charge)})`}
@@ -238,19 +282,27 @@ const AdminOrders = () => {
                 </span>
               )}
 
-              {/* Verify Payment button for unverified advance payments */}
+              {/* Verify/Reject buttons for unverified advance payments */}
               {awaitingVerification && (
                 <div className="mb-3 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
                   <p className="text-xs text-amber-600 dark:text-amber-400 mb-2">
                     ⚠️ এই অর্ডারে অগ্রিম পেমেন্ট আছে। প্রসেস করার আগে পেমেন্ট ভেরিফাই করুন।
                   </p>
-                  <button
-                    onClick={() => verifyPayment.mutate(o.id)}
-                    disabled={verifyPayment.isPending}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
-                  >
-                    <ShieldCheck size={14} /> {verifyPayment.isPending ? "ভেরিফাই হচ্ছে..." : "পেমেন্ট ভেরিফাই করুন"}
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => verifyPayment.mutate(o.id)}
+                      disabled={verifyPayment.isPending}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                    >
+                      <ShieldCheck size={14} /> {verifyPayment.isPending ? "ভেরিফাই হচ্ছে..." : "পেমেন্ট ভেরিফাই করুন"}
+                    </button>
+                    <button
+                      onClick={() => { setRejectTarget(o); setRejectReason("Invalid TxnID"); setRejectCustomReason(""); }}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-lg text-xs font-medium transition-colors"
+                    >
+                      <ShieldX size={14} /> পেমেন্ট বাতিল করুন
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -258,8 +310,8 @@ const AdminOrders = () => {
                 <select
                   value={o.status || "pending"}
                   onChange={(e) => updateStatus.mutate({ id: o.id, status: e.target.value })}
-                  disabled={awaitingVerification}
-                  className={`px-3 py-1.5 border border-border rounded-lg text-xs bg-card text-foreground focus:outline-none ${awaitingVerification ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                  disabled={awaitingVerification || rejected}
+                  className={`px-3 py-1.5 border border-border rounded-lg text-xs bg-card text-foreground focus:outline-none ${(awaitingVerification || rejected) ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
                 >
                   <option value="pending">⏳ Pending</option>
                   <option value="paid">💳 Paid</option>
@@ -274,13 +326,13 @@ const AdminOrders = () => {
                   placeholder="কুরিয়ার ট্র্যাকিং ID"
                   defaultValue={o.courier_tracking_id || ""}
                   onBlur={(e) => { if (e.target.value !== (o.courier_tracking_id || "")) updateTracking.mutate({ id: o.id, courier_tracking_id: e.target.value }); }}
-                  disabled={awaitingVerification}
-                  className={`px-3 py-1.5 border border-border rounded-lg text-xs focus:outline-none flex-1 bg-transparent text-foreground placeholder:text-muted-foreground ${awaitingVerification ? "opacity-50 cursor-not-allowed" : ""}`}
+                  disabled={awaitingVerification || rejected}
+                  className={`px-3 py-1.5 border border-border rounded-lg text-xs focus:outline-none flex-1 bg-transparent text-foreground placeholder:text-muted-foreground ${(awaitingVerification || rejected) ? "opacity-50 cursor-not-allowed" : ""}`}
                 />
                 <button onClick={() => handleGenerateInvoice(o)} className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary hover:bg-muted rounded-lg text-xs font-medium transition-colors text-foreground">
                   <FileDown size={13} /> ইনভয়েস
                 </button>
-                {!o.courier_tracking_id && !awaitingVerification && (
+                {!o.courier_tracking_id && !awaitingVerification && !rejected && (
                   <button
                     onClick={() => sendToCourier.mutate(o)}
                     disabled={sendingOrderId === o.id}
@@ -303,6 +355,62 @@ const AdminOrders = () => {
         })}
         {filtered.length === 0 && <div className="bg-card p-8 rounded-xl shadow-sm text-center text-muted-foreground text-sm border border-border">কোনো অর্ডার পাওয়া যায়নি</div>}
       </div>
+
+      {/* Reject Payment Modal */}
+      {rejectTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-card rounded-xl shadow-2xl w-full max-w-sm p-6 border border-border">
+            <div className="text-center mb-4">
+              <ShieldX size={32} className="mx-auto mb-3 text-destructive" />
+              <h3 className="font-serif text-lg mb-1 text-foreground">পেমেন্ট বাতিল করুন</h3>
+              <p className="text-sm text-muted-foreground">#{rejectTarget.id.slice(0, 8)} · {rejectTarget.customer_name}</p>
+              {rejectTarget.transaction_id && (
+                <p className="text-xs text-muted-foreground mt-1">TxnID: {rejectTarget.transaction_id}</p>
+              )}
+            </div>
+
+            <div className="space-y-3 mb-6">
+              <label className="text-sm font-medium text-foreground">বাতিলের কারণ নির্বাচন করুন:</label>
+              <div className="space-y-2">
+                {REJECTION_REASONS.map((reason) => (
+                  <label key={reason} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="reject-reason"
+                      value={reason}
+                      checked={rejectReason === reason}
+                      onChange={(e) => setRejectReason(e.target.value)}
+                      className="accent-destructive"
+                    />
+                    <span className="text-sm text-foreground">{reason}</span>
+                  </label>
+                ))}
+              </div>
+              {rejectReason === "Other" && (
+                <input
+                  value={rejectCustomReason}
+                  onChange={(e) => setRejectCustomReason(e.target.value)}
+                  placeholder="কারণ লিখুন..."
+                  className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none"
+                />
+              )}
+            </div>
+
+            <div className="flex gap-3 justify-center">
+              <button onClick={() => setRejectTarget(null)} className="px-5 py-2 border border-border rounded-full text-sm font-medium text-foreground hover:bg-secondary transition-colors">
+                বাতিল
+              </button>
+              <button
+                onClick={handleRejectConfirm}
+                disabled={rejectPayment.isPending || (rejectReason === "Other" && !rejectCustomReason.trim())}
+                className="px-5 py-2 bg-destructive text-destructive-foreground rounded-full text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                {rejectPayment.isPending ? "প্রসেস হচ্ছে..." : "পেমেন্ট বাতিল করুন"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       {deleteTarget && (
