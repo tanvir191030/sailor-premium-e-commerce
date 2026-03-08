@@ -277,9 +277,29 @@ const AdminOrders = () => {
         </button>
       </div>
 
-      <span className="px-3 py-1.5 bg-card rounded-lg border border-border text-muted-foreground text-sm inline-block">
-        {filtered.length} টি অর্ডার · মোট {formatPrice(totalFiltered)}
-      </span>
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="px-3 py-1.5 bg-card rounded-lg border border-border text-muted-foreground text-sm">
+          {filtered.length} টি অর্ডার · মোট {formatPrice(totalFiltered)}
+        </span>
+        {viewMode === "orders" && (
+          <button
+            onClick={() => {
+              const verifiedToday = filtered.filter((o: any) => {
+                const todayStr = new Date().toISOString().split("T")[0];
+                return o.created_at?.startsWith(todayStr) && (o as any).is_payment_verified === true;
+              });
+              if (verifiedToday.length === 0) {
+                toast({ title: "আজকে কোনো ভেরিফাইড অর্ডার নেই", variant: "destructive" });
+                return;
+              }
+              openBulkInvoicesInNewTab(verifiedToday as any, siteSettings.store_name || "Modest Mart", siteSettings.website_url || "");
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition-colors"
+          >
+            <Printer size={14} /> আজকের ভেরিফাইড ইনভয়েস
+          </button>
+        )}
+      </div>
 
       <div className="flex flex-col md:flex-row gap-3">
         <div className="relative flex-1 max-w-sm">
