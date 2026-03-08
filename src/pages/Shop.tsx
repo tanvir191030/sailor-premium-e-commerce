@@ -44,8 +44,16 @@ const Shop = () => {
     return inPrice && inSubCategory;
   });
 
-  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-  const paginatedProducts = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  const sorted = useMemo(() => {
+    const arr = [...filtered];
+    if (sort === "price_asc") arr.sort((a, b) => a.price - b.price);
+    else if (sort === "price_desc") arr.sort((a, b) => b.price - a.price);
+    else arr.sort((a, b) => new Date(b.created_at || "").getTime() - new Date(a.created_at || "").getTime());
+    return arr;
+  }, [filtered, sort]);
+
+  const totalPages = Math.ceil(sorted.length / ITEMS_PER_PAGE);
+  const paginatedProducts = sorted.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
