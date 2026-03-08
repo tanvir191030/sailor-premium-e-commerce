@@ -14,6 +14,8 @@ type TimeRange = "daily" | "weekly" | "monthly";
 const AdminDashboard = () => {
   const [timeRange, setTimeRange] = useState<TimeRange>("weekly");
   const { theme } = useTheme();
+  const { settings: siteSettings } = useSiteSettings();
+  const { toast } = useToast();
 
   const { data: products = [] } = useQuery({
     queryKey: ["admin-products"],
