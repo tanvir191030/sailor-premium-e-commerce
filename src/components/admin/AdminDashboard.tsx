@@ -17,6 +17,8 @@ type TimeRange = "daily" | "weekly" | "monthly";
 
 const AdminDashboard = () => {
   const [timeRange, setTimeRange] = useState<TimeRange>("weekly");
+  const [dashDateFrom, setDashDateFrom] = useState<Date | undefined>(new Date());
+  const [dashDateTo, setDashDateTo] = useState<Date | undefined>(new Date());
   const { theme } = useTheme();
   const { settings: siteSettings } = useSiteSettings();
   const { toast } = useToast();
