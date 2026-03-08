@@ -76,6 +76,8 @@ const ProductCard = ({
           <img
             src={image}
             alt={name}
+            loading="lazy"
+            decoding="async"
             className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${imageLoaded ? "opacity-100" : "opacity-0"
               }`}
             onLoad={() => setImageLoaded(true)}
