@@ -83,6 +83,9 @@ const DEFAULTS: SiteSettings = {
   hero_title: "",
   hero_subtitle: "",
   free_delivery: "false",
+  category_image_men: "",
+  category_image_women: "",
+  category_image_kids: "",
 };
 
 export const useSiteSettings = () => {
