@@ -43,6 +43,8 @@ const AdminOrders = () => {
   const [courierTarget, setCourierTarget] = useState<any>(null);
   const [permanentDeleteTarget, setPermanentDeleteTarget] = useState<any>(null);
   const [viewMode, setViewMode] = useState<"orders" | "trash">("orders");
+  const [bulkDateFrom, setBulkDateFrom] = useState<Date | undefined>(new Date());
+  const [bulkDateTo, setBulkDateTo] = useState<Date | undefined>(new Date());
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { settings: siteSettings } = useSiteSettings();
