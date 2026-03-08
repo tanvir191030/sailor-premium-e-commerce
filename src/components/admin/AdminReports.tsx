@@ -29,7 +29,7 @@ const AdminReports = () => {
   const { data: deliveredOrders = [] } = useQuery({
     queryKey: ["report-orders", timeRange],
     queryFn: async () => {
-      const { data, error } = await supabase.from("orders").select("id,total,created_at,delivery_charge")
+      const { data, error } = await supabase.from("orders").select("id,total,created_at,delivery_charge,customer_name,phone")
         .eq("status", "delivered")
         .gte("created_at", dateFrom)
         .order("created_at", { ascending: true });

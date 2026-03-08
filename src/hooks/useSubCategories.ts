@@ -27,11 +27,13 @@ export const useSubCategories = () => {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("sub_categories")
-        .select("*")
+        .select("id,name,category_id,measurement_template")
         .order("name");
       if (error) throw error;
       return data as SubCategory[];
     },
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
   });
 };
 
@@ -41,12 +43,13 @@ export const useSubCategoriesByCategory = (categoryId: string | undefined) => {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("sub_categories")
-        .select("*")
+        .select("id,name,category_id,measurement_template")
         .eq("category_id", categoryId)
         .order("name");
       if (error) throw error;
       return data as SubCategory[];
     },
     enabled: !!categoryId,
+    staleTime: 1000 * 60 * 10,
   });
 };
