@@ -1,0 +1,1 @@
+ALTER TABLE public.coupons ADD COLUMN max_discount numeric DEFAULT 0;

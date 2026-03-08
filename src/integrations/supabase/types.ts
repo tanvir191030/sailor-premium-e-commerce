@@ -92,6 +92,7 @@ export type Database = {
           expires_at: string | null
           id: string
           is_active: boolean | null
+          max_discount: number | null
           max_uses: number | null
           min_order: number | null
           used_count: number | null
@@ -104,6 +105,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean | null
+          max_discount?: number | null
           max_uses?: number | null
           min_order?: number | null
           used_count?: number | null
@@ -116,6 +118,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean | null
+          max_discount?: number | null
           max_uses?: number | null
           min_order?: number | null
           used_count?: number | null
