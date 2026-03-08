@@ -150,30 +150,80 @@ const AdminDashboard = () => {
         ))}
       </div>
 
-      {/* Today's Verified Invoices Download Card */}
-      <div className="bg-card p-5 rounded-xl shadow-sm border border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h3 className="font-serif text-base text-foreground flex items-center gap-2">
-            <FileDown size={18} className="text-emerald-500" />
-            আজকের ভেরিফাইড ইনভয়েস
-          </h3>
-          <p className="text-xs text-muted-foreground mt-1">
-            আজ {todayVerified.length} টি ভেরিফাইড অর্ডার · মোট {formatPrice(todayVerifiedTotal)}
-          </p>
+      {/* Verified Invoices Download Card with Date Range */}
+      <div className="bg-card p-5 rounded-xl shadow-sm border border-border space-y-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div>
+            <h3 className="font-serif text-base text-foreground flex items-center gap-2">
+              <FileDown size={18} className="text-emerald-500" />
+              ভেরিফাইড ইনভয়েস ডাউনলোড
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              আজ {todayVerified.length} টি ভেরিফাইড অর্ডার · মোট {formatPrice(todayVerifiedTotal)}
+            </p>
+          </div>
         </div>
-        <button
-          onClick={() => {
-            if (todayVerified.length === 0) {
-              toast({ title: "আজকে কোনো ভেরিফাইড অর্ডার নেই", variant: "destructive" });
-              return;
-            }
-            openBulkInvoicesInNewTab(todayVerified as any, siteSettings.store_name || "Modest Mart", siteSettings.website_url || "");
-          }}
-          disabled={todayVerified.length === 0}
-          className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <FileDown size={16} /> আজকের ইনভয়েস ডাউনলোড করুন
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className={cn("flex items-center gap-1.5 px-3 py-2 bg-secondary border border-border rounded-lg text-xs font-medium hover:bg-muted text-foreground", !dashDateFrom && "text-muted-foreground")}>
+                <CalendarIcon size={14} />
+                {dashDateFrom ? format(dashDateFrom, "dd/MM/yyyy") : "শুরুর তারিখ"}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar mode="single" selected={dashDateFrom} onSelect={setDashDateFrom} initialFocus className="p-3 pointer-events-auto" />
+            </PopoverContent>
+          </Popover>
+          <span className="text-xs text-muted-foreground">→</span>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className={cn("flex items-center gap-1.5 px-3 py-2 bg-secondary border border-border rounded-lg text-xs font-medium hover:bg-muted text-foreground", !dashDateTo && "text-muted-foreground")}>
+                <CalendarIcon size={14} />
+                {dashDateTo ? format(dashDateTo, "dd/MM/yyyy") : "শেষের তারিখ"}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar mode="single" selected={dashDateTo} onSelect={setDashDateTo} initialFocus className="p-3 pointer-events-auto" />
+            </PopoverContent>
+          </Popover>
+          <button
+            onClick={() => {
+              if (!dashDateFrom || !dashDateTo) {
+                toast({ title: "তারিখ নির্বাচন করুন", variant: "destructive" });
+                return;
+              }
+              const fromStr = format(dashDateFrom, "yyyy-MM-dd");
+              const toStr = format(dashDateTo, "yyyy-MM-dd");
+              const verifiedInRange = orders.filter((o: any) => {
+                const dateStr = o.created_at?.split("T")[0];
+                return dateStr >= fromStr && dateStr <= toStr && (o as any).is_payment_verified === true && !(o as any).is_deleted;
+              });
+              if (verifiedInRange.length === 0) {
+                toast({ title: "নির্বাচিত তারিখে কোনো ভেরিফাইড অর্ডার নেই", variant: "destructive" });
+                return;
+              }
+              const dateLabel = fromStr === toStr ? format(dashDateFrom, "dd/MM/yyyy") : `${format(dashDateFrom, "dd/MM/yyyy")} — ${format(dashDateTo, "dd/MM/yyyy")}`;
+              openBulkInvoicesInNewTab(verifiedInRange as any, siteSettings.store_name || "Modest Mart", siteSettings.website_url || "", dateLabel);
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition-colors"
+          >
+            <FileDown size={14} /> ইনভয়েস ডাউনলোড
+          </button>
+          <button
+            onClick={() => {
+              if (todayVerified.length === 0) {
+                toast({ title: "আজকে কোনো ভেরিফাইড অর্ডার নেই", variant: "destructive" });
+                return;
+              }
+              openBulkInvoicesInNewTab(todayVerified as any, siteSettings.store_name || "Modest Mart", siteSettings.website_url || "", format(new Date(), "dd/MM/yyyy"));
+            }}
+            disabled={todayVerified.length === 0}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600/80 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FileDown size={14} /> আজকের ইনভয়েস
+          </button>
+        </div>
       </div>
 
       {/* Revenue Chart */}
