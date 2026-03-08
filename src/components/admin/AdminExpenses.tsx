@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/lib/currency";
 import { useToast } from "@/hooks/use-toast";
-import { Wallet, Plus, Trash2, Download, Calendar, X, Printer, Pencil, Package, ShoppingCart } from "lucide-react";
+import { Wallet, Plus, Trash2, Download, Calendar, X, Printer, Pencil, Package, ShoppingCart, Search, ChevronDown } from "lucide-react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
