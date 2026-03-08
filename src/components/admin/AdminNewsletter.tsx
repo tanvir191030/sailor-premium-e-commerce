@@ -42,15 +42,27 @@ const AdminNewsletter = () => {
     }
   };
 
-  const handleExport = () => {
-    const rows = subscribers.map((s) => ({
-      Email: s.email,
-      "Subscribed At": new Date(s.subscribed_at).toLocaleString("bn-BD"),
+  const handleExport = async (format: "xlsx" | "csv" = "xlsx") => {
+    // Always fetch fresh data before export
+    const { data } = await supabase
+      .from("newsletter_subscribers" as any)
+      .select("*")
+      .order("subscribed_at", { ascending: false });
+    const fresh = (data || []) as Subscriber[];
+    const rows = fresh.map((s) => ({
+      "Email Address": s.email,
+      "Subscribed Date": new Date(s.subscribed_at).toISOString().slice(0, 10),
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Subscribers");
-    XLSX.writeFile(wb, `newsletter_subscribers_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    const dateStr = new Date().toISOString().slice(0, 10);
+    if (format === "csv") {
+      XLSX.writeFile(wb, `newsletter_subscribers_${dateStr}.csv`, { bookType: "csv" });
+    } else {
+      XLSX.writeFile(wb, `newsletter_subscribers_${dateStr}.xlsx`);
+    }
+    toast({ title: "ডাউনলোড সম্পন্ন", description: `${fresh.length}টি সাবস্ক্রাইবার এক্সপোর্ট হয়েছে।` });
   };
 
   const filtered = subscribers.filter((s) =>
