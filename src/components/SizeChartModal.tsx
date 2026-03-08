@@ -6,7 +6,6 @@ interface Props {
   open: boolean;
   onClose: () => void;
   product?: any;
-  anchorPoint?: { x: number; y: number } | null;
 }
 
 const defaultMeasurements = [
@@ -19,23 +18,20 @@ const defaultMeasurements = [
   { size: "3XL", chest: "44-46", waist: "36-38", hip: "46-48", height: "180-185" },
 ];
 
-const SizeChartModal = ({ open, onClose, product, anchorPoint }: Props) => {
+const SizeChartModal = ({ open, onClose, product }: Props) => {
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
     }
-    return () => {
-      document.body.style.overflow = "";
-    };
+    return () => { document.body.style.overflow = ""; };
   }, [open]);
 
   const rawSizes = product?.sizes as any;
   const isComplexSize = rawSizes && rawSizes.variants !== undefined;
   const sizeVariants = isComplexSize ? rawSizes.variants : null;
   const productSubCategory = isComplexSize ? (rawSizes.sub_category || product?.sub_category) : product?.sub_category;
-
   const isHijabOrna = productSubCategory?.toLowerCase() === "hijab" || productSubCategory?.toLowerCase() === "orna";
 
   let dynamicHeaders: string[] = [];
@@ -48,9 +44,7 @@ const SizeChartModal = ({ open, onClose, product, anchorPoint }: Props) => {
         Object.keys(data.measurements).forEach((k) => allKeys.add(k));
       }
     });
-
     dynamicHeaders = Array.from(allKeys);
-
     Object.entries(sizeVariants).forEach(([sizeKey, data]: any) => {
       if (data && typeof data === "object" && data.measurements && Object.keys(data.measurements).length > 0) {
         dynamicRows.push({ size: sizeKey, ...data.measurements });
@@ -60,51 +54,35 @@ const SizeChartModal = ({ open, onClose, product, anchorPoint }: Props) => {
 
   const hasDynamicData = dynamicHeaders.length > 0 && dynamicRows.length > 0;
 
-  const modalPositionStyle = (() => {
-    if (!anchorPoint || typeof window === "undefined") {
-      return {
-        left: "50%",
-        top: "50%",
-        transform: "translate(-50%, -50%)",
-      } as const;
-    }
-
-    const safeMargin = 24;
-    const safeX = Math.min(Math.max(anchorPoint.x, safeMargin), window.innerWidth - safeMargin);
-    const safeY = Math.min(Math.max(anchorPoint.y, safeMargin), window.innerHeight - safeMargin);
-
-    return {
-      left: `${safeX}px`,
-      top: `${safeY}px`,
-      transform: "translate(-50%, -50%)",
-    } as const;
-  })();
-
   return (
     <AnimatePresence>
       {open && (
         <>
+          {/* Dark overlay - click to close */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/60 backdrop-blur-sm"
-            style={{ zIndex: 1000 }}
+            style={{ zIndex: 9998 }}
             onClick={onClose}
           />
 
+          {/* Centered container */}
           <div
-            className="fixed w-[90vw] max-w-lg"
-            style={{ ...modalPositionStyle, zIndex: 1001 }}
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 flex items-center justify-center p-4"
+            style={{ zIndex: 9999 }}
+            onClick={onClose}
           >
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              initial={{ opacity: 0, scale: 0.92, y: 24 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ duration: 0.2 }}
-              className="bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
+              exit={{ opacity: 0, scale: 0.92, y: 24 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+              className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
             >
+              {/* Header */}
               <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-border">
                 <h2 className="font-serif text-base sm:text-lg text-foreground truncate pr-4">
                   {product?.name ? `${product.name} - সাইজ চার্ট` : "সাইজ চার্ট"}
@@ -114,6 +92,7 @@ const SizeChartModal = ({ open, onClose, product, anchorPoint }: Props) => {
                 </button>
               </div>
 
+              {/* Content */}
               <div className="p-4 sm:p-6 space-y-5 overflow-y-auto max-h-[65vh]">
                 <p className="text-xs text-muted-foreground">
                   সঠিক সাইজ নির্বাচনের জন্য নিচের পরিমাপ অনুসরণ করুন। সব পরিমাপ ইঞ্চিতে।
@@ -128,21 +107,17 @@ const SizeChartModal = ({ open, onClose, product, anchorPoint }: Props) => {
                           dynamicHeaders.map((h) => (
                             <th key={h} className="px-3 sm:px-4 py-3 text-center capitalize">{h}</th>
                           ))
+                        ) : isHijabOrna ? (
+                          <>
+                            <th className="px-3 sm:px-4 py-3 text-center">চওড়া (Width)</th>
+                            <th className="px-3 sm:px-4 py-3 text-center">লম্বা (Length)</th>
+                          </>
                         ) : (
                           <>
-                            {isHijabOrna ? (
-                              <>
-                                <th className="px-3 sm:px-4 py-3 text-center">চওড়া (Width)</th>
-                                <th className="px-3 sm:px-4 py-3 text-center">লম্বা (Length)</th>
-                              </>
-                            ) : (
-                              <>
-                                <th className="px-3 sm:px-4 py-3 text-center">বুক</th>
-                                <th className="px-3 sm:px-4 py-3 text-center">কোমর</th>
-                                <th className="px-3 sm:px-4 py-3 text-center">হিপ</th>
-                                <th className="px-3 sm:px-4 py-3 text-center">উচ্চতা (cm)</th>
-                              </>
-                            )}
+                            <th className="px-3 sm:px-4 py-3 text-center">বুক</th>
+                            <th className="px-3 sm:px-4 py-3 text-center">কোমর</th>
+                            <th className="px-3 sm:px-4 py-3 text-center">হিপ</th>
+                            <th className="px-3 sm:px-4 py-3 text-center">উচ্চতা (cm)</th>
                           </>
                         )}
                       </tr>
@@ -150,7 +125,7 @@ const SizeChartModal = ({ open, onClose, product, anchorPoint }: Props) => {
                     <tbody>
                       {hasDynamicData ? (
                         dynamicRows.map((row, i) => (
-                          <tr key={row.size} className={`border-t border-border transition-colors ${i % 2 === 0 ? "" : "bg-secondary/30"}`}>
+                          <tr key={row.size} className={`border-t border-border ${i % 2 !== 0 ? "bg-secondary/30" : ""}`}>
                             <td className="px-3 sm:px-4 py-3">
                               <span className="font-bold text-primary text-sm">{row.size}</span>
                             </td>
@@ -161,7 +136,7 @@ const SizeChartModal = ({ open, onClose, product, anchorPoint }: Props) => {
                         ))
                       ) : (
                         defaultMeasurements.map((row, i) => (
-                          <tr key={row.size} className={`border-t border-border transition-colors ${i % 2 === 0 ? "" : "bg-secondary/30"}`}>
+                          <tr key={row.size} className={`border-t border-border ${i % 2 !== 0 ? "bg-secondary/30" : ""}`}>
                             <td className="px-3 sm:px-4 py-3">
                               <span className="font-bold text-primary text-sm">{row.size}</span>
                             </td>
@@ -188,27 +163,17 @@ const SizeChartModal = ({ open, onClose, product, anchorPoint }: Props) => {
                 {!hasDynamicData && !isHijabOrna && (
                   <div className="bg-secondary/50 rounded-xl p-4 space-y-2">
                     <p className="text-xs font-semibold text-foreground mb-2">📏 কিভাবে মাপবেন</p>
-                    <p className="text-xs text-muted-foreground">
-                      <strong className="text-foreground">বুক:</strong> বুকের সবচেয়ে প্রশস্ত অংশ মাপুন, বগলের নিচ দিয়ে।
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      <strong className="text-foreground">কোমর:</strong> পেটের সবচেয়ে চিকন অংশে মাপুন।
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      <strong className="text-foreground">হিপ:</strong> নিতম্বের সবচেয়ে প্রশস্ত অংশে মাপুন।
-                    </p>
+                    <p className="text-xs text-muted-foreground"><strong className="text-foreground">বুক:</strong> বুকের সবচেয়ে প্রশস্ত অংশ মাপুন, বগলের নিচ দিয়ে।</p>
+                    <p className="text-xs text-muted-foreground"><strong className="text-foreground">কোমর:</strong> পেটের সবচেয়ে চিকন অংশে মাপুন।</p>
+                    <p className="text-xs text-muted-foreground"><strong className="text-foreground">হিপ:</strong> নিতম্বের সবচেয়ে প্রশস্ত অংশে মাপুন।</p>
                   </div>
                 )}
 
                 {isHijabOrna && (
                   <div className="bg-secondary/50 rounded-xl p-4 space-y-2">
                     <p className="text-xs font-semibold text-foreground mb-2">📏 কিভাবে মাপবেন (হিজাব/ওড়না)</p>
-                    <p className="text-xs text-muted-foreground">
-                      <strong className="text-foreground">চওড়া:</strong> এক প্রান্ত থেকে অন্য প্রান্ত পর্যন্ত মাপুন।
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      <strong className="text-foreground">লম্বা:</strong> উপর থেকে নিচ পর্যন্ত সম্পূর্ণ দৈর্ঘ্য মাপুন।
-                    </p>
+                    <p className="text-xs text-muted-foreground"><strong className="text-foreground">চওড়া:</strong> এক প্রান্ত থেকে অন্য প্রান্ত পর্যন্ত মাপুন।</p>
+                    <p className="text-xs text-muted-foreground"><strong className="text-foreground">লম্বা:</strong> উপর থেকে নিচ পর্যন্ত সম্পূর্ণ দৈর্ঘ্য মাপুন।</p>
                   </div>
                 )}
 

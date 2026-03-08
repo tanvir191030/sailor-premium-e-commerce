@@ -30,7 +30,6 @@ const ProductCard = ({
 }: ProductCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
-  const [sizeChartAnchor, setSizeChartAnchor] = useState<{ x: number; y: number } | null>(null);
   const { toggle, isWishlisted } = useWishlist();
   const { addItem, setIsBuyNowOpen, setIsOpen } = useCart();
   const { settings } = useSiteSettings();
@@ -53,10 +52,8 @@ const ProductCard = ({
     navigate("/checkout");
   };
 
-  const handleSizeChart = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleSizeChart = (e: React.MouseEvent) => {
     e.stopPropagation();
-    e.preventDefault();
-    setSizeChartAnchor({ x: e.clientX, y: e.clientY });
     setSizeChartOpen(true);
   };
 
@@ -189,14 +186,7 @@ const ProductCard = ({
         </div>
       </motion.div>
 
-      <SizeChartModal
-        open={sizeChartOpen}
-        onClose={() => {
-          setSizeChartOpen(false);
-          setSizeChartAnchor(null);
-        }}
-        anchorPoint={sizeChartAnchor}
-      />
+      <SizeChartModal open={sizeChartOpen} onClose={() => setSizeChartOpen(false)} />
     </>
   );
 };
