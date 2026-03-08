@@ -1,9 +1,5 @@
 import Header from "@/components/Header";
 import HeroSlider from "@/components/HeroSlider";
-import NewArrivals from "@/components/NewArrivals";
-import CategorySection from "@/components/CategorySection";
-import ShoeCollection from "@/components/ShoeCollection";
-import WatchGallery from "@/components/WatchGallery";
 import Footer from "@/components/Footer";
 import PageTransition from "@/components/PageTransition";
 import SEOHead, { organizationSchema, siteNavigationSchema } from "@/components/SEOHead";
@@ -11,6 +7,19 @@ import { useProducts, useFeaturedProducts } from "@/hooks/useProducts";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { lazy, Suspense } from "react";
+
+// Lazy-load below-the-fold sections
+const NewArrivals = lazy(() => import("@/components/NewArrivals"));
+const CategorySection = lazy(() => import("@/components/CategorySection"));
+const ShoeCollection = lazy(() => import("@/components/ShoeCollection"));
+const WatchGallery = lazy(() => import("@/components/WatchGallery"));
+
+const SectionFallback = () => (
+  <div className="py-12 flex items-center justify-center">
+    <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
 const Index = () => {
   const { data: products = [], isLoading: productsLoading } = useProducts();
@@ -82,15 +91,9 @@ const Index = () => {
     },
   ];
 
+  // Show hero immediately — don't wait for products
   const slides = bannerSlides.length > 0 ? bannerSlides : featuredProducts.length > 0 ? featuredSlides : defaultSlides;
-
-  if (productsLoading || featuredLoading || bannersLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent animate-spin" />
-      </div>
-    );
-  }
+  const heroReady = !bannersLoading || bannerSlides.length > 0;
 
   return (
     <PageTransition>
@@ -112,11 +115,23 @@ const Index = () => {
         />
         <Header />
         <main>
-          <HeroSlider slides={slides} />
-          <NewArrivals products={products} />
-          <CategorySection />
-          <ShoeCollection />
-          <WatchGallery />
+          {heroReady ? (
+            <HeroSlider slides={slides} />
+          ) : (
+            <div className="w-full aspect-video bg-secondary animate-pulse" />
+          )}
+          <Suspense fallback={<SectionFallback />}>
+            {productsLoading ? <SectionFallback /> : <NewArrivals products={products} />}
+          </Suspense>
+          <Suspense fallback={<SectionFallback />}>
+            <CategorySection />
+          </Suspense>
+          <Suspense fallback={<SectionFallback />}>
+            <ShoeCollection />
+          </Suspense>
+          <Suspense fallback={<SectionFallback />}>
+            <WatchGallery />
+          </Suspense>
         </main>
         <Footer />
       </div>
