@@ -170,6 +170,17 @@ const ProductDetail = () => {
 
   const { settings } = useSiteSettings();
   const baseUrl = settings.website_url || "https://modestmart.com";
+  const isFreeDelivery = settings.free_delivery === "true";
+
+  // Sticky desktop bar: show when CTA buttons scroll out of view
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowStickyBar(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+    if (ctaRef.current) observer.observe(ctaRef.current);
+    return () => observer.disconnect();
+  }, [product]);
 
   const seoJsonLd = useMemo(() => {
     if (!product) return undefined;
