@@ -71,6 +71,7 @@ const Checkout = () => {
     },
   });
 
+  const orderMode = deliverySettings?.order_mode ?? "cod";
   const isFreeDelivery = deliverySettings?.free_delivery ?? false;
   const deliveryCharge = isFreeDelivery ? 0 : (deliveryZone === "inside_dhaka"
     ? (deliverySettings?.inside_dhaka ?? 80)
@@ -86,6 +87,11 @@ const Checkout = () => {
     : 0;
 
   const grandTotal = totalPrice - discount + deliveryCharge;
+
+  // Amount the customer must pay NOW based on order mode
+  const payableNow = orderMode === "cod" ? 0 : orderMode === "delivery_charge_advance" ? deliveryCharge : grandTotal;
+  // Must use mobile payment if advance is required
+  const requiresAdvance = orderMode !== "cod";
 
   const applyCoupon = async () => {
     if (!couponCode.trim()) return;
