@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Link } from "react-router-dom";
 import AnimatedCtaButton from "./AnimatedCtaButton";
 
 interface HeroSlide {
@@ -18,47 +17,25 @@ interface HeroSliderProps {
   slides: HeroSlide[];
 }
 
-// Preload images to prevent white flash
-const preloadImage = (src: string): Promise<void> => {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => resolve();
-    img.onerror = () => resolve();
-    img.src = src;
-  });
-};
-
 const HeroSlider = ({ slides }: HeroSliderProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [firstImageLoaded, setFirstImageLoaded] = useState(false);
   const preloadedRef = useRef<Set<string>>(new Set());
 
-  // Preload all images on mount
+  // Only wait for the FIRST image to load (LCP optimization)
   useEffect(() => {
-    const loadImages = async () => {
-      await Promise.all(slides.map((slide) => preloadImage(slide.image)));
-      setImagesLoaded(true);
-    };
-    if (slides.length > 0) {
-      loadImages();
-    }
-  }, [slides]);
-
-  // Preload adjacent images when index changes
-  useEffect(() => {
-    if (slides.length <= 1) return;
-    
-    const nextIndex = (currentIndex + 1) % slides.length;
-    const prevIndex = (currentIndex - 1 + slides.length) % slides.length;
-    
-    [nextIndex, prevIndex].forEach((idx) => {
-      const src = slides[idx].image;
-      if (!preloadedRef.current.has(src)) {
-        preloadImage(src);
-        preloadedRef.current.add(src);
-      }
+    if (slides.length === 0) return;
+    const img = new Image();
+    img.onload = () => setFirstImageLoaded(true);
+    img.onerror = () => setFirstImageLoaded(true);
+    img.src = slides[0].image;
+    // Preload remaining images in background (non-blocking)
+    slides.slice(1).forEach((slide) => {
+      const bgImg = new Image();
+      bgImg.src = slide.image;
+      preloadedRef.current.add(slide.image);
     });
-  }, [currentIndex, slides]);
+  }, [slides]);
 
   const nextSlide = useCallback(() => {
     setCurrentIndex((prev) => (prev + 1) % slides.length);
@@ -86,33 +63,14 @@ const HeroSlider = ({ slides }: HeroSliderProps) => {
     );
   }
 
-  // Show loading state until images are ready
-  if (!imagesLoaded) {
-    return (
-      <div className="w-full aspect-video bg-secondary flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent animate-spin" />
-      </div>
-    );
-  }
-
   const contentVariants = {
     hidden: { opacity: 0, y: 30 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: {
-        duration: 0.6,
-        delay: 0.3,
-        staggerChildren: 0.15,
-      },
+      transition: { duration: 0.6, delay: 0.3, staggerChildren: 0.15 },
     },
-    exit: {
-      opacity: 0,
-      y: -20,
-      transition: {
-        duration: 0.3,
-      },
-    },
+    exit: { opacity: 0, y: -20, transition: { duration: 0.3 } },
   };
 
   const itemVariants = {
@@ -122,6 +80,18 @@ const HeroSlider = ({ slides }: HeroSliderProps) => {
 
   return (
     <div className="relative w-full aspect-video overflow-hidden bg-secondary">
+      {/* First image rendered as <img> with fetchpriority="high" for LCP */}
+      {!firstImageLoaded && (
+        <img
+          src={slides[0].image}
+          alt={slides[0].title}
+          fetchPriority="high"
+          decoding="sync"
+          className="absolute inset-0 w-full h-full object-cover"
+          onLoad={() => setFirstImageLoaded(true)}
+        />
+      )}
+
       {/* Background Images Layer - Crossfade */}
       <div className="absolute inset-0">
         {slides.map((slide, index) => (
@@ -142,10 +112,10 @@ const HeroSlider = ({ slides }: HeroSliderProps) => {
         ))}
       </div>
 
-      {/* Gradient Overlay - Always visible */}
+      {/* Gradient Overlay */}
       <div className="absolute inset-0 gradient-overlay-left" />
 
-      {/* Content Layer - Animated separately */}
+      {/* Content Layer */}
       <div className="relative h-full container mx-auto px-4 md:px-6 flex items-center">
         <AnimatePresence mode="wait">
           <motion.div
@@ -159,15 +129,12 @@ const HeroSlider = ({ slides }: HeroSliderProps) => {
             <motion.span variants={itemVariants} className="text-label text-white/80 mb-2 md:mb-4 block text-[10px] md:text-xs">
               {slides[currentIndex].label}
             </motion.span>
-
             <motion.h2 variants={itemVariants} className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-serif font-bold text-white mb-2 md:mb-6 leading-tight">
               {slides[currentIndex].title}
             </motion.h2>
-
             <motion.p variants={itemVariants} className="text-xs sm:text-sm md:text-xl font-light leading-relaxed mb-3 md:mb-8 text-white/90 line-clamp-2 md:line-clamp-none">
               {slides[currentIndex].description}
             </motion.p>
-
             <motion.div variants={itemVariants}>
               <AnimatedCtaButton
                 to={slides[currentIndex].ctaLink}
@@ -183,18 +150,10 @@ const HeroSlider = ({ slides }: HeroSliderProps) => {
       {/* Navigation Arrows */}
       {slides.length > 1 && (
         <>
-          <button
-            onClick={prevSlide}
-            className="absolute left-2 md:left-8 top-1/2 -translate-y-1/2 p-1.5 md:p-3 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-colors"
-            aria-label="Previous slide"
-          >
+          <button onClick={prevSlide} className="absolute left-2 md:left-8 top-1/2 -translate-y-1/2 p-1.5 md:p-3 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-colors" aria-label="Previous slide">
             <ChevronLeft className="w-4 h-4 md:w-6 md:h-6" />
           </button>
-          <button
-            onClick={nextSlide}
-            className="absolute right-2 md:right-8 top-1/2 -translate-y-1/2 p-1.5 md:p-3 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-colors"
-            aria-label="Next slide"
-          >
+          <button onClick={nextSlide} className="absolute right-2 md:right-8 top-1/2 -translate-y-1/2 p-1.5 md:p-3 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-colors" aria-label="Next slide">
             <ChevronRight className="w-4 h-4 md:w-6 md:h-6" />
           </button>
         </>
@@ -208,9 +167,7 @@ const HeroSlider = ({ slides }: HeroSliderProps) => {
               key={index}
               onClick={() => goToSlide(index)}
               className={`h-1.5 md:h-2 rounded-full transition-all duration-300 ${
-                index === currentIndex
-                  ? "bg-white w-5 md:w-8"
-                  : "w-1.5 md:w-2 bg-white/50 hover:bg-white/70"
+                index === currentIndex ? "bg-white w-5 md:w-8" : "w-1.5 md:w-2 bg-white/50 hover:bg-white/70"
               }`}
               aria-label={`Go to slide ${index + 1}`}
             />

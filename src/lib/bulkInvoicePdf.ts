@@ -30,9 +30,14 @@ export function openBulkInvoicesInNewTab(
   const totalAmount = orders.reduce((s, o) => s + Number(o.total), 0);
   const totalDelivery = orders.reduce((s, o) => s + Number(o.delivery_charge || 0), 0);
 
+  const brandColor = "#064E3B";
+  const brandLight = "#ECFDF5";
+  const brandMedium = "#D1FAE5";
+
+  // Cover page
   const coverPage = `
-    <div style="page-break-after:always;padding:60px 40px;font-family:'Noto Sans Bengali','Noto Sans',Inter,sans-serif;text-align:center">
-      <div style="background:#064E3B;color:#fff;padding:32px 40px;border-radius:12px;margin-bottom:40px">
+    <div style="page-break-after:always;padding:60px 40px;text-align:center">
+      <div style="background:${brandColor};color:#fff;padding:32px 40px;border-radius:12px;margin-bottom:40px">
         <h1 style="font-size:28px;margin:0 0 6px;letter-spacing:1px">${storeName.toUpperCase()}</h1>
         <p style="font-size:12px;opacity:0.7;letter-spacing:1px;text-transform:uppercase">Verified Invoice Summary</p>
       </div>
@@ -40,14 +45,14 @@ export function openBulkInvoicesInNewTab(
         <table style="width:100%;font-size:15px;border-collapse:collapse">
           <tr><td style="padding:12px 0;color:#666;border-bottom:1px solid #eee">📅 তারিখ</td><td style="padding:12px 0;font-weight:700;text-align:right;border-bottom:1px solid #eee">${displayDate}</td></tr>
           <tr><td style="padding:12px 0;color:#666;border-bottom:1px solid #eee">📦 মোট অর্ডার</td><td style="padding:12px 0;font-weight:700;text-align:right;border-bottom:1px solid #eee">${orders.length} টি</td></tr>
-          <tr><td style="padding:12px 0;color:#666;border-bottom:1px solid #eee">🚚 মোট ডেলিভারি চার্জ</td><td style="padding:12px 0;font-weight:700;text-align:right;border-bottom:1px solid #eee">BDT ${totalDelivery.toLocaleString()}</td></tr>
-          <tr><td style="padding:12px 0;color:#666">💰 মোট আদায়যোগ্য</td><td style="padding:12px 0;font-weight:700;font-size:20px;color:#064E3B;text-align:right">BDT ${totalAmount.toLocaleString()}</td></tr>
+          <tr><td style="padding:12px 0;color:#666;border-bottom:1px solid #eee">🚚 ডেলিভারি চার্জ</td><td style="padding:12px 0;font-weight:700;text-align:right;border-bottom:1px solid #eee">BDT ${totalDelivery.toLocaleString()}</td></tr>
+          <tr><td style="padding:12px 0;color:#666">💰 মোট আদায়যোগ্য</td><td style="padding:12px 0;font-weight:700;font-size:20px;color:${brandColor};text-align:right">BDT ${totalAmount.toLocaleString()}</td></tr>
         </table>
       </div>
       <div style="margin-top:40px">
         <h3 style="font-size:14px;color:#333;margin-bottom:16px;text-align:left">অর্ডার তালিকা:</h3>
         <table style="width:100%;font-size:12px;border-collapse:collapse;text-align:left">
-          <thead><tr style="background:#064E3B;color:#fff">
+          <thead><tr style="background:${brandColor};color:#fff">
             <th style="padding:8px 12px;border-radius:6px 0 0 0">#</th>
             <th style="padding:8px 12px">Order ID</th>
             <th style="padding:8px 12px">কাস্টমার</th>
@@ -68,8 +73,8 @@ export function openBulkInvoicesInNewTab(
     </div>
   `;
 
-  // Generate individual invoices — extract body content with styles preserved
-  const invoicePages = orders.map((order) => {
+  // Generate compact invoice HTML for 2-per-page layout
+  const generateCompactInvoice = (order: BulkOrder): string => {
     const items = Array.isArray(order.cart_items) ? order.cart_items : [];
     const deliveryCharge = order.delivery_charge ?? 0;
     const discountAmount = order.discount_amount ?? 0;
@@ -81,79 +86,133 @@ export function openBulkInvoicesInNewTab(
       const dc = order.delivery_charge ?? 0;
       paidAmount = (dc > 0 && dc < order.total) ? dc : order.total;
     }
+    const dueAmount = Math.max(0, order.total - paidAmount);
+    const paymentBadgeLabel = isCOD ? "COD" : paidAmount >= order.total ? "PAID" : paidAmount > 0 ? "PARTIAL" : "UNPAID";
+    const paymentBadgeColor = isCOD ? "#D97706" : paidAmount >= order.total ? "#059669" : paidAmount > 0 ? "#2563EB" : "#DC2626";
+    const statusColor = order.status?.toLowerCase() === "delivered" ? "#059669" : order.status?.toLowerCase() === "pending" ? "#D97706" : order.status?.toLowerCase() === "cancelled" ? "#DC2626" : "#6B7280";
 
-    const html = generateInvoiceHTML({
-      storeName,
-      websiteUrl,
-      orderId: order.id,
-      date: new Date(order.created_at).toLocaleDateString("en-GB"),
-      status: (order.status || "pending").toUpperCase(),
-      paymentMethod: order.payment_method || "Cash on Delivery",
-      transactionId: order.transaction_id || "",
-      customerName: order.customer_name,
-      phone: order.phone,
-      address: order.address,
-      items,
-      subtotal,
-      deliveryCharge,
-      total: order.total,
-      courierTrackingId: order.courier_tracking_id || "",
-      couponCode: order.coupon_code || "",
-      discountAmount,
-      paidAmount,
-      isPaymentVerified: order.is_payment_verified ?? false,
-    });
+    const txnInfo = order.transaction_id ? ` · TxnID: ${order.transaction_id}` : "";
+    const qrUrl = websiteUrl ? `<img src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${encodeURIComponent(websiteUrl)}&color=064E3B" style="width:50px;height:50px;display:block;margin:0 auto" />` : "";
 
-    // Extract body content, remove auto-print script
-    const bodyMatch = html.match(/<body>([\s\S]*)<\/body>/);
-    const bodyContent = bodyMatch ? bodyMatch[1].replace(/<script[\s\S]*?<\/script>/gi, "") : "";
-    return `<div style="page-break-before:always">${bodyContent}</div>`;
-  });
+    return `
+      <div class="compact-invoice">
+        <!-- Header -->
+        <div style="background:${brandColor};padding:10px 16px;text-align:center">
+          <div style="color:#fff;font-size:14px;font-weight:700;letter-spacing:1px">${storeName.toUpperCase()}</div>
+          <div style="color:rgba(255,255,255,0.6);font-size:8px;letter-spacing:0.5px">INVOICE / MEMO</div>
+        </div>
+        <div style="height:2px;background:linear-gradient(90deg,#047857,${brandColor},#047857)"></div>
+
+        <!-- Meta row -->
+        <div style="display:flex;justify-content:space-between;padding:8px 16px;font-size:9px;color:#555;border-bottom:1px solid #f0f0f0">
+          <div>
+            <div><b>Order:</b> #${order.id.slice(0, 8)}</div>
+            <div><b>Date:</b> ${new Date(order.created_at).toLocaleDateString("en-GB")}</div>
+            <span style="display:inline-block;padding:1px 6px;border-radius:10px;font-size:7px;font-weight:700;color:#fff;background:${paymentBadgeColor};margin-top:3px">${paymentBadgeLabel}</span>
+          </div>
+          <div style="text-align:right">
+            <div>Status: <span style="display:inline-block;padding:1px 6px;border-radius:10px;font-size:7px;font-weight:600;color:#fff;background:${statusColor}">${(order.status || "pending").toUpperCase()}</span></div>
+            <div style="margin-top:2px"><b>Pay:</b> ${order.payment_method}${txnInfo}</div>
+            ${order.is_payment_verified ? `<div style="color:#059669;font-size:8px;font-weight:600;margin-top:2px">✅ Verified</div>` : ""}
+          </div>
+        </div>
+
+        <!-- Customer -->
+        <div style="background:${brandLight};border-left:3px solid ${brandColor};padding:7px 12px;margin:8px 16px;border-radius:0 6px 6px 0">
+          <div style="font-size:8px;font-weight:700;color:${brandColor};text-transform:uppercase;margin-bottom:3px">Customer</div>
+          <div style="font-size:9px;color:#333;line-height:1.6">
+            <b>${order.customer_name}</b> · 📞 ${order.phone}<br/>📍 ${order.address}
+          </div>
+        </div>
+
+        <!-- Items Table -->
+        <table style="width:calc(100% - 32px);margin:6px 16px;border-collapse:collapse;font-size:9px;border-radius:4px;overflow:hidden">
+          <thead><tr style="background:${brandColor};color:#fff">
+            <th style="text-align:left;padding:5px 8px;font-size:8px">Item</th>
+            <th style="text-align:center;padding:5px 4px;font-size:8px;width:30px">Qty</th>
+            <th style="text-align:right;padding:5px 8px;font-size:8px;width:60px">Price</th>
+            <th style="text-align:right;padding:5px 8px;font-size:8px;width:65px">Total</th>
+          </tr></thead>
+          <tbody>
+            ${items.map((item: any, idx: number) => {
+              const nm = item.name || "Item";
+              const qty = item.quantity || 1;
+              const pr = item.price || 0;
+              const sz = item.size ? ` (${item.size})` : "";
+              return `<tr style="background:${idx % 2 === 0 ? '#fff' : '#f9fafb'}">
+                <td style="padding:4px 8px;border-bottom:1px solid #f0f0f0">${nm}${sz}</td>
+                <td style="padding:4px 4px;text-align:center;border-bottom:1px solid #f0f0f0">${qty}</td>
+                <td style="padding:4px 8px;text-align:right;border-bottom:1px solid #f0f0f0">${pr.toLocaleString()}</td>
+                <td style="padding:4px 8px;text-align:right;border-bottom:1px solid #f0f0f0;font-weight:600">${(pr * qty).toLocaleString()}</td>
+              </tr>`;
+            }).join("")}
+          </tbody>
+        </table>
+
+        <!-- Summary -->
+        <div style="padding:0 16px;font-size:9px;text-align:right;line-height:1.8">
+          <div>Subtotal: BDT ${subtotal.toLocaleString()}</div>
+          ${discountAmount > 0 && order.coupon_code ? `<div style="color:#e11d48">Coupon (${order.coupon_code}): -BDT ${discountAmount.toLocaleString()}</div>` : ""}
+          <div>Delivery: BDT ${deliveryCharge.toLocaleString()}</div>
+          ${paidAmount > 0 ? `<div style="color:#059669">Advance: -BDT ${paidAmount.toLocaleString()}</div>` : ""}
+        </div>
+
+        <!-- Grand Total -->
+        <div style="margin:6px 16px;padding:8px 12px;background:${brandColor};border-radius:6px;text-align:right;color:#fff;font-size:14px;font-weight:700">
+          Total: BDT ${order.total.toLocaleString()}
+        </div>
+
+        ${paidAmount > 0 ? `<div style="margin:4px 16px;padding:5px 10px;background:${brandLight};border:1px solid ${brandMedium};border-radius:6px;text-align:right;color:#059669;font-size:9px;font-weight:600">✅ Advance: BDT ${paidAmount.toLocaleString()}</div>` : ""}
+        ${!isCOD && paidAmount > 0 && dueAmount > 0 ? `<div style="margin:4px 16px;padding:5px 10px;background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;text-align:right;color:#DC2626;font-size:10px;font-weight:700">💰 Due: BDT ${dueAmount.toLocaleString()}</div>` : ""}
+        ${isCOD ? `<div style="margin:4px 16px;padding:5px 10px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:6px;text-align:right;color:#D97706;font-size:10px;font-weight:700">💰 COD: BDT ${order.total.toLocaleString()}</div>` : ""}
+
+        ${order.courier_tracking_id ? `<div style="margin:4px 16px;padding:4px 10px;background:${brandLight};border-radius:6px;font-size:8px;color:#333"><b>Courier:</b> ${order.courier_tracking_id}</div>` : ""}
+
+        <!-- Footer -->
+        <div style="margin-top:6px;padding:6px 16px;border-top:1px solid ${brandMedium};text-align:center">
+          <div style="font-size:9px;color:${brandColor};font-weight:600">🛍 ধন্যবাদ!</div>
+          ${qrUrl ? `<div style="margin-top:4px">${qrUrl}</div>` : ""}
+        </div>
+      </div>
+    `;
+  };
+
+  // Build 2-per-page layout
+  const invoicePages: string[] = [];
+  for (let i = 0; i < orders.length; i += 2) {
+    const first = generateCompactInvoice(orders[i]);
+    const second = orders[i + 1] ? generateCompactInvoice(orders[i + 1]) : "";
+    invoicePages.push(`
+      <div class="a4-page">
+        ${first}
+        ${second ? `<div class="page-divider"></div>${second}` : ""}
+      </div>
+    `);
+  }
 
   const fullHTML = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Bulk Invoices - ${displayDate}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Noto Sans Bengali','Noto Sans',Inter,'Segoe UI',Tahoma,sans-serif;color:#1a1a1a;max-width:800px;margin:auto;line-height:1.6;background:#fff}
-.invoice-wrap{padding:0}
-.header{background:#064E3B;padding:28px 40px 24px;text-align:center}
-.header h1{color:#fff;font-size:24px;font-weight:700;letter-spacing:1.5px;margin-bottom:4px}
-.header .tagline{color:rgba(255,255,255,0.7);font-size:11px;letter-spacing:1px;text-transform:uppercase}
-.header-accent{height:4px;background:linear-gradient(90deg,#047857,#064E3B,#047857)}
-.order-meta{display:flex;justify-content:space-between;align-items:flex-start;padding:20px 40px;font-size:12px;color:#555;border-bottom:1px solid #f0f0f0}
-.order-meta .left div,.order-meta .right div{margin-bottom:3px}
-.order-meta .right{text-align:right}
-.status-badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600;color:#fff}
-.payment-badge{display:inline-block;padding:3px 12px;border-radius:20px;font-size:10px;font-weight:700;color:#fff;margin-top:6px}
-.content{padding:0 40px 40px}
-.customer-box{background:#ECFDF5;border-left:4px solid #064E3B;border-radius:0 8px 8px 0;padding:16px 20px;margin:20px 0}
-.customer-box .label{font-size:13px;font-weight:700;color:#064E3B;margin-bottom:8px;text-transform:uppercase}
-.customer-box .detail{font-size:13px;color:#333;line-height:1.9}
-table{width:100%;border-collapse:collapse;margin-top:20px;font-size:13px;border-radius:8px;overflow:hidden}
-thead tr{background:#064E3B;color:#fff}
-th{text-align:left;padding:11px 16px;font-weight:600;font-size:12px}
-td{padding:11px 16px;border-bottom:1px solid #f0f0f0;color:#333}
-tbody tr:nth-child(even){background:#f9fafb}
-tbody tr:nth-child(odd){background:#fff}
-th:nth-child(2),td:nth-child(2){text-align:center;width:60px}
-th:nth-child(3),td:nth-child(3){text-align:right;width:100px}
-th:nth-child(4),td:nth-child(4){text-align:right;width:110px}
-.summary{margin-top:20px;text-align:right;font-size:13px;line-height:2.2}
-.summary .row{display:flex;justify-content:flex-end;gap:20px}
-.summary .row .lbl{color:#777;min-width:120px;text-align:right}
-.summary .row .val{min-width:100px;text-align:right;font-weight:500}
-.summary .divider{border-top:1px dashed #ddd;margin:6px 0}
-.grand-total-box{margin-top:12px;padding:14px 20px;background:#064E3B;border-radius:8px;text-align:right;color:#fff;font-size:20px;font-weight:700}
-.due-box{margin-top:8px;padding:12px 20px;background:#FEF2F2;border:2px solid #FECACA;border-radius:8px;text-align:right;color:#DC2626;font-size:16px;font-weight:700}
-.paid-box{margin-top:8px;padding:10px 20px;background:#ECFDF5;border:2px solid #D1FAE5;border-radius:8px;text-align:right;color:#059669;font-size:13px;font-weight:600}
-.footer{margin-top:32px;padding-top:20px;border-top:2px solid #D1FAE5;text-align:center}
-.footer .thanks{font-size:14px;color:#064E3B;font-weight:600;margin-bottom:4px}
-.footer .sub{font-size:11px;color:#999}
-@media print{body{padding:0}thead tr,tbody tr:nth-child(even),.grand-total-box,.due-box,.paid-box,.customer-box,.status-badge,.payment-badge,.header{-webkit-print-color-adjust:exact;print-color-adjust:exact}button,.no-print{display:none!important}}
+body{font-family:'Noto Sans Bengali','Noto Sans',Inter,'Segoe UI',Tahoma,sans-serif;color:#1a1a1a;background:#fff}
+.a4-page{max-width:210mm;margin:0 auto;page-break-after:always;padding:8mm 10mm}
+.compact-invoice{border:1px solid #e5e5e5;border-radius:8px;overflow:hidden;margin-bottom:0}
+.page-divider{border-top:2px dashed #ccc;margin:10px 0;position:relative}
+.page-divider::after{content:'✂';position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#fff;padding:0 8px;color:#999;font-size:12px}
+.no-print{text-align:center;padding:16px;background:#064E3B;color:#fff}
+.no-print button{padding:10px 32px;background:#fff;color:#064E3B;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer}
+@media print{
+  body{padding:0}
+  .no-print{display:none!important}
+  .a4-page{padding:5mm 8mm;page-break-after:always}
+  .compact-invoice{border:1px solid #ddd}
+  thead tr,tbody tr:nth-child(even){-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  [style*="background"]{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
 </head><body>
-<div class="no-print" style="text-align:center;padding:16px;background:#064E3B;color:#fff">
-  <button onclick="window.print()" style="padding:10px 32px;background:#fff;color:#064E3B;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer">🖨️ প্রিন্ট / PDF ডাউনলোড</button>
+<div class="no-print">
+  <button onclick="window.print()">🖨️ প্রিন্ট / PDF ডাউনলোড</button>
   <span style="margin-left:16px;font-size:13px">${orders.length} টি ইনভয়েস · ${displayDate}</span>
 </div>
 ${coverPage}
