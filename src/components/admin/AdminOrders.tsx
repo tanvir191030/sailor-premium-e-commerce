@@ -35,6 +35,7 @@ const AdminOrders = () => {
   const [rejectReason, setRejectReason] = useState("Invalid TxnID");
   const [rejectCustomReason, setRejectCustomReason] = useState("");
   const [sendingOrderId, setSendingOrderId] = useState<string | null>(null);
+  const [courierTarget, setCourierTarget] = useState<any>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { settings: siteSettings } = useSiteSettings();
