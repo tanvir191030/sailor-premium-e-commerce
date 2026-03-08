@@ -224,8 +224,7 @@ const AdminExpenses = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-expenses"] });
-      queryClient.invalidateQueries({ queryKey: ["admin-inventory"] });
-      queryClient.invalidateQueries({ queryKey: ["all-products-for-expense"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-products-list"] });
       setForm({ ...emptyForm });
       setShowForm(false);
       setEditMode(false);
