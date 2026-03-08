@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/lib/currency";
-import { FileDown, Search, Trash2, Send, ShieldCheck, CheckCircle2, XCircle, ShieldX } from "lucide-react";
+import { FileDown, Search, Trash2, Send, ShieldCheck, CheckCircle2, XCircle, ShieldX, RotateCcw, Archive } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { generateInvoiceHTML } from "@/lib/invoiceTemplate";
@@ -36,6 +36,8 @@ const AdminOrders = () => {
   const [rejectCustomReason, setRejectCustomReason] = useState("");
   const [sendingOrderId, setSendingOrderId] = useState<string | null>(null);
   const [courierTarget, setCourierTarget] = useState<any>(null);
+  const [permanentDeleteTarget, setPermanentDeleteTarget] = useState<any>(null);
+  const [viewMode, setViewMode] = useState<"orders" | "trash">("orders");
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { settings: siteSettings } = useSiteSettings();
@@ -48,6 +50,9 @@ const AdminOrders = () => {
       return data;
     },
   });
+
+  const activeOrders = orders.filter((o: any) => !(o as any).is_deleted);
+  const trashedOrders = orders.filter((o: any) => (o as any).is_deleted);
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
@@ -96,15 +101,43 @@ const AdminOrders = () => {
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  const deleteOrderMutation = useMutation({
+  // Soft delete — move to trash
+  const softDeleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("orders").update({ is_deleted: true } as any).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      toast({ title: "🗑️ অর্ডার ট্র্যাশে সরানো হয়েছে" });
+      setDeleteTarget(null);
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  // Restore from trash
+  const restoreMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("orders").update({ is_deleted: false } as any).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      toast({ title: "✅ অর্ডার সফলভাবে পুনরুদ্ধার হয়েছে!", description: "অর্ডার মূল তালিকায় ফিরে এসেছে।" });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  // Permanent delete
+  const permanentDeleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("orders").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
-      toast({ title: "অর্ডার ডিলিট হয়েছে" });
-      setDeleteTarget(null);
+      toast({ title: "অর্ডার স্থায়ীভাবে মুছে ফেলা হয়েছে" });
+      setPermanentDeleteTarget(null);
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
@@ -194,7 +227,9 @@ const AdminOrders = () => {
   const needsVerification = (o: any) =>
     hasAdvancePayment(o) && !(o as any).is_payment_verified && !isPaymentRejected(o);
 
-  const filtered = orders.filter((o: any) => {
+  const baseOrders = viewMode === "orders" ? activeOrders : trashedOrders;
+
+  const filtered = baseOrders.filter((o: any) => {
     const matchesSearch = o.customer_name.toLowerCase().includes(search.toLowerCase()) || o.phone.includes(search) || o.id.toLowerCase().includes(search.toLowerCase());
     return (statusFilter === "all" || o.status === statusFilter) && matchesSearch;
   });
@@ -208,6 +243,22 @@ const AdminOrders = () => {
 
   return (
     <div className="space-y-5">
+      {/* Tab switcher: Orders / Trash */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => setViewMode("orders")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "orders" ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground hover:bg-secondary"}`}
+        >
+          📦 অর্ডার সমূহ ({activeOrders.length})
+        </button>
+        <button
+          onClick={() => setViewMode("trash")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "trash" ? "bg-destructive text-destructive-foreground" : "bg-card border border-border text-muted-foreground hover:bg-secondary"}`}
+        >
+          <Archive size={14} /> ট্র্যাশ ({trashedOrders.length})
+        </button>
+      </div>
+
       <span className="px-3 py-1.5 bg-card rounded-lg border border-border text-muted-foreground text-sm inline-block">
         {filtered.length} টি অর্ডার · মোট {formatPrice(totalFiltered)}
       </span>
@@ -283,8 +334,8 @@ const AdminOrders = () => {
                 </span>
               )}
 
-              {/* Verify/Reject buttons for unverified advance payments */}
-              {awaitingVerification && (
+              {/* Verify/Reject buttons for unverified advance payments — only in orders view */}
+              {viewMode === "orders" && awaitingVerification && (
                 <div className="mb-3 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
                   <p className="text-xs text-amber-600 dark:text-amber-400 mb-2">
                     ⚠️ এই অর্ডারে অগ্রিম পেমেন্ট আছে। প্রসেস করার আগে পেমেন্ট ভেরিফাই করুন।
@@ -307,54 +358,83 @@ const AdminOrders = () => {
                 </div>
               )}
 
+              {/* Actions row */}
               <div className="flex flex-col md:flex-row gap-2 items-stretch md:items-center">
-                <select
-                  value={o.status || "pending"}
-                  onChange={(e) => updateStatus.mutate({ id: o.id, status: e.target.value })}
-                  disabled={awaitingVerification || rejected}
-                  className={`px-3 py-1.5 border border-border rounded-lg text-xs bg-card text-foreground focus:outline-none ${(awaitingVerification || rejected) ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-                >
-                  <option value="pending">⏳ Pending</option>
-                  <option value="paid">💳 Paid</option>
-                  <option value="processing">🔄 Processing</option>
-                  <option value="shipped">🚚 Shipped</option>
-                  <option value="delivered">✅ Delivered</option>
-                  <option value="cancelled">❌ Cancelled</option>
-                  <option value="refunded">↩️ Refunded</option>
-                  <option value="returned">📦 Returned</option>
-                </select>
-                <input
-                  placeholder="কুরিয়ার ট্র্যাকিং ID"
-                  defaultValue={o.courier_tracking_id || ""}
-                  onBlur={(e) => { if (e.target.value !== (o.courier_tracking_id || "")) updateTracking.mutate({ id: o.id, courier_tracking_id: e.target.value }); }}
-                  disabled={awaitingVerification || rejected}
-                  className={`px-3 py-1.5 border border-border rounded-lg text-xs focus:outline-none flex-1 bg-transparent text-foreground placeholder:text-muted-foreground ${(awaitingVerification || rejected) ? "opacity-50 cursor-not-allowed" : ""}`}
-                />
-                <button onClick={() => handleGenerateInvoice(o)} className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary hover:bg-muted rounded-lg text-xs font-medium transition-colors text-foreground">
-                  <FileDown size={13} /> ইনভয়েস
-                </button>
-                {!o.courier_tracking_id && !awaitingVerification && !rejected && (
-                  <button
-                    onClick={() => setCourierTarget(o)}
-                    disabled={sendingOrderId === o.id}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
-                  >
-                    <Send size={13} /> {sendingOrderId === o.id ? "পাঠানো হচ্ছে..." : "কুরিয়ারে পাঠান"}
-                  </button>
+                {viewMode === "orders" ? (
+                  <>
+                    <select
+                      value={o.status || "pending"}
+                      onChange={(e) => updateStatus.mutate({ id: o.id, status: e.target.value })}
+                      disabled={awaitingVerification || rejected}
+                      className={`px-3 py-1.5 border border-border rounded-lg text-xs bg-card text-foreground focus:outline-none ${(awaitingVerification || rejected) ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                    >
+                      <option value="pending">⏳ Pending</option>
+                      <option value="paid">💳 Paid</option>
+                      <option value="processing">🔄 Processing</option>
+                      <option value="shipped">🚚 Shipped</option>
+                      <option value="delivered">✅ Delivered</option>
+                      <option value="cancelled">❌ Cancelled</option>
+                      <option value="refunded">↩️ Refunded</option>
+                      <option value="returned">📦 Returned</option>
+                    </select>
+                    <input
+                      placeholder="কুরিয়ার ট্র্যাকিং ID"
+                      defaultValue={o.courier_tracking_id || ""}
+                      onBlur={(e) => { if (e.target.value !== (o.courier_tracking_id || "")) updateTracking.mutate({ id: o.id, courier_tracking_id: e.target.value }); }}
+                      disabled={awaitingVerification || rejected}
+                      className={`px-3 py-1.5 border border-border rounded-lg text-xs focus:outline-none flex-1 bg-transparent text-foreground placeholder:text-muted-foreground ${(awaitingVerification || rejected) ? "opacity-50 cursor-not-allowed" : ""}`}
+                    />
+                    <button onClick={() => handleGenerateInvoice(o)} className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary hover:bg-muted rounded-lg text-xs font-medium transition-colors text-foreground">
+                      <FileDown size={13} /> ইনভয়েস
+                    </button>
+                    {!o.courier_tracking_id && !awaitingVerification && !rejected && (
+                      <button
+                        onClick={() => setCourierTarget(o)}
+                        disabled={sendingOrderId === o.id}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                      >
+                        <Send size={13} /> {sendingOrderId === o.id ? "পাঠানো হচ্ছে..." : "কুরিয়ারে পাঠান"}
+                      </button>
+                    )}
+                    {o.courier_tracking_id && (
+                      <span className="px-3 py-1.5 bg-emerald-500/10 text-emerald-500 rounded-lg text-xs font-medium">
+                        ✅ CID: {o.courier_tracking_id}
+                      </span>
+                    )}
+                    <button onClick={() => setDeleteTarget(o)} className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-destructive/10 text-destructive rounded-lg text-xs font-medium transition-colors">
+                      <Trash2 size={13} /> ডিলিট
+                    </button>
+                  </>
+                ) : (
+                  /* Trash view actions */
+                  <>
+                    <button onClick={() => handleGenerateInvoice(o)} className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary hover:bg-muted rounded-lg text-xs font-medium transition-colors text-foreground">
+                      <FileDown size={13} /> ইনভয়েস
+                    </button>
+                    <button
+                      onClick={() => restoreMutation.mutate(o.id)}
+                      disabled={restoreMutation.isPending}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                    >
+                      <RotateCcw size={13} /> {restoreMutation.isPending ? "পুনরুদ্ধার হচ্ছে..." : "পুনরুদ্ধার করুন"}
+                    </button>
+                    <button
+                      onClick={() => setPermanentDeleteTarget(o)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-destructive/10 text-destructive rounded-lg text-xs font-medium transition-colors"
+                    >
+                      <Trash2 size={13} /> স্থায়ীভাবে মুছুন
+                    </button>
+                  </>
                 )}
-                {o.courier_tracking_id && (
-                  <span className="px-3 py-1.5 bg-emerald-500/10 text-emerald-500 rounded-lg text-xs font-medium">
-                    ✅ CID: {o.courier_tracking_id}
-                  </span>
-                )}
-                <button onClick={() => setDeleteTarget(o)} className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-destructive/10 text-destructive rounded-lg text-xs font-medium transition-colors">
-                  <Trash2 size={13} /> ডিলিট
-                </button>
               </div>
             </div>
           );
         })}
-        {filtered.length === 0 && <div className="bg-card p-8 rounded-xl shadow-sm text-center text-muted-foreground text-sm border border-border">কোনো অর্ডার পাওয়া যায়নি</div>}
+        {filtered.length === 0 && (
+          <div className="bg-card p-8 rounded-xl shadow-sm text-center text-muted-foreground text-sm border border-border">
+            {viewMode === "trash" ? "ট্র্যাশ খালি — কোনো ডিলিট করা অর্ডার নেই" : "কোনো অর্ডার পাওয়া যায়নি"}
+          </div>
+        )}
       </div>
 
       {/* Reject Payment Modal */}
@@ -436,18 +516,36 @@ const AdminOrders = () => {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Soft Delete Confirmation Modal */}
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-card rounded-xl shadow-2xl w-full max-w-sm p-6 border border-border text-center">
             <Trash2 size={32} className="mx-auto mb-3 text-destructive" />
-            <h3 className="font-serif text-lg mb-2 text-foreground">অর্ডার ডিলিট করুন</h3>
+            <h3 className="font-serif text-lg mb-2 text-foreground">অর্ডার ট্র্যাশে সরান</h3>
             <p className="text-sm text-muted-foreground mb-1">#{deleteTarget.id.slice(0, 8)} · {deleteTarget.customer_name}</p>
-            <p className="text-xs text-muted-foreground mb-6">এই অর্ডার স্থায়ীভাবে মুছে ফেলা হবে।</p>
+            <p className="text-xs text-muted-foreground mb-6">অর্ডারটি ট্র্যাশে সরানো হবে। পরে পুনরুদ্ধার করা যাবে।</p>
             <div className="flex gap-3 justify-center">
               <button onClick={() => setDeleteTarget(null)} className="px-5 py-2 border border-border rounded-full text-sm font-medium text-foreground hover:bg-secondary transition-colors">বাতিল</button>
-              <button onClick={() => deleteOrderMutation.mutate(deleteTarget.id)} disabled={deleteOrderMutation.isPending} className="px-5 py-2 bg-destructive text-destructive-foreground rounded-full text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50">
-                {deleteOrderMutation.isPending ? "ডিলিট হচ্ছে..." : "ডিলিট করুন"}
+              <button onClick={() => softDeleteMutation.mutate(deleteTarget.id)} disabled={softDeleteMutation.isPending} className="px-5 py-2 bg-destructive text-destructive-foreground rounded-full text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50">
+                {softDeleteMutation.isPending ? "সরানো হচ্ছে..." : "ট্র্যাশে সরান"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Permanent Delete Confirmation Modal */}
+      {permanentDeleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-card rounded-xl shadow-2xl w-full max-w-sm p-6 border border-border text-center">
+            <Trash2 size={32} className="mx-auto mb-3 text-destructive" />
+            <h3 className="font-serif text-lg mb-2 text-foreground">স্থায়ীভাবে মুছে ফেলুন</h3>
+            <p className="text-sm text-muted-foreground mb-1">#{permanentDeleteTarget.id.slice(0, 8)} · {permanentDeleteTarget.customer_name}</p>
+            <p className="text-xs text-destructive mb-6">⚠️ এই অর্ডার স্থায়ীভাবে মুছে যাবে এবং আর পুনরুদ্ধার করা যাবে না!</p>
+            <div className="flex gap-3 justify-center">
+              <button onClick={() => setPermanentDeleteTarget(null)} className="px-5 py-2 border border-border rounded-full text-sm font-medium text-foreground hover:bg-secondary transition-colors">বাতিল</button>
+              <button onClick={() => permanentDeleteMutation.mutate(permanentDeleteTarget.id)} disabled={permanentDeleteMutation.isPending} className="px-5 py-2 bg-destructive text-destructive-foreground rounded-full text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50">
+                {permanentDeleteMutation.isPending ? "মুছে ফেলা হচ্ছে..." : "স্থায়ীভাবে মুছুন"}
               </button>
             </div>
           </div>
