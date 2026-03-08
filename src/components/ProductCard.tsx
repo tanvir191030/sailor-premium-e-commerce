@@ -52,10 +52,8 @@ const ProductCard = ({
     navigate("/checkout");
   };
 
-  const handleSizeChart = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleSizeChart = (e: React.MouseEvent) => {
     e.stopPropagation();
-    e.preventDefault();
-    setSizeChartAnchor({ x: e.clientX, y: e.clientY });
     setSizeChartOpen(true);
   };
 
