@@ -14,6 +14,8 @@ interface InvoiceData {
   deliveryCharge: number;
   total: number;
   courierTrackingId?: string;
+  couponCode?: string;
+  discountAmount?: number;
 }
 
 export function generateInvoiceHTML(data: InvoiceData): string {
@@ -82,7 +84,7 @@ th:nth-child(4),td:nth-child(4){text-align:right;width:100px}
     }).join("")}
   </tbody>
 </table>
-<div class="total-row">Subtotal: BDT ${data.subtotal}<br>Delivery: BDT ${data.deliveryCharge}</div>
+<div class="total-row">Subtotal: BDT ${data.subtotal}${data.couponCode && data.discountAmount ? `<br><span style="color:#e11d48">Coupon (${data.couponCode}): -BDT ${data.discountAmount}</span>` : ""}<br>Delivery: BDT ${data.deliveryCharge}</div>
 <div class="grand-total">Total: BDT ${data.total}</div>
 ${courierInfo}
 ${qrSection}

@@ -162,10 +162,12 @@ export type Database = {
         Row: {
           address: string
           cart_items: Json
+          coupon_code: string | null
           courier_tracking_id: string | null
           created_at: string | null
           customer_name: string
           delivery_charge: number | null
+          discount_amount: number | null
           district: string | null
           email: string | null
           id: string
@@ -181,10 +183,12 @@ export type Database = {
         Insert: {
           address: string
           cart_items: Json
+          coupon_code?: string | null
           courier_tracking_id?: string | null
           created_at?: string | null
           customer_name: string
           delivery_charge?: number | null
+          discount_amount?: number | null
           district?: string | null
           email?: string | null
           id?: string
@@ -200,10 +204,12 @@ export type Database = {
         Update: {
           address?: string
           cart_items?: Json
+          coupon_code?: string | null
           courier_tracking_id?: string | null
           created_at?: string | null
           customer_name?: string
           delivery_charge?: number | null
+          discount_amount?: number | null
           district?: string | null
           email?: string | null
           id?: string
