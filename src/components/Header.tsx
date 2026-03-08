@@ -124,8 +124,13 @@ const Header = () => {
 
   return (
     <>
-      <div className="bg-primary text-primary-foreground text-center py-2 text-xs tracking-[0.15em] uppercase">
-        {announcementBar}
+      <div className="bg-primary text-primary-foreground py-2 text-xs tracking-[0.15em] uppercase overflow-hidden">
+        <div className="animate-marquee whitespace-nowrap">
+          <span className="mx-8">{announcementBar}</span>
+          <span className="mx-8">{announcementBar}</span>
+          <span className="mx-8">{announcementBar}</span>
+          <span className="mx-8">{announcementBar}</span>
+        </div>
       </div>
 
       <header
