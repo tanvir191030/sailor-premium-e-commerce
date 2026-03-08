@@ -1,21 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { SlidersHorizontal } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
+import Pagination from "@/components/Pagination";
 import PageTransition from "@/components/PageTransition";
 import FilterSidebar, { FilterState, PRICE_MAX } from "@/components/FilterSidebar";
 import { useProducts } from "@/hooks/useProducts";
 import { useTranslation } from "react-i18next";
 
 const DEFAULT_FILTERS: FilterState = { sizes: [], colors: [], subCategories: [], priceMin: 0, priceMax: PRICE_MAX };
+const ITEMS_PER_PAGE = 16;
 
 const Shop = () => {
   const { data: products = [], isLoading } = useProducts();
   const { t } = useTranslation();
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  const [page, setPage] = useState(1);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [filters]);
 
   const filtered = products.filter((p) => {
     const inPrice = p.price >= filters.priceMin && (filters.priceMax >= PRICE_MAX || p.price <= filters.priceMax);
@@ -28,6 +36,14 @@ const Shop = () => {
 
     return inPrice && inSubCategory;
   });
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginatedProducts = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const activeCount =
     filters.sizes.length + filters.colors.length + (filters.subCategories?.length || 0) +
@@ -104,26 +120,33 @@ const Shop = () => {
                       </button>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-                      {filtered.map((product, index) => (
-                        <motion.div
-                          key={product.id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.4, delay: index * 0.05 }}
-                        >
-                          <ProductCard
-                            id={product.id}
-                            name={product.name}
-                            price={product.price}
-                            originalPrice={(product as any).original_price ?? undefined}
-                            image={product.image_url || "/placeholder.svg"}
-                            category={product.category || undefined}
-                            isNew={index < 4}
-                          />
-                        </motion.div>
-                      ))}
-                    </div>
+                    <>
+                      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+                        {paginatedProducts.map((product, index) => (
+                          <motion.div
+                            key={product.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, delay: index * 0.05 }}
+                          >
+                            <ProductCard
+                              id={product.id}
+                              name={product.name}
+                              price={product.price}
+                              originalPrice={(product as any).original_price ?? undefined}
+                              image={product.image_url || "/placeholder.svg"}
+                              category={product.category || undefined}
+                              isNew={index < 4 && page === 1}
+                            />
+                          </motion.div>
+                        ))}
+                      </div>
+                      <Pagination
+                        currentPage={page}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                      />
+                    </>
                   )}
                 </div>
               </div>
