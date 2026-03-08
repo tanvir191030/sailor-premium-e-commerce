@@ -1,23 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Product } from "./useProducts";
+import type { SortOption } from "@/components/SortSelect";
 
 const PAGE_SIZE = 16;
 
-// Only fetch columns needed for product cards
 const LISTING_COLS = "id,name,price,original_price,image_url,category,sub_category,created_at,is_featured,stock" as const;
 
 export const useCategoryProducts = (
   category: string | undefined,
   subCategory: string | undefined,
-  page: number
+  page: number,
+  sort: SortOption = "newest"
 ) => {
   return useQuery({
-    queryKey: ["category-products", category, subCategory, page],
+    queryKey: ["category-products", category, subCategory, page, sort],
     queryFn: async () => {
       if (!category) return { products: [] as Product[], total: 0 };
 
-      // Count query
       let countQuery = supabase
         .from("products")
         .select("id", { count: "exact", head: true })
@@ -30,12 +30,14 @@ export const useCategoryProducts = (
       const from = (page - 1) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
 
-      // Data query — only listing columns
+      const orderCol = sort === "newest" ? "created_at" : "price";
+      const ascending = sort === "price_asc";
+
       let dataQuery = supabase
         .from("products")
         .select(LISTING_COLS)
         .ilike("category", category)
-        .order("created_at", { ascending: false })
+        .order(orderCol, { ascending })
         .range(from, to);
       if (subCategory) dataQuery = dataQuery.ilike("sub_category", subCategory);
       const { data, error } = await dataQuery;

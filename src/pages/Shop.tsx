@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { SlidersHorizontal } from "lucide-react";
 import Header from "@/components/Header";
@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import Pagination from "@/components/Pagination";
 import PageTransition from "@/components/PageTransition";
+import SortSelect, { SortOption } from "@/components/SortSelect";
 import FilterSidebar, { FilterState, PRICE_MAX } from "@/components/FilterSidebar";
 import { useProducts } from "@/hooks/useProducts";
 import { useTranslation } from "react-i18next";
@@ -19,11 +20,12 @@ const Shop = () => {
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<SortOption>("newest");
 
   // Reset to page 1 when filters change
   useEffect(() => {
     setPage(1);
-  }, [filters]);
+  }, [filters, sort]);
 
   const filtered = products.filter((p) => {
     const inPrice = p.price >= filters.priceMin && (filters.priceMax >= PRICE_MAX || p.price <= filters.priceMax);
@@ -37,8 +39,16 @@ const Shop = () => {
     return inPrice && inSubCategory;
   });
 
-  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-  const paginatedProducts = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  const sorted = useMemo(() => {
+    const arr = [...filtered];
+    if (sort === "price_asc") arr.sort((a, b) => a.price - b.price);
+    else if (sort === "price_desc") arr.sort((a, b) => b.price - a.price);
+    else arr.sort((a, b) => new Date(b.created_at || "").getTime() - new Date(a.created_at || "").getTime());
+    return arr;
+  }, [filtered, sort]);
+
+  const totalPages = Math.ceil(sorted.length / ITEMS_PER_PAGE);
+  const paginatedProducts = sorted.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
@@ -76,7 +86,7 @@ const Shop = () => {
             <div className="container mx-auto px-4 md:px-6">
               {/* Mobile filter toggle */}
               <div className="flex items-center justify-between mb-6 lg:hidden">
-                <p className="text-sm text-muted-foreground">{filtered.length} পণ্য</p>
+                <SortSelect value={sort} onChange={setSort} />
                 <button
                   onClick={() => setMobileFilterOpen(true)}
                   className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-xl text-sm font-medium text-foreground hover:bg-secondary transition-colors"
@@ -101,15 +111,18 @@ const Shop = () => {
 
                 <div className="flex-1 min-w-0">
                   <div className="hidden lg:flex items-center justify-between mb-5">
-                    <p className="text-sm text-muted-foreground">{filtered.length} পণ্য পাওয়া গেছে</p>
-                    {activeCount > 0 && (
-                      <button
-                        onClick={() => setFilters(DEFAULT_FILTERS)}
-                        className="text-xs text-primary hover:underline"
-                      >
-                        সব ফিল্টার মুছুন ({activeCount})
-                      </button>
-                    )}
+                    <p className="text-sm text-muted-foreground">{sorted.length} পণ্য পাওয়া গেছে</p>
+                    <div className="flex items-center gap-4">
+                      <SortSelect value={sort} onChange={setSort} />
+                      {activeCount > 0 && (
+                        <button
+                          onClick={() => setFilters(DEFAULT_FILTERS)}
+                          className="text-xs text-primary hover:underline"
+                        >
+                          সব ফিল্টার মুছুন ({activeCount})
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {filtered.length === 0 ? (
