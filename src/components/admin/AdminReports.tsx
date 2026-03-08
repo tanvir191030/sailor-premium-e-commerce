@@ -29,24 +29,26 @@ const AdminReports = () => {
   const { data: deliveredOrders = [] } = useQuery({
     queryKey: ["report-orders", timeRange],
     queryFn: async () => {
-      const { data, error } = await supabase.from("orders").select("*")
+      const { data, error } = await supabase.from("orders").select("id,total,created_at,delivery_charge")
         .eq("status", "delivered")
         .gte("created_at", dateFrom)
         .order("created_at", { ascending: true });
       if (error) throw error;
       return data;
     },
+    staleTime: 1000 * 60 * 2,
   });
 
   const { data: expenses = [] } = useQuery({
     queryKey: ["report-expenses", timeRange],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).from("expenses").select("*")
+      const { data, error } = await (supabase as any).from("expenses").select("id,amount,category,expense_date,title")
         .gte("expense_date", dateFrom)
         .order("expense_date", { ascending: true });
       if (error) throw error;
       return data as any[];
     },
+    staleTime: 1000 * 60 * 2,
   });
 
   const totalSales = deliveredOrders.reduce((s, o) => s + Number(o.total), 0);
