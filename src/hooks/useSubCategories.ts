@@ -6,6 +6,8 @@ export interface SubCategory {
   name: string;
   category_id: string;
   measurement_template: string;
+  size_chart_image?: string | null;
+  size_chart_data?: any[] | null;
   created_at: string;
 }
 
