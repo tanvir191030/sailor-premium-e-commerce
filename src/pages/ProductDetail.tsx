@@ -1134,10 +1134,50 @@ const ProductDetail = () => {
           )}
         </main>
 
+        {/* Sticky Desktop Top Bar — shown when scrolled past CTA */}
+        <AnimatePresence>
+          {showStickyBar && product && (
+            <motion.div
+              initial={{ y: -60, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -60, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-border shadow-sm hidden lg:block"
+            >
+              <div className="container mx-auto px-6 py-2.5 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  {galleryImages[0] && <img src={galleryImages[0]} alt="" className="w-10 h-10 object-cover rounded flex-shrink-0" />}
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{product.name}</p>
+                    <p className="text-lg font-bold text-primary">{formatPrice(activePrice)}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <motion.button
+                    onClick={handleBuyNow}
+                    disabled={!isInStock}
+                    whileTap={{ scale: 0.95 }}
+                    className="bg-primary text-primary-foreground px-6 h-10 text-xs uppercase tracking-[0.12em] font-bold hover:bg-primary/90 flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    <Zap size={14} /> এখনই কিনুন
+                  </motion.button>
+                  <motion.button
+                    onClick={handleAddToCart}
+                    disabled={!isInStock}
+                    whileTap={{ scale: 0.95 }}
+                    className="bg-transparent text-foreground border-2 border-primary px-6 h-10 text-xs uppercase tracking-[0.12em] font-bold flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-primary hover:text-primary-foreground transition-colors"
+                  >
+                    <ShoppingCart size={14} /> কার্টে যোগ
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Sticky CTA Bar — mobile only, above bottom nav */}
         <div className="fixed bottom-[52px] left-0 right-0 z-40 bg-background/95 backdrop-blur-md border-t border-border px-3 py-2 md:hidden safe-bottom">
           <div className="flex items-center gap-2">
-            {/* Mini quantity selector */}
             <div className="flex items-center border border-border flex-shrink-0 overflow-hidden">
               <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="w-8 h-10 flex items-center justify-center hover:bg-muted active:bg-muted/80 transition-colors" disabled={!isInStock}>
                 <Minus size={13} />
