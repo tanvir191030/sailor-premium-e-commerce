@@ -277,6 +277,32 @@ const AdminExpenses = () => {
     setEditMode(false);
   };
 
+  // Quick Add Product
+  const quickAddProduct = useMutation({
+    mutationFn: async () => {
+      if (!quickProduct.name.trim()) throw new Error("পণ্যের নাম আবশ্যক");
+      if (!Number(quickProduct.price)) throw new Error("দাম আবশ্যক");
+      const payload: any = {
+        name: quickProduct.name.trim(),
+        price: Number(quickProduct.price),
+        stock: 0,
+        category: form.product_category || null,
+        sub_category: form.product_sub_category || null,
+      };
+      const { data, error } = await supabase.from("products").insert(payload).select("id, name, price").single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["all-products-for-expense"] });
+      setForm((prev) => ({ ...prev, product_id: data.id, title: prev.title || data.name }));
+      setQuickProduct({ name: "", price: "" });
+      setShowQuickAdd(false);
+      toast({ title: `"${data.name}" পণ্য তৈরি ও নির্বাচন হয়েছে ✅` });
+    },
+    onError: (err: any) => toast({ title: err.message, variant: "destructive" }),
+  });
+
   const totalExpenses = expenses.reduce((s: number, e: any) => s + Number(e.amount), 0);
   const purchaseTotal = expenses.filter((e: any) => e.category === "purchase").reduce((s: number, e: any) => s + Number(e.amount), 0);
   const otherTotal = totalExpenses - purchaseTotal;
