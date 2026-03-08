@@ -87,6 +87,12 @@ const AdminSettings = () => {
   // Pages
   const [privacyPolicy, setPrivacyPolicy] = useState("");
   const [termsConditions, setTermsConditions] = useState("");
+  // Category Images
+  const [catImageMen, setCatImageMen] = useState("");
+  const [catImageWomen, setCatImageWomen] = useState("");
+  const [catImageKids, setCatImageKids] = useState("");
+  const catFileRefs = { men: useRef<HTMLInputElement>(null), women: useRef<HTMLInputElement>(null), kids: useRef<HTMLInputElement>(null) };
+  const [catUploading, setCatUploading] = useState<string | null>(null);
 
   const [loaded, setLoaded] = useState(false);
   const [uploading, setUploading] = useState<"logo" | "favicon" | null>(null);
