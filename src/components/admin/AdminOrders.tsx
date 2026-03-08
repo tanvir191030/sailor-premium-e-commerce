@@ -104,7 +104,8 @@ const AdminOrders = () => {
   const handleGenerateInvoice = (order: any) => {
     const items = Array.isArray(order.cart_items) ? order.cart_items : [];
     const deliveryCharge = order.delivery_charge ?? 0;
-    const subtotal = order.total - deliveryCharge;
+    const discountAmount = order.discount_amount ?? 0;
+    const subtotal = order.total + discountAmount - deliveryCharge;
 
     const html = generateInvoiceHTML({
       storeName: siteSettings.store_name || "Modest Mart",
@@ -122,6 +123,8 @@ const AdminOrders = () => {
       deliveryCharge,
       total: order.total,
       courierTrackingId: order.courier_tracking_id || "",
+      couponCode: order.coupon_code || "",
+      discountAmount,
     });
 
     const win = window.open("", "_blank");
