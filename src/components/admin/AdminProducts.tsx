@@ -314,7 +314,7 @@ const AdminProducts = () => {
           {/* Add new size button */}
           <button type="button" onClick={() => {
             const newKey = `new_${Date.now()}`;
-            setForm({ ...form, sizes: { ...form.sizes, [newKey]: { stock: "", measurements: { width: "", length: "" } } } });
+            setForm({ ...form, sizes: { ...form.sizes, [newKey]: { stock: "", price: "", measurements: { width: "", length: "" } } } });
           }} className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 font-medium py-2">
             <Plus size={14} /> নতুন সাইজ যোগ করুন
           </button>
