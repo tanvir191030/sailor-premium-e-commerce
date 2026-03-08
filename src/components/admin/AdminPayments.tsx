@@ -53,6 +53,7 @@ const AdminPayments = () => {
     saveSetting.mutate({ key: "bkash_number", value: bkashNumber }); saveSetting.mutate({ key: "nagad_number", value: nagadNumber });
     saveSetting.mutate({ key: "rocket_number", value: rocketNumber }); saveSetting.mutate({ key: "default_courier", value: defaultCourier });
     saveSetting.mutate({ key: "shipping_cost", value: shippingCost }); saveSetting.mutate({ key: "free_delivery", value: freeDelivery ? "true" : "false" });
+    saveSetting.mutate({ key: "order_confirmation_mode", value: orderMode });
     toast({ title: "সেটিংস সেভ হয়েছে" });
   };
 
