@@ -334,10 +334,22 @@ const AdminOrders = () => {
                 </span>
               )}
               {rejected && (
-                <div className="mb-3">
+                <div className="mb-3 flex flex-wrap items-center gap-2">
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-destructive/10 text-destructive rounded text-[11px] font-medium">
                     <XCircle size={12} /> পেমেন্ট বাতিল — {(o as any).payment_rejection_reason}
                   </span>
+                </div>
+              )}
+              {/* Back to Pending button for cancelled or rejected orders */}
+              {viewMode === "orders" && (o.status === "cancelled" || rejected) && (
+                <div className="mb-3">
+                  <button
+                    onClick={() => backToPending.mutate(o.id)}
+                    disabled={backToPending.isPending}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                  >
+                    <Undo2 size={13} /> {backToPending.isPending ? "প্রসেস হচ্ছে..." : "পেন্ডিং এ ফিরিয়ে নিন"}
+                  </button>
                 </div>
               )}
               {awaitingVerification && (
