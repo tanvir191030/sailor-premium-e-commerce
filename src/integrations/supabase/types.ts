@@ -196,6 +196,7 @@ export type Database = {
           id: string
           is_payment_verified: boolean | null
           payment_method: string | null
+          payment_rejection_reason: string | null
           phone: string
           status: string | null
           thana: string | null
@@ -218,6 +219,7 @@ export type Database = {
           id?: string
           is_payment_verified?: boolean | null
           payment_method?: string | null
+          payment_rejection_reason?: string | null
           phone: string
           status?: string | null
           thana?: string | null
@@ -240,6 +242,7 @@ export type Database = {
           id?: string
           is_payment_verified?: boolean | null
           payment_method?: string | null
+          payment_rejection_reason?: string | null
           phone?: string
           status?: string | null
           thana?: string | null

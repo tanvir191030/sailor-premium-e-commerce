@@ -1,0 +1,1 @@
+ALTER TABLE public.orders ADD COLUMN payment_rejection_reason text DEFAULT NULL;
