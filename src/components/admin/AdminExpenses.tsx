@@ -77,13 +77,15 @@ const AdminExpenses = () => {
     },
   });
 
-  // Fetch products
+  // Fetch products — shared key with inventory for sync
   const { data: products = [] } = useQuery({
-    queryKey: ["all-products-for-expense"],
+    queryKey: ["admin-products-list"],
     queryFn: async () => {
       const { data } = await supabase.from("products").select("id, name, category, sub_category, price, image_url").order("name");
       return data || [];
     },
+    staleTime: 1000 * 30,
+    refetchOnWindowFocus: true,
   });
 
   // Filter sub-categories by selected category

@@ -17,12 +17,14 @@ const AdminInventory = () => {
   const [filter, setFilter] = useState<"all" | "low" | "out">("all");
 
   const { data: products = [], isLoading } = useQuery({
-    queryKey: ["admin-inventory"],
+    queryKey: ["admin-products-list"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("products").select("id, name, stock, price, category, image_url, sizes");
+      const { data, error } = await supabase.from("products").select("id, name, stock, price, category, sub_category, image_url, sizes");
       if (error) throw error;
       return data;
     },
+    staleTime: 1000 * 30,
+    refetchOnWindowFocus: true,
   });
 
   const filtered = products
