@@ -112,6 +112,8 @@ const Shop = () => {
                 <div className="flex-1 min-w-0">
                   <div className="hidden lg:flex items-center justify-between mb-5">
                     <p className="text-sm text-muted-foreground">{sorted.length} পণ্য পাওয়া গেছে</p>
+                    <div className="flex items-center gap-4">
+                      <SortSelect value={sort} onChange={setSort} />
                     {activeCount > 0 && (
                       <button
                         onClick={() => setFilters(DEFAULT_FILTERS)}
