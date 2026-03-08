@@ -454,9 +454,9 @@ const AdminExpenses = () => {
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">পণ্য নির্বাচন করুন *</label>
-                    <select value={form.product_id} onChange={(e) => handleFormChange("product_id", e.target.value)} className={inputCls}>
+                    <select value={form.product_id} onChange={(e) => handleFormChange("product_id", e.target.value)} className={selectCls}>
                       <option value="">-- পণ্য বেছে নিন --</option>
-                      {filteredProducts.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                      {filteredProducts.map((p: any) => <option key={p.id} value={p.id}>{p.name} ({formatPrice(p.price)})</option>)}
                     </select>
                   </div>
                 </div>
