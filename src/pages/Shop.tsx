@@ -114,14 +114,15 @@ const Shop = () => {
                     <p className="text-sm text-muted-foreground">{sorted.length} পণ্য পাওয়া গেছে</p>
                     <div className="flex items-center gap-4">
                       <SortSelect value={sort} onChange={setSort} />
-                    {activeCount > 0 && (
-                      <button
-                        onClick={() => setFilters(DEFAULT_FILTERS)}
-                        className="text-xs text-primary hover:underline"
-                      >
-                        সব ফিল্টার মুছুন ({activeCount})
-                      </button>
-                    )}
+                      {activeCount > 0 && (
+                        <button
+                          onClick={() => setFilters(DEFAULT_FILTERS)}
+                          className="text-xs text-primary hover:underline"
+                        >
+                          সব ফিল্টার মুছুন ({activeCount})
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {filtered.length === 0 ? (
