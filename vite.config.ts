@@ -22,14 +22,7 @@ export default defineConfig(({ mode }) => ({
   build: {
     // Minification & compression
     target: "es2020",
-    minify: "terser",
-    terserOptions: {
-      compress: {
-        drop_console: mode === "production",
-        drop_debugger: true,
-        passes: 2,
-      },
-    },
+    minify: "esbuild",
     // Code splitting for optimal caching
     rollupOptions: {
       output: {
