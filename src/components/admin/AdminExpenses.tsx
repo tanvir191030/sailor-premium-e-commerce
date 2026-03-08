@@ -486,9 +486,34 @@ const AdminExpenses = () => {
                       <option value="">-- পণ্য বেছে নিন --</option>
                       {filteredProducts.map((p: any) => <option key={p.id} value={p.id}>{p.name} ({formatPrice(p.price)})</option>)}
                     </select>
+                    <button type="button" onClick={() => setShowQuickAdd(!showQuickAdd)} className="mt-1.5 text-[11px] text-primary hover:underline flex items-center gap-1">
+                      <Plus size={10} /> {showQuickAdd ? "বাতিল" : "নতুন পণ্য যোগ করুন"}
+                    </button>
                   </div>
                 </div>
 
+                {/* Quick Add Product Inline */}
+                {showQuickAdd && (
+                  <div className="border border-dashed border-primary/40 rounded-lg p-3 mb-3 bg-primary/5">
+                    <p className="text-xs font-semibold text-foreground mb-2">⚡ দ্রুত নতুন পণ্য তৈরি করুন</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">পণ্যের নাম *</label>
+                        <input value={quickProduct.name} onChange={(e) => setQuickProduct((p) => ({ ...p, name: e.target.value }))} placeholder="যেমন: Dubai Cherry Hijab" className={inputCls} />
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">বিক্রয় মূল্য (৳) *</label>
+                        <input value={quickProduct.price} onChange={(e) => setQuickProduct((p) => ({ ...p, price: e.target.value.replace(/[^0-9.]/g, "") }))} placeholder="যেমন: 350" type="number" className={inputCls} />
+                      </div>
+                      <div className="flex items-end">
+                        <button type="button" onClick={() => quickAddProduct.mutate()} disabled={quickAddProduct.isPending} className="px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:opacity-90 disabled:opacity-50 w-full">
+                          {quickAddProduct.isPending ? "তৈরি হচ্ছে..." : "পণ্য তৈরি করুন"}
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1.5">ক্যাটাগরি: {form.product_category || "নির্বাচিত নয়"} | সাব-ক্যাটাগরি: {form.product_sub_category || "নির্বাচিত নয়"}</p>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">পরিমাণ (পিস) *</label>
