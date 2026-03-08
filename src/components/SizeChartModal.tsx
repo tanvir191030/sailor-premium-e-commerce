@@ -55,7 +55,7 @@ const SizeChartModal = ({ open, onClose, product }: Props) => {
 
   const hasDynamicData = dynamicHeaders.length > 0 && dynamicRows.length > 0;
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {open && (
         <>
