@@ -219,11 +219,23 @@ const ProductDetail = () => {
     .filter((p) => p.id !== id && p.category === product?.category)
     .slice(0, 6);
 
+  // Compute dynamic price for hijab variants
+  const getActivePrice = () => {
+    if (!product) return 0;
+    if (sizeType === "hijab" && selectedSize && sizeVariants[selectedSize]) {
+      const variantPrice = Number(sizeVariants[selectedSize]?.price);
+      if (variantPrice > 0) return variantPrice;
+    }
+    return product.price;
+  };
+
+  const activePrice = product ? getActivePrice() : 0;
+
   const cartPayload = product
     ? {
       id: product.id,
       name: product.name,
-      price: product.price,
+      price: activePrice,
       image: galleryImages[0] || "/placeholder.svg",
       category: product.category || undefined,
       size: selectedSize || undefined,
