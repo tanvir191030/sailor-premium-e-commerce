@@ -37,7 +37,7 @@ const Category = () => {
   // Reset to page 1 when category/subcategory changes
   useEffect(() => {
     setPage(1);
-  }, [categoryName, subCategoryName]);
+  }, [categoryName, subCategoryName, sort]);
 
   const products = data?.products ?? [];
   const totalProducts = data?.total ?? 0;
