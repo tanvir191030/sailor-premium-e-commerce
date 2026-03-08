@@ -58,6 +58,20 @@ const AdminExpenses = () => {
   const [form, setForm] = useState<ExpenseForm>({ ...emptyForm });
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [quickProduct, setQuickProduct] = useState({ name: "", price: "" });
+  const [productSearch, setProductSearch] = useState("");
+  const [productDropdownOpen, setProductDropdownOpen] = useState(false);
+  const productDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close product dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (productDropdownRef.current && !productDropdownRef.current.contains(e.target as Node)) {
+        setProductDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   // Fetch categories
   const { data: categories = [] } = useQuery({
