@@ -24,6 +24,7 @@ import AdminReviews from "@/components/admin/AdminReviews";
 import AdminInventory from "@/components/admin/AdminInventory";
 import AdminExpenses from "@/components/admin/AdminExpenses";
 import AdminReports from "@/components/admin/AdminReports";
+import AdminNewsletter from "@/components/admin/AdminNewsletter";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n/index";
 

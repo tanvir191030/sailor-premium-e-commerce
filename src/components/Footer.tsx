@@ -91,9 +91,10 @@ const Footer = () => {
               />
               <button
                 type="submit"
-                className="bg-primary-foreground text-primary px-6 py-3 text-sm uppercase tracking-[0.1em] font-medium hover:bg-primary-foreground/90 transition-colors min-h-[44px]"
+                disabled={subscribing}
+                className="bg-primary-foreground text-primary px-6 py-3 text-sm uppercase tracking-[0.1em] font-medium hover:bg-primary-foreground/90 transition-colors min-h-[44px] disabled:opacity-50"
               >
-                {t("footer.subscribe")}
+                {subscribing ? "..." : t("footer.subscribe")}
               </button>
             </form>
           </div>
