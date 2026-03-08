@@ -530,7 +530,60 @@ const AdminSettings = () => {
         </div>
       </Section>
 
-      {/* ── Footer Info ── */}
+      {/* ── Category Images ── */}
+      <Section icon={Image} title="ক্যাটাগরি ইমেজ (Shop by Category)">
+        <div className="space-y-5 max-w-2xl">
+          <p className="text-xs text-muted-foreground">হোমপেজে "Shop by Category" সেকশনে যে ইমেজ দেখাবে সেগুলো এখান থেকে আপডেট করুন।</p>
+          {([
+            { key: "men", label: "Men Category Image", state: catImageMen, setter: setCatImageMen, defaultImg: "https://images.unsplash.com/photo-1617137968427-85924c800a22?w=800&h=800&fit=crop" },
+            { key: "women", label: "Women Category Image", state: catImageWomen, setter: setCatImageWomen, defaultImg: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=800&h=800&fit=crop" },
+            { key: "kids", label: "Kids Category Image", state: catImageKids, setter: setCatImageKids, defaultImg: "https://images.unsplash.com/photo-1503919545889-aef636e10ad4?w=800&h=800&fit=crop" },
+          ] as const).map((cat) => (
+            <div key={cat.key} className="flex items-center gap-4 p-3 border border-border rounded-xl bg-secondary/30">
+              <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-secondary">
+                <img src={cat.state || cat.defaultImg} alt={cat.label} className="w-full h-full object-cover" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground mb-2">{cat.label}</p>
+                <input
+                  ref={catFileRefs[cat.key]}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setCatUploading(cat.key);
+                    try {
+                      const optimized = await optimizeHeroImage(file);
+                      const path = `category-${cat.key}-${Date.now()}.webp`;
+                      const { error: uploadError } = await supabase.storage.from("site-assets").upload(path, optimized, { upsert: true, contentType: "image/webp" });
+                      if (uploadError) throw uploadError;
+                      const { data } = supabase.storage.from("site-assets").getPublicUrl(path);
+                      cat.setter(data.publicUrl);
+                      await saveSetting.mutateAsync({ key: `category_image_${cat.key}`, value: data.publicUrl });
+                      queryClient.invalidateQueries({ queryKey: ["site-settings"] });
+                      toast({ title: `✓ ${cat.label} আপডেট হয়েছে` });
+                    } catch (err: any) {
+                      toast({ title: "আপলোড ব্যর্থ", description: err.message, variant: "destructive" });
+                    } finally {
+                      setCatUploading(null);
+                    }
+                  }}
+                />
+                <button
+                  onClick={() => catFileRefs[cat.key].current?.click()}
+                  disabled={catUploading === cat.key}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                >
+                  <Upload size={12} /> {catUploading === cat.key ? "আপলোড হচ্ছে..." : "ইমেজ আপডেট"}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Section>
+
       <Section icon={FileText} title="ফুটার ও About Us তথ্য">
         <div className="space-y-4 max-w-2xl">
           <Field label="About Us (সংক্ষিপ্ত — ফুটারে দেখাবে)">
