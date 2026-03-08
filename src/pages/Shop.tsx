@@ -25,6 +25,7 @@ const Shop = () => {
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<SortOption>("newest");
 
   // Reset to page 1 when filters change
   useEffect(() => {
