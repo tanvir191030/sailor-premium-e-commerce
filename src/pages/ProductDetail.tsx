@@ -380,7 +380,15 @@ const ProductDetail = () => {
           jsonLd={seoJsonLd}
         />
       )}
-      <SizeChartModal open={sizeChartOpen} onClose={() => setSizeChartOpen(false)} product={product} />
+      <SizeChartModal
+        open={sizeChartOpen}
+        onClose={() => {
+          setSizeChartOpen(false);
+          setSizeChartAnchor(null);
+        }}
+        product={product}
+        anchorPoint={sizeChartAnchor}
+      />
       <div className="min-h-screen bg-background">
         <Header />
         <main className="pb-20 lg:pb-0">
