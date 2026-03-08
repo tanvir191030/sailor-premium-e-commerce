@@ -25,6 +25,7 @@ const AdminCoupons = () => {
     discount_type: "percentage",
     discount_value: "",
     min_order: "",
+    max_discount: "",
     max_uses: "",
     expires_at: "",
   });
