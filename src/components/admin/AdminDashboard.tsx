@@ -2,15 +2,20 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/lib/currency";
-import { Package, ShoppingCart, Clock, TrendingUp, AlertTriangle, Users, DollarSign, TrendingDown, Wallet } from "lucide-react";
+import { Package, ShoppingCart, Clock, TrendingUp, AlertTriangle, Users, DollarSign, TrendingDown, Wallet, FileDown } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { openBulkInvoicesInNewTab } from "@/lib/bulkInvoicePdf";
+import { useToast } from "@/hooks/use-toast";
 
 type TimeRange = "daily" | "weekly" | "monthly";
 
 const AdminDashboard = () => {
   const [timeRange, setTimeRange] = useState<TimeRange>("weekly");
   const { theme } = useTheme();
+  const { settings: siteSettings } = useSiteSettings();
+  const { toast } = useToast();
 
   const { data: products = [] } = useQuery({
     queryKey: ["admin-products"],
@@ -49,6 +54,12 @@ const AdminDashboard = () => {
   const processingOrders = orders.filter((o) => o.status === "processing").length;
   const shippedOrders = orders.filter((o) => o.status === "shipped").length;
   const deliveredOrders = orders.filter((o) => o.status === "delivered").length;
+  const todayStr = new Date().toISOString().split("T")[0];
+  const todayVerified = orders.filter(
+    (o: any) => o.created_at?.startsWith(todayStr) && (o as any).is_payment_verified === true && !(o as any).is_deleted
+  );
+  const todayVerifiedTotal = todayVerified.reduce((s, o) => s + Number(o.total), 0);
+
   const lowStockProducts = products.filter((p: any) => (p.stock ?? 0) < 5);
   const totalProducts = products.length;
   const uniqueCustomers = new Set(orders.map((o: any) => `${o.customer_name}-${o.phone}`)).size;
@@ -131,6 +142,32 @@ const AdminDashboard = () => {
             <p className="text-[11px] text-muted-foreground mt-0.5">{s.label}</p>
           </div>
         ))}
+      </div>
+
+      {/* Today's Verified Invoices Download Card */}
+      <div className="bg-card p-5 rounded-xl shadow-sm border border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h3 className="font-serif text-base text-foreground flex items-center gap-2">
+            <FileDown size={18} className="text-emerald-500" />
+            আজকের ভেরিফাইড ইনভয়েস
+          </h3>
+          <p className="text-xs text-muted-foreground mt-1">
+            আজ {todayVerified.length} টি ভেরিফাইড অর্ডার · মোট {formatPrice(todayVerifiedTotal)}
+          </p>
+        </div>
+        <button
+          onClick={() => {
+            if (todayVerified.length === 0) {
+              toast({ title: "আজকে কোনো ভেরিফাইড অর্ডার নেই", variant: "destructive" });
+              return;
+            }
+            openBulkInvoicesInNewTab(todayVerified as any, siteSettings.store_name || "Modest Mart", siteSettings.website_url || "");
+          }}
+          disabled={todayVerified.length === 0}
+          className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <FileDown size={16} /> আজকের ইনভয়েস ডাউনলোড করুন
+        </button>
       </div>
 
       {/* Revenue Chart */}
