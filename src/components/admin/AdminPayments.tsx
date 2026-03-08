@@ -1,9 +1,17 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { CreditCard, Save, Truck, Gift } from "lucide-react";
+import { CreditCard, Save, Truck, Gift, ShieldCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+
+const ORDER_MODES = [
+  { value: "cod", label: "ফুল ক্যাশ অন ডেলিভারি (COD)", desc: "অগ্রিম পেমেন্ট লাগবে না" },
+  { value: "delivery_charge_advance", label: "শুধু ডেলিভারি চার্জ অগ্রিম", desc: "কাস্টমার শুধু ডেলিভারি ফি bKash/Nagad এ পে করবে" },
+  { value: "full_advance", label: "সম্পূর্ণ অগ্রিম পেমেন্ট", desc: "পুরো মূল্য + ডেলিভারি ফি আগেই পে করতে হবে" },
+];
 
 const AdminPayments = () => {
   const queryClient = useQueryClient();
@@ -21,12 +29,14 @@ const AdminPayments = () => {
   const [defaultCourier, setDefaultCourier] = useState("");
   const [shippingCost, setShippingCost] = useState("");
   const [freeDelivery, setFreeDelivery] = useState(false);
+  const [orderMode, setOrderMode] = useState("cod");
   const [loaded, setLoaded] = useState(false);
 
   if (settings.length > 0 && !loaded) {
     setBkashNumber(getSetting("bkash_number")); setNagadNumber(getSetting("nagad_number")); setRocketNumber(getSetting("rocket_number"));
     setDefaultCourier(getSetting("default_courier")); setShippingCost(getSetting("shipping_cost"));
     setFreeDelivery(getSetting("free_delivery") === "true");
+    setOrderMode(getSetting("order_confirmation_mode") || "cod");
     setLoaded(true);
   }
 
