@@ -219,26 +219,12 @@ const ProductDetail = () => {
     .filter((p) => p.id !== id && p.category === product?.category)
     .slice(0, 6);
 
-  // Compute dynamic price for hijab variants
-  const getActivePrice = () => {
-    if (!product) return 0;
-    if (sizeType === "hijab" && selectedSize && sizeVariants[selectedSize]) {
-      const variantPrice = Number(sizeVariants[selectedSize]?.price);
-      if (variantPrice > 0) return variantPrice;
-    }
-    return product.price;
-  };
-
-  const activePrice = product ? getActivePrice() : 0;
-
-  const cartPayload = product
+  const cartPayloadBase = product
     ? {
       id: product.id,
       name: product.name,
-      price: activePrice,
       image: galleryImages[0] || "/placeholder.svg",
       category: product.category || undefined,
-      size: selectedSize || undefined,
     }
     : null;
 
@@ -359,6 +345,19 @@ const ProductDetail = () => {
   const sizeType = rawSizes?.type || (HIJAB_SUBS.includes(productSubCategory || "") ? "hijab" : SHOE_SUBS.includes(productSubCategory || "") ? "shoes" : NO_SIZE_SUBS.includes(productSubCategory || "") ? "none" : "clothing");
   const sizeVariants = isComplexSize ? rawSizes.variants : (rawSizes || {});
   const isNoSizeProduct = sizeType === "none" || NO_SIZE_SUBS.includes(productSubCategory || "");
+
+  // Dynamic pricing for hijab variants
+  const activePrice = (() => {
+    if (sizeType === "hijab" && selectedSize && sizeVariants[selectedSize]) {
+      const variantPrice = Number(sizeVariants[selectedSize]?.price);
+      if (variantPrice > 0) return variantPrice;
+    }
+    return product.price;
+  })();
+
+  const cartPayload = cartPayloadBase
+    ? { ...cartPayloadBase, price: activePrice, size: selectedSize || undefined }
+    : null;
 
   const hasSpecificSizes = !isNoSizeProduct && sizeVariants && Object.keys(sizeVariants).length > 0;
 
