@@ -377,8 +377,11 @@ const ProductDetail = () => {
     return product.price;
   })();
 
+  const colorVariants: string[] = Array.isArray((product as any).color_variants) ? (product as any).color_variants : [];
+  const hasColors = colorVariants.length > 0;
+
   const cartPayload = cartPayloadBase
-    ? { ...cartPayloadBase, price: activePrice, size: selectedSize || undefined }
+    ? { ...cartPayloadBase, price: activePrice, size: selectedSize || undefined, color: selectedColor || undefined }
     : null;
 
   const hasSpecificSizes = !isNoSizeProduct && sizeVariants && Object.keys(sizeVariants).length > 0;
