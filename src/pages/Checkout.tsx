@@ -579,7 +579,7 @@ const Checkout = () => {
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium truncate text-foreground">{item.name}</p>
-                                <p className="text-xs text-muted-foreground">x{item.quantity}</p>
+                                <p className="text-xs text-muted-foreground">{[`x${item.quantity}`, item.size, item.color].filter(Boolean).join(" · ")}</p>
                               </div>
                               <p className="text-sm font-medium text-foreground whitespace-nowrap">{formatPrice(item.price * item.quantity)}</p>
                             </div>
