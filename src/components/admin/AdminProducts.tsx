@@ -117,6 +117,7 @@ const AdminProducts = () => {
         sizes: finalSizes,
         description: form.description || null,
         is_featured: form.is_featured,
+        color_variants: form.enableColors && form.color_variants.length > 0 ? form.color_variants : [],
         ...(image_url && { image_url }),
       };
       let productId = editingId;
@@ -124,27 +125,31 @@ const AdminProducts = () => {
         const { error } = await supabase.from("products").update(payload).eq("id", editingId);
         if (error) throw error;
 
-        // Remove old product_images and re-insert existing (non-primary) + new
+        // Remove old product_images and re-insert existing (non-primary) + new with color tags
         await supabase.from("product_images").delete().eq("product_id", editingId);
         let sortIdx = 1;
-        for (const url of existingImages.slice(1)) {
-          await supabase.from("product_images").insert({ product_id: editingId, image_url: url, sort_order: sortIdx++, is_primary: false });
+        for (let eIdx = 1; eIdx < existingImages.length; eIdx++) {
+          const colorTag = imageColorTags[eIdx] || null;
+          await supabase.from("product_images").insert({ product_id: editingId, image_url: existingImages[eIdx], sort_order: sortIdx++, is_primary: false, color_name: colorTag });
         }
         // Upload new files (skip first if it became primary)
         const startIdx = existingImages.length === 0 ? 1 : 0;
         for (let i = startIdx; i < imageFiles.length; i++) {
           const url = await uploadProductImage(imageFiles[i]);
-          await supabase.from("product_images").insert({ product_id: editingId, image_url: url, sort_order: sortIdx++, is_primary: false });
+          const globalIdx = existingImages.length + i;
+          const colorTag = imageColorTags[globalIdx] || null;
+          await supabase.from("product_images").insert({ product_id: editingId, image_url: url, sort_order: sortIdx++, is_primary: false, color_name: colorTag });
         }
       } else {
         const { data, error } = await supabase.from("products").insert(payload).select("id").single();
         if (error) throw error;
         productId = data.id;
-        // Upload additional images for new product
+        // Upload additional images for new product with color tags
         if (imageFiles.length > 1 && productId) {
           for (let i = 1; i < imageFiles.length; i++) {
             const url = await uploadProductImage(imageFiles[i]);
-            await supabase.from("product_images").insert({ product_id: productId, image_url: url, sort_order: i, is_primary: false });
+            const colorTag = imageColorTags[existingImages.length + i] || null;
+            await supabase.from("product_images").insert({ product_id: productId, image_url: url, sort_order: i, is_primary: false, color_name: colorTag });
           }
         }
       }
