@@ -554,6 +554,90 @@ const AdminProducts = () => {
                 {t("admin.featured")}
               </label>
 
+              {/* Color Variants Toggle & Management */}
+              <div className="space-y-3 border border-border p-3 rounded-lg bg-secondary/10">
+                <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+                  <input type="checkbox" checked={form.enableColors} onChange={(e) => setForm({ ...form, enableColors: e.target.checked })} className="rounded" />
+                  🎨 কালার ভ্যারিয়েন্ট সক্রিয় করুন
+                </label>
+                {form.enableColors && (
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap gap-1.5">
+                      {form.color_variants.map((c, i) => (
+                        <span key={i} className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded text-xs font-medium">
+                          {c}
+                          <button type="button" onClick={() => setForm({ ...form, color_variants: form.color_variants.filter((_, idx) => idx !== i) })} className="hover:text-destructive">×</button>
+                        </span>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        value={newColorInput}
+                        onChange={(e) => setNewColorInput(e.target.value)}
+                        placeholder="রঙের নাম (যেমন: Red, Blue)"
+                        className={`${inputCls} flex-1`}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            const v = newColorInput.trim();
+                            if (v && !form.color_variants.includes(v)) {
+                              setForm({ ...form, color_variants: [...form.color_variants, v] });
+                              setNewColorInput("");
+                            }
+                          }
+                        }}
+                      />
+                      <button type="button" onClick={() => {
+                        const v = newColorInput.trim();
+                        if (v && !form.color_variants.includes(v)) {
+                          setForm({ ...form, color_variants: [...form.color_variants, v] });
+                          setNewColorInput("");
+                        }
+                      }} className="px-3 py-1 bg-primary text-primary-foreground rounded-lg text-xs font-medium">
+                        <Plus size={14} />
+                      </button>
+                    </div>
+                    {form.color_variants.length > 0 && (existingImages.length > 0 || imagePreviews.length > 0) && (
+                      <div className="pt-2 border-t border-border/50">
+                        <p className="text-[10px] text-muted-foreground mb-2">ছবিতে রঙ ট্যাগ করুন (ঐচ্ছিক):</p>
+                        <div className="grid grid-cols-5 gap-2">
+                          {existingImages.map((url, i) => (
+                            <div key={`et-${i}`} className="space-y-1">
+                              <div className="aspect-square rounded overflow-hidden border border-border">
+                                <img src={url} alt="" className="w-full h-full object-cover" />
+                              </div>
+                              <select
+                                value={imageColorTags[i] || ""}
+                                onChange={(e) => setImageColorTags({ ...imageColorTags, [i]: e.target.value })}
+                                className="w-full text-[9px] px-1 py-0.5 border border-border rounded bg-card text-foreground"
+                              >
+                                <option value="">ট্যাগ নেই</option>
+                                {form.color_variants.map((c) => <option key={c} value={c}>{c}</option>)}
+                              </select>
+                            </div>
+                          ))}
+                          {imagePreviews.map((src, i) => (
+                            <div key={`nt-${i}`} className="space-y-1">
+                              <div className="aspect-square rounded overflow-hidden border border-border">
+                                <img src={src} alt="" className="w-full h-full object-cover" />
+                              </div>
+                              <select
+                                value={imageColorTags[existingImages.length + i] || ""}
+                                onChange={(e) => setImageColorTags({ ...imageColorTags, [existingImages.length + i]: e.target.value })}
+                                className="w-full text-[9px] px-1 py-0.5 border border-border rounded bg-card text-foreground"
+                              >
+                                <option value="">ট্যাগ নেই</option>
+                                {form.color_variants.map((c) => <option key={c} value={c}>{c}</option>)}
+                              </select>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !form.name || !form.price} className="w-full bg-primary text-primary-foreground py-2.5 rounded-full text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50">
                 {saveMutation.isPending ? t("admin.saving") : editingId ? t("admin.update") : t("admin.save")}
               </button>
