@@ -43,6 +43,7 @@ const ProductDetail = () => {
   const queryClient = useQueryClient();
 
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [activeIndex, setActiveIndex] = useState(0);
   const [zoomed, setZoomed] = useState(false);
@@ -50,6 +51,7 @@ const ProductDetail = () => {
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const [sizeError, setSizeError] = useState(false);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [colorImageMap, setColorImageMap] = useState<Record<string, string>>({});
   const { toast } = useToast();
 
   // Reviews state
