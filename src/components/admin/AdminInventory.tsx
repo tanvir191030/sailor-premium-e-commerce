@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/lib/currency";
 import { Package, AlertTriangle, Search, Download, ArrowUpDown, Printer } from "lucide-react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
