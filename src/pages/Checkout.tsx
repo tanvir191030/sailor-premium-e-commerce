@@ -239,7 +239,7 @@ const Checkout = () => {
         district: form.district || null,
         thana: form.thana.trim() || null,
         address: fullAddress,
-        cart_items: items.map((i) => ({ id: i.id, product_id: i.productId || i.id.split('-')[0], name: i.name, price: i.price, quantity: i.quantity, image: i.image, size: i.size })),
+        cart_items: items.map((i) => ({ id: i.id, product_id: i.productId || i.id.split('-')[0], name: i.name, price: i.price, quantity: i.quantity, image: i.image, size: i.size, color: i.color })),
         total: grandTotal,
         delivery_charge: deliveryCharge,
         payment_method: paymentMethod === "cod" ? "Cash on Delivery" : paymentMethod === "bkash" ? "bKash" : paymentMethod === "nagad" ? "Nagad" : "Rocket",
@@ -579,7 +579,7 @@ const Checkout = () => {
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium truncate text-foreground">{item.name}</p>
-                                <p className="text-xs text-muted-foreground">x{item.quantity}</p>
+                                <p className="text-xs text-muted-foreground">{[`x${item.quantity}`, item.size, item.color].filter(Boolean).join(" · ")}</p>
                               </div>
                               <p className="text-sm font-medium text-foreground whitespace-nowrap">{formatPrice(item.price * item.quantity)}</p>
                             </div>

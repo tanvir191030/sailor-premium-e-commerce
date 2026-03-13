@@ -43,6 +43,7 @@ const ProductDetail = () => {
   const queryClient = useQueryClient();
 
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [activeIndex, setActiveIndex] = useState(0);
   const [zoomed, setZoomed] = useState(false);
@@ -50,6 +51,7 @@ const ProductDetail = () => {
   const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const [sizeError, setSizeError] = useState(false);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [colorImageMap, setColorImageMap] = useState<Record<string, string>>({});
   const { toast } = useToast();
 
   // Reviews state
@@ -214,18 +216,23 @@ const ProductDetail = () => {
     const fetchImages = async () => {
       const { data } = await supabase
         .from("product_images")
-        .select("image_url, sort_order, is_primary")
+        .select("image_url, sort_order, is_primary, color_name")
         .eq("product_id", product.id)
         .order("sort_order", { ascending: true });
 
       const imgs: string[] = [];
+      const cMap: Record<string, string> = {};
       if (product.image_url) imgs.push(product.image_url);
       if (data) {
-        data.forEach((r) => {
+        data.forEach((r: any) => {
           if (r.image_url && !imgs.includes(r.image_url)) imgs.push(r.image_url);
+          if (r.color_name && r.image_url) {
+            cMap[r.color_name] = r.image_url;
+          }
         });
       }
       setGalleryImages(imgs.length ? imgs : ["/placeholder.svg"]);
+      setColorImageMap(cMap);
     };
     fetchImages();
   }, [product]);
@@ -370,8 +377,11 @@ const ProductDetail = () => {
     return product.price;
   })();
 
+  const colorVariants: string[] = Array.isArray((product as any).color_variants) ? (product as any).color_variants : [];
+  const hasColors = colorVariants.length > 0;
+
   const cartPayload = cartPayloadBase
-    ? { ...cartPayloadBase, price: activePrice, size: selectedSize || undefined }
+    ? { ...cartPayloadBase, price: activePrice, size: selectedSize || undefined, color: selectedColor || undefined }
     : null;
 
   const hasSpecificSizes = !isNoSizeProduct && sizeVariants && Object.keys(sizeVariants).length > 0;
@@ -588,6 +598,42 @@ const ProductDetail = () => {
                     </span>
                   )}
                 </div>
+
+                {/* Color Variants — only shown if admin added colors */}
+                {hasColors && (
+                  <div>
+                    <span className="text-sm font-medium mb-2.5 block">
+                      রঙ বেছে নিন
+                      {selectedColor && <span className="text-muted-foreground font-normal ml-2">— {selectedColor}</span>}
+                    </span>
+                    <div className="flex gap-2 flex-wrap">
+                      {colorVariants.map((color: string) => {
+                        const isActive = selectedColor === color;
+                        const colorImg = colorImageMap[color];
+                        return (
+                          <button
+                            key={color}
+                            onClick={() => {
+                              setSelectedColor(isActive ? null : color);
+                              // Switch to the color-tagged image if available
+                              if (!isActive && colorImg) {
+                                const idx = galleryImages.indexOf(colorImg);
+                                if (idx >= 0) setActiveIndex(idx);
+                              }
+                            }}
+                            className={`min-w-[44px] min-h-[44px] px-3 py-2 text-sm font-medium border transition-colors ${
+                              isActive
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-background text-foreground border-border hover:border-primary"
+                            }`}
+                          >
+                            {color}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {/* Size Selection — dynamic based on sub-category */}
                 {isNoSizeProduct ? (

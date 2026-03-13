@@ -276,6 +276,7 @@ export type Database = {
       }
       product_images: {
         Row: {
+          color_name: string | null
           created_at: string | null
           id: string
           image_url: string
@@ -284,6 +285,7 @@ export type Database = {
           sort_order: number | null
         }
         Insert: {
+          color_name?: string | null
           created_at?: string | null
           id?: string
           image_url: string
@@ -292,6 +294,7 @@ export type Database = {
           sort_order?: number | null
         }
         Update: {
+          color_name?: string | null
           created_at?: string | null
           id?: string
           image_url?: string
@@ -313,6 +316,7 @@ export type Database = {
         Row: {
           brand: string | null
           category: string | null
+          color_variants: Json | null
           created_at: string | null
           description: string | null
           id: string
@@ -329,6 +333,7 @@ export type Database = {
         Insert: {
           brand?: string | null
           category?: string | null
+          color_variants?: Json | null
           created_at?: string | null
           description?: string | null
           id?: string
@@ -345,6 +350,7 @@ export type Database = {
         Update: {
           brand?: string | null
           category?: string | null
+          color_variants?: Json | null
           created_at?: string | null
           description?: string | null
           id?: string

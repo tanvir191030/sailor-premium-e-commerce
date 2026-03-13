@@ -5,7 +5,7 @@ import { formatPrice } from "@/lib/currency";
 import { useToast } from "@/hooks/use-toast";
 import { Wallet, Plus, Trash2, Download, Calendar, X, Printer, Pencil, Package, ShoppingCart, Search, ChevronDown } from "lucide-react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
-import * as XLSX from "xlsx";
+import { exportJsonToExcel } from "@/lib/excelExport";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -349,10 +349,7 @@ const AdminExpenses = () => {
       "মোট পরিমাণ": e.amount,
       "বিবরণ": e.description || "",
     }));
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Expenses");
-    XLSX.writeFile(wb, `expenses-${new Date().toISOString().split("T")[0]}.xlsx`);
+    exportJsonToExcel(rows, "Expenses", `expenses-${new Date().toISOString().split("T")[0]}.xlsx`);
   };
 
   const exportPDF = () => {

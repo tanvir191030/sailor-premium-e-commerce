@@ -28,10 +28,14 @@ const AdminProducts = () => {
     stock: "", description: "", description_bn: "", is_featured: false,
     sub_category: "",
     sizes: {} as any,
+    color_variants: [] as string[],
+    enableColors: false,
   });
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]); // URLs from DB
+  const [imageColorTags, setImageColorTags] = useState<Record<number, string>>({}); // index -> color name
+  const [newColorInput, setNewColorInput] = useState("");
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { data: allSubCategories = [] } = useSubCategories();
@@ -113,6 +117,7 @@ const AdminProducts = () => {
         sizes: finalSizes,
         description: form.description || null,
         is_featured: form.is_featured,
+        color_variants: form.enableColors && form.color_variants.length > 0 ? form.color_variants : [],
         ...(image_url && { image_url }),
       };
       let productId = editingId;
@@ -120,27 +125,31 @@ const AdminProducts = () => {
         const { error } = await supabase.from("products").update(payload).eq("id", editingId);
         if (error) throw error;
 
-        // Remove old product_images and re-insert existing (non-primary) + new
+        // Remove old product_images and re-insert existing (non-primary) + new with color tags
         await supabase.from("product_images").delete().eq("product_id", editingId);
         let sortIdx = 1;
-        for (const url of existingImages.slice(1)) {
-          await supabase.from("product_images").insert({ product_id: editingId, image_url: url, sort_order: sortIdx++, is_primary: false });
+        for (let eIdx = 1; eIdx < existingImages.length; eIdx++) {
+          const colorTag = imageColorTags[eIdx] || null;
+          await supabase.from("product_images").insert({ product_id: editingId, image_url: existingImages[eIdx], sort_order: sortIdx++, is_primary: false, color_name: colorTag });
         }
         // Upload new files (skip first if it became primary)
         const startIdx = existingImages.length === 0 ? 1 : 0;
         for (let i = startIdx; i < imageFiles.length; i++) {
           const url = await uploadProductImage(imageFiles[i]);
-          await supabase.from("product_images").insert({ product_id: editingId, image_url: url, sort_order: sortIdx++, is_primary: false });
+          const globalIdx = existingImages.length + i;
+          const colorTag = imageColorTags[globalIdx] || null;
+          await supabase.from("product_images").insert({ product_id: editingId, image_url: url, sort_order: sortIdx++, is_primary: false, color_name: colorTag });
         }
       } else {
         const { data, error } = await supabase.from("products").insert(payload).select("id").single();
         if (error) throw error;
         productId = data.id;
-        // Upload additional images for new product
+        // Upload additional images for new product with color tags
         if (imageFiles.length > 1 && productId) {
           for (let i = 1; i < imageFiles.length; i++) {
             const url = await uploadProductImage(imageFiles[i]);
-            await supabase.from("product_images").insert({ product_id: productId, image_url: url, sort_order: i, is_primary: false });
+            const colorTag = imageColorTags[existingImages.length + i] || null;
+            await supabase.from("product_images").insert({ product_id: productId, image_url: url, sort_order: i, is_primary: false, color_name: colorTag });
           }
         }
       }
@@ -183,8 +192,8 @@ const AdminProducts = () => {
   });
 
   const resetForm = () => {
-    setForm({ name: "", name_bn: "", price: "", original_price: "", category: "", brand: "", stock: "", description: "", description_bn: "", is_featured: false, sub_category: "", sizes: {} });
-    setImageFiles([]); setImagePreviews([]); setExistingImages([]); setEditingId(null); setShowForm(false);
+    setForm({ name: "", name_bn: "", price: "", original_price: "", category: "", brand: "", stock: "", description: "", description_bn: "", is_featured: false, sub_category: "", sizes: {}, color_variants: [], enableColors: false });
+    setImageFiles([]); setImagePreviews([]); setExistingImages([]); setEditingId(null); setShowForm(false); setImageColorTags({}); setNewColorInput("");
   };
 
   const startEdit = async (p: any) => {
@@ -217,6 +226,8 @@ const AdminProducts = () => {
       });
     }
 
+    const colorVars = Array.isArray(p.color_variants) ? p.color_variants : [];
+
     setForm({
       name: p.name, name_bn: p.name_bn || "", price: String(p.price),
       original_price: p.original_price ? String(p.original_price) : "",
@@ -224,8 +235,28 @@ const AdminProducts = () => {
       description: p.description || "", description_bn: p.description_bn || "",
       is_featured: p.is_featured || false,
       sizes: initialSizes,
+      color_variants: colorVars,
+      enableColors: colorVars.length > 0,
     });
-    setEditingId(p.id); setImageFiles([]); setImagePreviews([]); setExistingImages(urls); setShowForm(true);
+
+    // Build color tags from existing images
+    const { data: allImgs } = await supabase
+      .from("product_images")
+      .select("image_url, color_name")
+      .eq("product_id", p.id)
+      .order("sort_order");
+    const tags: Record<number, string> = {};
+    if (allImgs) {
+      allImgs.forEach((img: any) => {
+        if (img.color_name) {
+          // Find index in urls array
+          const idx = urls.indexOf(img.image_url);
+          if (idx >= 0) tags[idx] = img.color_name;
+        }
+      });
+    }
+
+    setEditingId(p.id); setImageFiles([]); setImagePreviews([]); setExistingImages(urls); setShowForm(true); setImageColorTags(tags); setNewColorInput("");
   };
 
   const filtered = products.filter((p: any) =>
@@ -522,6 +553,90 @@ const AdminProducts = () => {
                 <input type="checkbox" checked={form.is_featured} onChange={(e) => setForm({ ...form, is_featured: e.target.checked })} className="rounded" />
                 {t("admin.featured")}
               </label>
+
+              {/* Color Variants Toggle & Management */}
+              <div className="space-y-3 border border-border p-3 rounded-lg bg-secondary/10">
+                <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+                  <input type="checkbox" checked={form.enableColors} onChange={(e) => setForm({ ...form, enableColors: e.target.checked })} className="rounded" />
+                  🎨 কালার ভ্যারিয়েন্ট সক্রিয় করুন
+                </label>
+                {form.enableColors && (
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap gap-1.5">
+                      {form.color_variants.map((c, i) => (
+                        <span key={i} className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded text-xs font-medium">
+                          {c}
+                          <button type="button" onClick={() => setForm({ ...form, color_variants: form.color_variants.filter((_, idx) => idx !== i) })} className="hover:text-destructive">×</button>
+                        </span>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        value={newColorInput}
+                        onChange={(e) => setNewColorInput(e.target.value)}
+                        placeholder="রঙের নাম (যেমন: Red, Blue)"
+                        className={`${inputCls} flex-1`}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            const v = newColorInput.trim();
+                            if (v && !form.color_variants.includes(v)) {
+                              setForm({ ...form, color_variants: [...form.color_variants, v] });
+                              setNewColorInput("");
+                            }
+                          }
+                        }}
+                      />
+                      <button type="button" onClick={() => {
+                        const v = newColorInput.trim();
+                        if (v && !form.color_variants.includes(v)) {
+                          setForm({ ...form, color_variants: [...form.color_variants, v] });
+                          setNewColorInput("");
+                        }
+                      }} className="px-3 py-1 bg-primary text-primary-foreground rounded-lg text-xs font-medium">
+                        <Plus size={14} />
+                      </button>
+                    </div>
+                    {form.color_variants.length > 0 && (existingImages.length > 0 || imagePreviews.length > 0) && (
+                      <div className="pt-2 border-t border-border/50">
+                        <p className="text-[10px] text-muted-foreground mb-2">ছবিতে রঙ ট্যাগ করুন (ঐচ্ছিক):</p>
+                        <div className="grid grid-cols-5 gap-2">
+                          {existingImages.map((url, i) => (
+                            <div key={`et-${i}`} className="space-y-1">
+                              <div className="aspect-square rounded overflow-hidden border border-border">
+                                <img src={url} alt="" className="w-full h-full object-cover" />
+                              </div>
+                              <select
+                                value={imageColorTags[i] || ""}
+                                onChange={(e) => setImageColorTags({ ...imageColorTags, [i]: e.target.value })}
+                                className="w-full text-[9px] px-1 py-0.5 border border-border rounded bg-card text-foreground"
+                              >
+                                <option value="">ট্যাগ নেই</option>
+                                {form.color_variants.map((c) => <option key={c} value={c}>{c}</option>)}
+                              </select>
+                            </div>
+                          ))}
+                          {imagePreviews.map((src, i) => (
+                            <div key={`nt-${i}`} className="space-y-1">
+                              <div className="aspect-square rounded overflow-hidden border border-border">
+                                <img src={src} alt="" className="w-full h-full object-cover" />
+                              </div>
+                              <select
+                                value={imageColorTags[existingImages.length + i] || ""}
+                                onChange={(e) => setImageColorTags({ ...imageColorTags, [existingImages.length + i]: e.target.value })}
+                                className="w-full text-[9px] px-1 py-0.5 border border-border rounded bg-card text-foreground"
+                              >
+                                <option value="">ট্যাগ নেই</option>
+                                {form.color_variants.map((c) => <option key={c} value={c}>{c}</option>)}
+                              </select>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
 
               <button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !form.name || !form.price} className="w-full bg-primary text-primary-foreground py-2.5 rounded-full text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50">
                 {saveMutation.isPending ? t("admin.saving") : editingId ? t("admin.update") : t("admin.save")}

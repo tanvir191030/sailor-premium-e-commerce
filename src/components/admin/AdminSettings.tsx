@@ -8,7 +8,7 @@ import {
   Upload, Image, Search, Mail, Phone, MapPin, FileText, Palette, Zap, BookOpen, MessageCircle, FileSpreadsheet, File
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import * as XLSX from "xlsx";
+import { exportAoaToExcel } from "@/lib/excelExport";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -339,15 +339,7 @@ const AdminSettings = () => {
   type ReportData = { headers: string[]; rows: (string | number)[][] };
 
   const downloadExcel = (filename: string, data: ReportData) => {
-    const ws = XLSX.utils.aoa_to_sheet([data.headers, ...data.rows]);
-    // Auto-size columns
-    ws["!cols"] = data.headers.map((h, i) => {
-      const maxLen = Math.max(h.length, ...data.rows.map(r => String(r[i] ?? "").length));
-      return { wch: Math.min(maxLen + 2, 40) };
-    });
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Report");
-    XLSX.writeFile(wb, `${filename}-${new Date().toISOString().split("T")[0]}.xlsx`);
+    exportAoaToExcel(data.headers, data.rows, "Report", `${filename}-${new Date().toISOString().split("T")[0]}.xlsx`);
   };
 
   const downloadPDF = (filename: string, title: string, data: ReportData) => {
