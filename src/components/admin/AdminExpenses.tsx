@@ -349,10 +349,7 @@ const AdminExpenses = () => {
       "মোট পরিমাণ": e.amount,
       "বিবরণ": e.description || "",
     }));
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Expenses");
-    XLSX.writeFile(wb, `expenses-${new Date().toISOString().split("T")[0]}.xlsx`);
+    exportJsonToExcel(rows, "Expenses", `expenses-${new Date().toISOString().split("T")[0]}.xlsx`);
   };
 
   const exportPDF = () => {

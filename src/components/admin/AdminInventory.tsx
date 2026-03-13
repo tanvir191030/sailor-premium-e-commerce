@@ -60,10 +60,7 @@ const AdminInventory = () => {
       "মোট মূল্য": p.stock * Number(p.price),
       "স্ট্যাটাস": p.stock <= 0 ? "Out of Stock" : p.stock < LOW_STOCK_THRESHOLD ? "Low Stock" : "In Stock",
     }));
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Inventory");
-    XLSX.writeFile(wb, `inventory-${new Date().toISOString().split("T")[0]}.xlsx`);
+    exportJsonToExcel(rows, "Inventory", `inventory-${new Date().toISOString().split("T")[0]}.xlsx`);
   };
 
   const exportPDF = () => {

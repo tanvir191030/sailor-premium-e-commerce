@@ -97,20 +97,11 @@ const AdminReports = () => {
   const timeLabels: Record<TimeRange, string> = { week: "সাপ্তাহিক", month: "মাসিক", quarter: "ত্রৈমাসিক", year: "বাৎসরিক" };
 
   const exportExcel = () => {
-    const salesSheet = XLSX.utils.json_to_sheet(deliveredOrders.map((o) => ({
-      "Date": o.created_at?.split("T")[0], "Customer": o.customer_name, "Phone": o.phone, "Total": o.total, "Delivery": o.delivery_charge,
-    })));
-    const expenseSheet = XLSX.utils.json_to_sheet(expenses.map((e: any) => ({
-      "Date": e.expense_date, "Title": e.title, "Category": e.category, "Amount": e.amount,
-    })));
-    const summarySheet = XLSX.utils.json_to_sheet([{
-      "Total Sales": totalSales, "Total Expenses": totalExpenses, "Net Profit": netProfit, "Profit Margin": `${profitMargin}%`,
-    }]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, summarySheet, "Summary");
-    XLSX.utils.book_append_sheet(wb, salesSheet, "Sales");
-    XLSX.utils.book_append_sheet(wb, expenseSheet, "Expenses");
-    XLSX.writeFile(wb, `business-report-${new Date().toISOString().split("T")[0]}.xlsx`);
+    exportMultiSheetExcel([
+      { name: "Summary", rows: [{ "Total Sales": totalSales, "Total Expenses": totalExpenses, "Net Profit": netProfit, "Profit Margin": `${profitMargin}%` }] },
+      { name: "Sales", rows: deliveredOrders.map((o) => ({ "Date": o.created_at?.split("T")[0], "Customer": o.customer_name, "Phone": o.phone, "Total": o.total, "Delivery": o.delivery_charge })) },
+      { name: "Expenses", rows: expenses.map((e: any) => ({ "Date": e.expense_date, "Title": e.title, "Category": e.category, "Amount": e.amount })) },
+    ], `business-report-${new Date().toISOString().split("T")[0]}.xlsx`);
   };
 
   const exportPDF = () => {
