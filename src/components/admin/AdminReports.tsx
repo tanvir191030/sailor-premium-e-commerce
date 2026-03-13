@@ -5,7 +5,7 @@ import { formatPrice } from "@/lib/currency";
 import { TrendingUp, TrendingDown, DollarSign, Download, Printer } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from "recharts";
 import { useTheme } from "@/contexts/ThemeContext";
-import ExcelJS from "exceljs";
+import { exportMultiSheetExcel } from "@/lib/excelExport";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
