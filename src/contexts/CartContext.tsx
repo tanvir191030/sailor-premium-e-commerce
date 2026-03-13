@@ -47,14 +47,16 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const addItem = useCallback((item: Omit<CartItem, "quantity">, qty: number = 1) => {
     setItems((prev) => {
-      // Create a unique cart item ID by appending size if it exists.
-      const cartItemId = item.size ? `${item.id}-${item.size}` : item.id;
+      // Create a unique cart item ID by appending size and color if they exist.
+      let cartItemId = item.id;
+      if (item.size) cartItemId += `-${item.size}`;
+      if (item.color) cartItemId += `-${item.color}`;
       const existing = prev.find((i) => i.id === cartItemId);
 
       if (existing) {
         return prev.map((i) => (i.id === cartItemId ? { ...i, quantity: i.quantity + qty } : i));
       }
-      return [...prev, { ...item, id: cartItemId, productId: item.id, quantity: qty }];
+      return [...prev, { ...item, id: cartItemId, productId: item.id.split('-')[0] || item.id, quantity: qty }];
     });
   }, []);
 
