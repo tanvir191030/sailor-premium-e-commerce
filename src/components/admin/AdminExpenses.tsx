@@ -5,7 +5,7 @@ import { formatPrice } from "@/lib/currency";
 import { useToast } from "@/hooks/use-toast";
 import { Wallet, Plus, Trash2, Download, Calendar, X, Printer, Pencil, Package, ShoppingCart, Search, ChevronDown } from "lucide-react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
-import ExcelJS from "exceljs";
+import { exportJsonToExcel } from "@/lib/excelExport";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
