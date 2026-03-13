@@ -239,7 +239,7 @@ const Checkout = () => {
         district: form.district || null,
         thana: form.thana.trim() || null,
         address: fullAddress,
-        cart_items: items.map((i) => ({ id: i.id, product_id: i.productId || i.id.split('-')[0], name: i.name, price: i.price, quantity: i.quantity, image: i.image, size: i.size })),
+        cart_items: items.map((i) => ({ id: i.id, product_id: i.productId || i.id.split('-')[0], name: i.name, price: i.price, quantity: i.quantity, image: i.image, size: i.size, color: i.color })),
         total: grandTotal,
         delivery_charge: deliveryCharge,
         payment_method: paymentMethod === "cod" ? "Cash on Delivery" : paymentMethod === "bkash" ? "bKash" : paymentMethod === "nagad" ? "Nagad" : "Rocket",
