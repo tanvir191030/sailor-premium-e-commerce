@@ -1,13 +1,14 @@
 import { createContext, useContext, useState, ReactNode, useCallback } from "react";
 
 export interface CartItem {
-  id: string; // This might be productId-size
+  id: string; // This might be productId-size-color
   productId?: string; // The actual Supabase UUID
   name: string;
   price: number;
   image: string;
   category?: string;
   size?: string;
+  color?: string;
   quantity: number;
 }
 
