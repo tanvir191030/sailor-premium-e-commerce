@@ -8,7 +8,7 @@ import {
   Upload, Image, Search, Mail, Phone, MapPin, FileText, Palette, Zap, BookOpen, MessageCircle, FileSpreadsheet, File
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import ExcelJS from "exceljs";
+import { exportAoaToExcel } from "@/lib/excelExport";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
