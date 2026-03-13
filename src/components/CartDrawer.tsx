@@ -64,7 +64,7 @@ const CartDrawer = () => {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{item.name}</p>
                       <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
-                        {item.category}
+                        {[item.category, item.size, item.color].filter(Boolean).join(" · ")}
                       </p>
                       <p className="font-medium text-sm">{formatPrice(item.price)}</p>
                       <div className="flex items-center gap-2 mt-2">
