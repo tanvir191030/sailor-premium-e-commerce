@@ -599,6 +599,42 @@ const ProductDetail = () => {
                   )}
                 </div>
 
+                {/* Color Variants — only shown if admin added colors */}
+                {hasColors && (
+                  <div>
+                    <span className="text-sm font-medium mb-2.5 block">
+                      রঙ বেছে নিন
+                      {selectedColor && <span className="text-muted-foreground font-normal ml-2">— {selectedColor}</span>}
+                    </span>
+                    <div className="flex gap-2 flex-wrap">
+                      {colorVariants.map((color: string) => {
+                        const isActive = selectedColor === color;
+                        const colorImg = colorImageMap[color];
+                        return (
+                          <button
+                            key={color}
+                            onClick={() => {
+                              setSelectedColor(isActive ? null : color);
+                              // Switch to the color-tagged image if available
+                              if (!isActive && colorImg) {
+                                const idx = galleryImages.indexOf(colorImg);
+                                if (idx >= 0) setActiveIndex(idx);
+                              }
+                            }}
+                            className={`min-w-[44px] min-h-[44px] px-3 py-2 text-sm font-medium border transition-colors ${
+                              isActive
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-background text-foreground border-border hover:border-primary"
+                            }`}
+                          >
+                            {color}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* Size Selection — dynamic based on sub-category */}
                 {isNoSizeProduct ? (
                   /* Bags/Others: no size selection needed */
