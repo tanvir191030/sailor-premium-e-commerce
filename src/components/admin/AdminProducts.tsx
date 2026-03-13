@@ -221,6 +221,8 @@ const AdminProducts = () => {
       });
     }
 
+    const colorVars = Array.isArray(p.color_variants) ? p.color_variants : [];
+
     setForm({
       name: p.name, name_bn: p.name_bn || "", price: String(p.price),
       original_price: p.original_price ? String(p.original_price) : "",
@@ -228,8 +230,28 @@ const AdminProducts = () => {
       description: p.description || "", description_bn: p.description_bn || "",
       is_featured: p.is_featured || false,
       sizes: initialSizes,
+      color_variants: colorVars,
+      enableColors: colorVars.length > 0,
     });
-    setEditingId(p.id); setImageFiles([]); setImagePreviews([]); setExistingImages(urls); setShowForm(true);
+
+    // Build color tags from existing images
+    const { data: allImgs } = await supabase
+      .from("product_images")
+      .select("image_url, color_name")
+      .eq("product_id", p.id)
+      .order("sort_order");
+    const tags: Record<number, string> = {};
+    if (allImgs) {
+      allImgs.forEach((img: any) => {
+        if (img.color_name) {
+          // Find index in urls array
+          const idx = urls.indexOf(img.image_url);
+          if (idx >= 0) tags[idx] = img.color_name;
+        }
+      });
+    }
+
+    setEditingId(p.id); setImageFiles([]); setImagePreviews([]); setExistingImages(urls); setShowForm(true); setImageColorTags(tags); setNewColorInput("");
   };
 
   const filtered = products.filter((p: any) =>
