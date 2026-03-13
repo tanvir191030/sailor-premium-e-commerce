@@ -8,7 +8,7 @@ export type ProductInsert = TablesInsert<"products"> & { is_featured?: boolean }
 export type ProductUpdate = TablesUpdate<"products"> & { is_featured?: boolean };
 
 // Columns needed for public product cards/listing
-const PUBLIC_PRODUCT_COLS = "id,name,price,original_price,image_url,category,sub_category,created_at,is_featured,stock" as const;
+const PUBLIC_PRODUCT_COLS = "id,name,price,original_price,image_url,category,sub_category,created_at,is_featured,stock,color_variants" as const;
 
 export const useProducts = () => {
   return useQuery({
