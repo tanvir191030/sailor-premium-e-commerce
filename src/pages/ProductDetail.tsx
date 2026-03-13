@@ -216,18 +216,23 @@ const ProductDetail = () => {
     const fetchImages = async () => {
       const { data } = await supabase
         .from("product_images")
-        .select("image_url, sort_order, is_primary")
+        .select("image_url, sort_order, is_primary, color_name")
         .eq("product_id", product.id)
         .order("sort_order", { ascending: true });
 
       const imgs: string[] = [];
+      const cMap: Record<string, string> = {};
       if (product.image_url) imgs.push(product.image_url);
       if (data) {
-        data.forEach((r) => {
+        data.forEach((r: any) => {
           if (r.image_url && !imgs.includes(r.image_url)) imgs.push(r.image_url);
+          if (r.color_name && r.image_url) {
+            cMap[r.color_name] = r.image_url;
+          }
         });
       }
       setGalleryImages(imgs.length ? imgs : ["/placeholder.svg"]);
+      setColorImageMap(cMap);
     };
     fetchImages();
   }, [product]);
