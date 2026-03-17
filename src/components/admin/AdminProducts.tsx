@@ -222,18 +222,26 @@ const AdminProducts = () => {
   const deleteMutation = useMutation({
     mutationFn: async (product: any) => {
       const { data: images } = await supabase.from("product_images").select("*").eq("product_id", product.id);
-      if (images && images.length > 0) {
-        const paths = images.map((img: any) => {
+      const { data: variants } = await supabase.from("product_variants" as any).select("image_url").eq("product_id", product.id);
+      const removalPaths = [
+        ...(images || []).map((img: any) => {
           try { return new URL(img.image_url).pathname.split("/").slice(-2).join("/"); } catch { return null; }
-        }).filter(Boolean);
-        if (paths.length > 0) await supabase.storage.from("product-images").remove(paths as string[]);
-        await supabase.from("product_images").delete().eq("product_id", product.id);
+        }),
+        ...(variants || []).map((variant: any) => {
+          try { return new URL(variant.image_url).pathname.split("/").slice(-2).join("/"); } catch { return null; }
+        }),
+      ].filter(Boolean);
+
+      if (removalPaths.length > 0) {
+        await supabase.storage.from("product-images").remove(Array.from(new Set(removalPaths)) as string[]);
       }
+      await supabase.from("product_images").delete().eq("product_id", product.id);
+      await supabase.from("product_variants" as any).delete().eq("product_id", product.id);
       if (product.image_url) {
         try {
           const path = new URL(product.image_url).pathname.split("/").slice(-2).join("/");
           await supabase.storage.from("product-images").remove([path]);
-        } catch { }
+        } catch {}
       }
       const { error } = await supabase.from("products").delete().eq("id", product.id);
       if (error) throw error;
