@@ -241,16 +241,18 @@ const ProductDetail = () => {
       if (data) {
         data.forEach((r: any) => {
           if (r.image_url && !imgs.includes(r.image_url)) imgs.push(r.image_url);
-          if (r.color_name && r.image_url) {
-            cMap[r.color_name] = r.image_url;
-          }
+          if (r.color_name && r.image_url) cMap[r.color_name] = r.image_url;
         });
       }
+      productVariants.forEach((variant: any) => {
+        if (variant.image_url && !imgs.includes(variant.image_url)) imgs.push(variant.image_url);
+        if (variant.color_name && variant.image_url) cMap[variant.color_name] = variant.image_url;
+      });
       setGalleryImages(imgs.length ? imgs : ["/placeholder.svg"]);
       setColorImageMap(cMap);
     };
     fetchImages();
-  }, [product]);
+  }, [product, productVariants]);
 
   const related = allProducts
     .filter((p) => p.id !== id && p.category === product?.category)
