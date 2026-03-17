@@ -261,30 +261,36 @@ const ProductDetail = () => {
   const cartPayloadBase = product
     ? {
       id: product.id,
+      productId: product.id,
       name: product.name,
       image: galleryImages[0] || "/placeholder.svg",
       category: product.category || undefined,
     }
     : null;
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (variantOverride?: any) => {
     if (!cartPayload) return;
 
-    // Check mandatory size selection (skip for no-size products)
     const rawSizesCheck = product?.sizes as any;
     const subCat = rawSizesCheck?.sub_category || product?.sub_category || "";
     const isNoSize = NO_SIZE_SUBS.includes(subCat);
     if (!isNoSize && !selectedSize) {
       setSizeError(true);
-      toast({
-        title: "সাইজ প্রয়োজন",
-        description: "অনুগ্রহ করে একটি সাইজ সিলেক্ট করুন",
-        variant: "destructive",
-      });
+      toast({ title: "সাইজ প্রয়োজন", description: "অনুগ্রহ করে একটি সাইজ সিলেক্ট করুন", variant: "destructive" });
       return;
     }
 
-    addItem(cartPayload, quantity);
+    const payload = variantOverride
+      ? {
+          ...cartPayload,
+          variantId: variantOverride.id,
+          color: variantOverride.color_name,
+          image: variantOverride.image_url || cartPayload.image,
+          price: Number(variantOverride.price) > 0 ? Number(variantOverride.price) : cartPayload.price,
+        }
+      : cartPayload;
+
+    addItem(payload, quantity);
     setIsOpen(true);
     toast({ title: "✓ কার্টে যোগ হয়েছে", description: `${product!.name} × ${quantity}` });
   };
@@ -292,17 +298,12 @@ const ProductDetail = () => {
   const handleBuyNow = () => {
     if (!cartPayload) return;
 
-    // Check mandatory size selection (skip for no-size products)
     const rawSizesCheck2 = product?.sizes as any;
     const subCat2 = rawSizesCheck2?.sub_category || product?.sub_category || "";
     const isNoSize2 = NO_SIZE_SUBS.includes(subCat2);
     if (!isNoSize2 && !selectedSize) {
       setSizeError(true);
-      toast({
-        title: "সাইজ প্রয়োজন",
-        description: "অনুগ্রহ করে একটি সাইজ সিলেক্ট করুন",
-        variant: "destructive",
-      });
+      toast({ title: "সাইজ প্রয়োজন", description: "অনুগ্রহ করে একটি সাইজ সিলেক্ট করুন", variant: "destructive" });
       return;
     }
 
