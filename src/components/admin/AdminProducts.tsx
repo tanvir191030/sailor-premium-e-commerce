@@ -534,12 +534,12 @@ const AdminProducts = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <input
-                  value={subType !== "none" && Object.keys(form.sizes).length > 0 ? String(Object.values(form.sizes).reduce((acc: number, curr: any) => acc + (parseInt(curr?.stock ?? curr) || 0), 0)) : form.stock}
+                  value={productVariants.length > 0 ? String(variantTotalStock) : subType !== "none" && Object.keys(form.sizes).length > 0 ? String(Object.values(form.sizes).reduce((acc: number, curr: any) => acc + (parseInt(curr?.stock ?? curr) || 0), 0)) : form.stock}
                   onChange={(e) => setForm({ ...form, stock: e.target.value })}
-                  disabled={subType !== "none" && Object.keys(form.sizes).length > 0}
+                  disabled={productVariants.length > 0 || (subType !== "none" && Object.keys(form.sizes).length > 0)}
                   placeholder={t("admin.stock")}
                   type="number"
-                  className={inputCls + (subType !== "none" && Object.keys(form.sizes).length > 0 ? " opacity-50 cursor-not-allowed" : "")}
+                  className={inputCls + (productVariants.length > 0 || (subType !== "none" && Object.keys(form.sizes).length > 0) ? " opacity-50 cursor-not-allowed" : "")}
                 />
               </div>
 
