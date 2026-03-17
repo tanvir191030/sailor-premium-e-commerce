@@ -177,7 +177,30 @@ const Checkout = () => {
     try {
       // 0. Stock validation
       for (const item of items) {
-        // Fallback to item.id if productId is mistakenly undefined (unlikely due to updated CartContext)
+        if (item.variantId) {
+          const { data: rawVariantData, error: variantError } = await (supabase as any)
+            .from("product_variants")
+            .select("color_name, stock_quantity")
+            .eq("id", item.variantId)
+            .maybeSingle();
+
+          const variantData = rawVariantData as { color_name: string; stock_quantity: number } | null;
+
+          if (variantError || !variantData) {
+            toast({ title: "Variant not found", description: `Could not verify stock for ${item.name}`, variant: "destructive" });
+            setSubmitting(false);
+            return;
+          }
+
+          if (Number(variantData.stock_quantity) < item.quantity) {
+            toast({ title: "Inadequate Stock", description: `Only ${variantData.stock_quantity} left for ${item.name} (${variantData.color_name}).`, variant: "destructive" });
+            setSubmitting(false);
+            return;
+          }
+
+          continue;
+        }
+
         const checkId = item.productId || item.id.split('-')[0];
         const { data: productData, error: productError } = await supabase
           .from("products")
@@ -239,7 +262,7 @@ const Checkout = () => {
         district: form.district || null,
         thana: form.thana.trim() || null,
         address: fullAddress,
-        cart_items: items.map((i) => ({ id: i.id, product_id: i.productId || i.id.split('-')[0], name: i.name, price: i.price, quantity: i.quantity, image: i.image, size: i.size, color: i.color })),
+        cart_items: items.map((i) => ({ id: i.id, product_id: i.productId || i.id.split('-')[0], variant_id: i.variantId || null, name: i.name, price: i.price, quantity: i.quantity, image: i.image, size: i.size, color: i.color })),
         total: grandTotal,
         delivery_charge: deliveryCharge,
         payment_method: paymentMethod === "cod" ? "Cash on Delivery" : paymentMethod === "bkash" ? "bKash" : paymentMethod === "nagad" ? "Nagad" : "Rocket",
@@ -252,6 +275,24 @@ const Checkout = () => {
 
       // 3. Subtract stock from products manually
       for (const item of items) {
+        if (item.variantId) {
+          const { data: rawCurrentVariant } = await (supabase as any)
+            .from("product_variants")
+            .select("stock_quantity")
+            .eq("id", item.variantId)
+            .maybeSingle();
+
+          const currentVariant = rawCurrentVariant as { stock_quantity: number } | null;
+
+          if (currentVariant) {
+            await (supabase as any)
+              .from("product_variants")
+              .update({ stock_quantity: Math.max(0, Number(currentVariant.stock_quantity) - item.quantity) })
+              .eq("id", item.variantId);
+          }
+          continue;
+        }
+
         const updateId = item.productId || item.id.split('-')[0];
         const { data: currentProduct } = await supabase
           .from("products")
@@ -579,7 +620,7 @@ const Checkout = () => {
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium truncate text-foreground">{item.name}</p>
-                                <p className="text-xs text-muted-foreground">{[`x${item.quantity}`, item.size, item.color].filter(Boolean).join(" · ")}</p>
+                                <p className="text-xs text-muted-foreground">{[`x${item.quantity}`, item.size ? `Size: ${item.size}` : null, item.color ? `Color: ${item.color}` : null].filter(Boolean).join(" · ")}</p>
                               </div>
                               <p className="text-sm font-medium text-foreground whitespace-nowrap">{formatPrice(item.price * item.quantity)}</p>
                             </div>

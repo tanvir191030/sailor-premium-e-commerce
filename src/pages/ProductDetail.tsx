@@ -44,6 +44,7 @@ const ProductDetail = () => {
 
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [activeIndex, setActiveIndex] = useState(0);
   const [zoomed, setZoomed] = useState(false);
@@ -73,6 +74,20 @@ const ProductDetail = () => {
       if (error) throw error;
       // Only show approved reviews on frontend
       return (data || []).filter((r: any) => r.is_approved === true);
+    },
+    enabled: !!id,
+  });
+
+  const { data: productVariants = [] } = useQuery({
+    queryKey: ["product-variants", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("product_variants" as any)
+        .select("id, color_name, image_url, stock_quantity, price, sort_order")
+        .eq("product_id", id!)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return (data || []) as any[];
     },
     enabled: !!id,
   });
@@ -226,16 +241,18 @@ const ProductDetail = () => {
       if (data) {
         data.forEach((r: any) => {
           if (r.image_url && !imgs.includes(r.image_url)) imgs.push(r.image_url);
-          if (r.color_name && r.image_url) {
-            cMap[r.color_name] = r.image_url;
-          }
+          if (r.color_name && r.image_url) cMap[r.color_name] = r.image_url;
         });
       }
+      productVariants.forEach((variant: any) => {
+        if (variant.image_url && !imgs.includes(variant.image_url)) imgs.push(variant.image_url);
+        if (variant.color_name && variant.image_url) cMap[variant.color_name] = variant.image_url;
+      });
       setGalleryImages(imgs.length ? imgs : ["/placeholder.svg"]);
       setColorImageMap(cMap);
     };
     fetchImages();
-  }, [product]);
+  }, [product, productVariants]);
 
   const related = allProducts
     .filter((p) => p.id !== id && p.category === product?.category)
@@ -244,30 +261,36 @@ const ProductDetail = () => {
   const cartPayloadBase = product
     ? {
       id: product.id,
+      productId: product.id,
       name: product.name,
       image: galleryImages[0] || "/placeholder.svg",
       category: product.category || undefined,
     }
     : null;
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (variantOverride?: any) => {
     if (!cartPayload) return;
 
-    // Check mandatory size selection (skip for no-size products)
     const rawSizesCheck = product?.sizes as any;
     const subCat = rawSizesCheck?.sub_category || product?.sub_category || "";
     const isNoSize = NO_SIZE_SUBS.includes(subCat);
     if (!isNoSize && !selectedSize) {
       setSizeError(true);
-      toast({
-        title: "সাইজ প্রয়োজন",
-        description: "অনুগ্রহ করে একটি সাইজ সিলেক্ট করুন",
-        variant: "destructive",
-      });
+      toast({ title: "সাইজ প্রয়োজন", description: "অনুগ্রহ করে একটি সাইজ সিলেক্ট করুন", variant: "destructive" });
       return;
     }
 
-    addItem(cartPayload, quantity);
+    const payload = variantOverride
+      ? {
+          ...cartPayload,
+          variantId: variantOverride.id,
+          color: variantOverride.color_name,
+          image: variantOverride.image_url || cartPayload.image,
+          price: Number(variantOverride.price) > 0 ? Number(variantOverride.price) : cartPayload.price,
+        }
+      : cartPayload;
+
+    addItem(payload, quantity);
     setIsOpen(true);
     toast({ title: "✓ কার্টে যোগ হয়েছে", description: `${product!.name} × ${quantity}` });
   };
@@ -275,17 +298,12 @@ const ProductDetail = () => {
   const handleBuyNow = () => {
     if (!cartPayload) return;
 
-    // Check mandatory size selection (skip for no-size products)
     const rawSizesCheck2 = product?.sizes as any;
     const subCat2 = rawSizesCheck2?.sub_category || product?.sub_category || "";
     const isNoSize2 = NO_SIZE_SUBS.includes(subCat2);
     if (!isNoSize2 && !selectedSize) {
       setSizeError(true);
-      toast({
-        title: "সাইজ প্রয়োজন",
-        description: "অনুগ্রহ করে একটি সাইজ সিলেক্ট করুন",
-        variant: "destructive",
-      });
+      toast({ title: "সাইজ প্রয়োজন", description: "অনুগ্রহ করে একটি সাইজ সিলেক্ট করুন", variant: "destructive" });
       return;
     }
 
@@ -379,16 +397,25 @@ const ProductDetail = () => {
 
   const colorVariants: string[] = Array.isArray((product as any).color_variants) ? (product as any).color_variants : [];
   const hasColors = colorVariants.length > 0;
+  const selectedVariant = productVariants.find((variant: any) => variant.id === selectedVariantId) || null;
+  const activeVariantPrice = selectedVariant && Number(selectedVariant.price) > 0 ? Number(selectedVariant.price) : activePrice;
 
   const cartPayload = cartPayloadBase
-    ? { ...cartPayloadBase, price: activePrice, size: selectedSize || undefined, color: selectedColor || undefined }
+    ? {
+        ...cartPayloadBase,
+        price: activeVariantPrice,
+        size: selectedSize || undefined,
+        color: selectedVariant?.color_name || selectedColor || undefined,
+        variantId: selectedVariant?.id || undefined,
+        image: selectedVariant?.image_url || galleryImages[0] || "/placeholder.svg",
+      }
     : null;
 
   const hasSpecificSizes = !isNoSizeProduct && sizeVariants && Object.keys(sizeVariants).length > 0;
 
   const displaySizes = hasSpecificSizes ? Object.keys(sizeVariants) : (sizeType === "shoes" ? SHOE_SIZES : SIZES);
 
-  const isInStock = product.stock > 0;
+  const isInStock = selectedVariant ? Number(selectedVariant.stock_quantity) > 0 : product.stock > 0;
   const wishlisted = isWishlisted(product.id);
   const currentImage = galleryImages[activeIndex] || "/placeholder.svg";
 
@@ -599,36 +626,54 @@ const ProductDetail = () => {
                   )}
                 </div>
 
-                {/* Color Variants — only shown if admin added colors */}
-                {hasColors && (
-                  <div>
-                    <span className="text-sm font-medium mb-2.5 block">
-                      রঙ বেছে নিন
-                      {selectedColor && <span className="text-muted-foreground font-normal ml-2">— {selectedColor}</span>}
-                    </span>
-                    <div className="flex gap-2 flex-wrap">
-                      {colorVariants.map((color: string) => {
-                        const isActive = selectedColor === color;
-                        const colorImg = colorImageMap[color];
+                {hasColors && productVariants.length > 0 && (
+                  <div className="space-y-3">
+                    <div>
+                      <span className="text-sm font-medium mb-1 block">রঙ বেছে নিন</span>
+                      <p className="text-xs text-muted-foreground">পছন্দের রঙের কার্ড থেকে সরাসরি কার্টে যোগ করুন।</p>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {productVariants.map((variant: any) => {
+                        const variantPrice = Number(variant.price) > 0 ? Number(variant.price) : activePrice;
+                        const variantOutOfStock = Number(variant.stock_quantity) <= 0;
+                        const isActive = selectedVariantId === variant.id;
                         return (
-                          <button
-                            key={color}
-                            onClick={() => {
-                              setSelectedColor(isActive ? null : color);
-                              // Switch to the color-tagged image if available
-                              if (!isActive && colorImg) {
-                                const idx = galleryImages.indexOf(colorImg);
-                                if (idx >= 0) setActiveIndex(idx);
-                              }
-                            }}
-                            className={`min-w-[44px] min-h-[44px] px-3 py-2 text-sm font-medium border transition-colors ${
-                              isActive
-                                ? "bg-primary text-primary-foreground border-primary"
-                                : "bg-background text-foreground border-border hover:border-primary"
-                            }`}
-                          >
-                            {color}
-                          </button>
+                          <div key={variant.id} className={`border bg-card p-3 transition-all ${isActive ? "border-variant bg-variant-soft" : "border-border hover:border-variant-border"}`}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedVariantId(variant.id);
+                                setSelectedColor(variant.color_name);
+                                const colorImg = variant.image_url || colorImageMap[variant.color_name];
+                                if (colorImg) {
+                                  const idx = galleryImages.indexOf(colorImg);
+                                  if (idx >= 0) setActiveIndex(idx);
+                                }
+                              }}
+                              className="block w-full text-left"
+                            >
+                              <div className="aspect-[4/5] overflow-hidden bg-secondary mb-3">
+                                <img src={variant.image_url || "/placeholder.svg"} alt={variant.color_name} className="w-full h-full object-cover" />
+                              </div>
+                              <div className="flex items-start justify-between gap-2 mb-3">
+                                <div>
+                                  <p className="font-semibold text-foreground">{variant.color_name}</p>
+                                  <p className="text-xs text-muted-foreground">{formatPrice(variantPrice)}</p>
+                                </div>
+                                <span className={`text-[10px] px-2 py-1 border ${variantOutOfStock ? "border-destructive/20 text-destructive bg-destructive/10" : "border-variant-border text-variant bg-variant-soft"}`}>
+                                  {variantOutOfStock ? "Out of Stock" : `${variant.stock_quantity} pcs`}
+                                </span>
+                              </div>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleAddToCart(variant)}
+                              disabled={variantOutOfStock}
+                              className={`w-full h-11 text-xs font-bold tracking-[0.12em] transition-colors ${variantOutOfStock ? "bg-secondary text-muted-foreground cursor-not-allowed" : "bg-variant text-variant-foreground hover:opacity-90"}`}
+                            >
+                              {variantOutOfStock ? "OUT OF STOCK" : "ADD TO CART"}
+                            </button>
+                          </div>
                         );
                       })}
                     </div>

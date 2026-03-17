@@ -1,8 +1,9 @@
 import { createContext, useContext, useState, ReactNode, useCallback } from "react";
 
 export interface CartItem {
-  id: string; // This might be productId-size-color
-  productId?: string; // The actual Supabase UUID
+  id: string;
+  productId?: string;
+  variantId?: string;
   name: string;
   price: number;
   image: string;
@@ -28,14 +29,14 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType>({
   items: [],
-  addItem: () => { },
-  removeItem: () => { },
-  updateQuantity: () => { },
-  clearCart: () => { },
+  addItem: () => {},
+  removeItem: () => {},
+  updateQuantity: () => {},
+  clearCart: () => {},
   isOpen: false,
-  setIsOpen: () => { },
+  setIsOpen: () => {},
   isBuyNowOpen: false,
-  setIsBuyNowOpen: () => { },
+  setIsBuyNowOpen: () => {},
   totalItems: 0,
   totalPrice: 0,
 });
@@ -47,22 +48,29 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const addItem = useCallback((item: Omit<CartItem, "quantity">, qty: number = 1) => {
     setItems((prev) => {
-      // Create a unique cart item ID by appending size and color if they exist.
-      let cartItemId = item.id;
+      const baseProductId = item.productId || item.id.split("-")[0] || item.id;
+      let cartItemId = baseProductId;
+
+      if (item.variantId) cartItemId += `-variant-${item.variantId}`;
       if (item.size) cartItemId += `-${item.size}`;
       if (item.color) cartItemId += `-${item.color}`;
+
       const existing = prev.find((i) => i.id === cartItemId);
 
       if (existing) {
         return prev.map((i) => (i.id === cartItemId ? { ...i, quantity: i.quantity + qty } : i));
       }
-      return [...prev, { ...item, id: cartItemId, productId: item.id.split('-')[0] || item.id, quantity: qty }];
-    });
-  }, []);
 
-  const openBuyNow = useCallback(() => {
-    setIsOpen(false);
-    setIsBuyNowOpen(true);
+      return [
+        ...prev,
+        {
+          ...item,
+          id: cartItemId,
+          productId: baseProductId,
+          quantity: qty,
+        },
+      ];
+    });
   }, []);
 
   const removeItem = useCallback((id: string) => {

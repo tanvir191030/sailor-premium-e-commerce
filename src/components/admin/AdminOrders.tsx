@@ -375,7 +375,7 @@ const AdminOrders = () => {
 
               <div className="text-xs text-muted-foreground mb-2">
                 {Array.isArray(o.cart_items) && o.cart_items.slice(0, 3).map((item: any, i: number) => (
-                  <span key={i}>{item.name} x{item.quantity || 1}{item.size ? ` (${item.size})` : ""}{item.color ? ` [${item.color}]` : ""}{i < Math.min(o.cart_items.length, 3) - 1 ? ", " : ""}</span>
+                  <span key={i}>{item.name} x{item.quantity || 1}{item.size ? ` (Size: ${item.size})` : ""}{item.color ? ` [Color: ${item.color}]` : ""}{i < Math.min(o.cart_items.length, 3) - 1 ? ", " : ""}</span>
                 ))}
                 {Array.isArray(o.cart_items) && o.cart_items.length > 3 && <span> +{o.cart_items.length - 3} আরও</span>}
               </div>

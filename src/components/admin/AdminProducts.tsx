@@ -18,6 +18,15 @@ const getTemplateType = (template: string): "clothing" | "hijab" | "shoes" | "no
   return "none";
 };
 
+type ProductVariantForm = {
+  id?: string;
+  color_name: string;
+  image_url: string;
+  image_file?: File | null;
+  stock_quantity: string;
+  price: string;
+};
+
 const AdminProducts = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -28,14 +37,12 @@ const AdminProducts = () => {
     stock: "", description: "", description_bn: "", is_featured: false,
     sub_category: "",
     sizes: {} as any,
-    color_variants: [] as string[],
-    enableColors: false,
   });
+  const [productVariants, setProductVariants] = useState<ProductVariantForm[]>([]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]); // URLs from DB
   const [imageColorTags, setImageColorTags] = useState<Record<number, string>>({}); // index -> color name
-  const [newColorInput, setNewColorInput] = useState("");
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { data: allSubCategories = [] } = useSubCategories();
@@ -70,7 +77,6 @@ const AdminProducts = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      // Determine primary image: first existing or first new upload
       let image_url: string | undefined = existingImages.length > 0 ? existingImages[0] : undefined;
       if (imageFiles.length > 0 && existingImages.length === 0) {
         image_url = await uploadProductImage(imageFiles[0]);
@@ -84,7 +90,7 @@ const AdminProducts = () => {
       if (subType === "clothing" || subType === "hijab" || subType === "shoes") {
         const variants: any = {};
         Object.entries(form.sizes).forEach(([size, data]: any) => {
-        if (data && data.stock && parseInt(data.stock) > 0) {
+          if (data && data.stock && parseInt(data.stock) > 0) {
             const variant: any = {
               stock: parseInt(data.stock),
               measurements: data.measurements || {}
@@ -101,7 +107,30 @@ const AdminProducts = () => {
         }
       }
 
-      const finalStock = finalSizes ? totalStockFromSizes : (parseInt(form.stock) || 0);
+      const cleanedVariants = productVariants
+        .map((variant, index) => ({
+          ...variant,
+          color_name: variant.color_name.trim(),
+          stock_quantity: String(parseInt(variant.stock_quantity || "0", 10) || 0),
+          price: variant.price?.trim() || "",
+          sort_order: index,
+        }))
+        .filter((variant) => variant.color_name || variant.image_url || variant.image_file);
+
+      const colorNames = cleanedVariants.map((variant) => variant.color_name.toLowerCase());
+      if (new Set(colorNames).size !== colorNames.length) {
+        throw new Error("Each variant color name must be unique.");
+      }
+      if (cleanedVariants.some((variant) => !variant.color_name)) {
+        throw new Error("Each variant must have a color name.");
+      }
+
+      const variantTotalStock = cleanedVariants.reduce((sum, variant) => sum + (parseInt(variant.stock_quantity, 10) || 0), 0);
+      const finalStock = cleanedVariants.length > 0
+        ? variantTotalStock
+        : finalSizes
+          ? totalStockFromSizes
+          : (parseInt(form.stock) || 0);
 
       const salePrice = parseFloat(form.price);
       const mrp = form.original_price ? parseFloat(form.original_price) : null;
@@ -117,22 +146,21 @@ const AdminProducts = () => {
         sizes: finalSizes,
         description: form.description || null,
         is_featured: form.is_featured,
-        color_variants: form.enableColors && form.color_variants.length > 0 ? form.color_variants : [],
+        color_variants: cleanedVariants.map((variant) => variant.color_name),
         ...(image_url && { image_url }),
       };
+
       let productId = editingId;
       if (editingId) {
         const { error } = await supabase.from("products").update(payload).eq("id", editingId);
         if (error) throw error;
 
-        // Remove old product_images and re-insert existing (non-primary) + new with color tags
         await supabase.from("product_images").delete().eq("product_id", editingId);
         let sortIdx = 1;
         for (let eIdx = 1; eIdx < existingImages.length; eIdx++) {
           const colorTag = imageColorTags[eIdx] || null;
           await supabase.from("product_images").insert({ product_id: editingId, image_url: existingImages[eIdx], sort_order: sortIdx++, is_primary: false, color_name: colorTag });
         }
-        // Upload new files (skip first if it became primary)
         const startIdx = existingImages.length === 0 ? 1 : 0;
         for (let i = startIdx; i < imageFiles.length; i++) {
           const url = await uploadProductImage(imageFiles[i]);
@@ -144,7 +172,6 @@ const AdminProducts = () => {
         const { data, error } = await supabase.from("products").insert(payload).select("id").single();
         if (error) throw error;
         productId = data.id;
-        // Upload additional images for new product with color tags
         if (imageFiles.length > 1 && productId) {
           for (let i = 1; i < imageFiles.length; i++) {
             const url = await uploadProductImage(imageFiles[i]);
@@ -152,6 +179,35 @@ const AdminProducts = () => {
             await supabase.from("product_images").insert({ product_id: productId, image_url: url, sort_order: i, is_primary: false, color_name: colorTag });
           }
         }
+      }
+
+      if (!productId) throw new Error("Unable to save product variants.");
+
+      await supabase.from("product_variants" as any).delete().eq("product_id", productId);
+
+      if (cleanedVariants.length > 0) {
+        const variantRows = [];
+        for (const [index, variant] of cleanedVariants.entries()) {
+          let variantImageUrl = variant.image_url;
+          if (variant.image_file) {
+            variantImageUrl = await uploadProductImage(variant.image_file);
+          }
+          if (!variantImageUrl) {
+            throw new Error(`Variant image is required for ${variant.color_name || `variant ${index + 1}`}.`);
+          }
+
+          variantRows.push({
+            product_id: productId,
+            color_name: variant.color_name,
+            image_url: variantImageUrl,
+            stock_quantity: parseInt(variant.stock_quantity, 10) || 0,
+            price: variant.price ? parseFloat(variant.price) : null,
+            sort_order: index,
+          });
+        }
+
+        const { error: variantError } = await supabase.from("product_variants" as any).insert(variantRows as any);
+        if (variantError) throw variantError;
       }
     },
     onSuccess: () => {
@@ -166,18 +222,26 @@ const AdminProducts = () => {
   const deleteMutation = useMutation({
     mutationFn: async (product: any) => {
       const { data: images } = await supabase.from("product_images").select("*").eq("product_id", product.id);
-      if (images && images.length > 0) {
-        const paths = images.map((img: any) => {
+      const { data: variants } = await supabase.from("product_variants" as any).select("image_url").eq("product_id", product.id);
+      const removalPaths = [
+        ...(images || []).map((img: any) => {
           try { return new URL(img.image_url).pathname.split("/").slice(-2).join("/"); } catch { return null; }
-        }).filter(Boolean);
-        if (paths.length > 0) await supabase.storage.from("product-images").remove(paths as string[]);
-        await supabase.from("product_images").delete().eq("product_id", product.id);
+        }),
+        ...(variants || []).map((variant: any) => {
+          try { return new URL(variant.image_url).pathname.split("/").slice(-2).join("/"); } catch { return null; }
+        }),
+      ].filter(Boolean);
+
+      if (removalPaths.length > 0) {
+        await supabase.storage.from("product-images").remove(Array.from(new Set(removalPaths)) as string[]);
       }
+      await supabase.from("product_images").delete().eq("product_id", product.id);
+      await supabase.from("product_variants" as any).delete().eq("product_id", product.id);
       if (product.image_url) {
         try {
           const path = new URL(product.image_url).pathname.split("/").slice(-2).join("/");
           await supabase.storage.from("product-images").remove([path]);
-        } catch { }
+        } catch {}
       }
       const { error } = await supabase.from("products").delete().eq("id", product.id);
       if (error) throw error;
@@ -192,8 +256,9 @@ const AdminProducts = () => {
   });
 
   const resetForm = () => {
-    setForm({ name: "", name_bn: "", price: "", original_price: "", category: "", brand: "", stock: "", description: "", description_bn: "", is_featured: false, sub_category: "", sizes: {}, color_variants: [], enableColors: false });
-    setImageFiles([]); setImagePreviews([]); setExistingImages([]); setEditingId(null); setShowForm(false); setImageColorTags({}); setNewColorInput("");
+    setForm({ name: "", name_bn: "", price: "", original_price: "", category: "", brand: "", stock: "", description: "", description_bn: "", is_featured: false, sub_category: "", sizes: {} });
+    setProductVariants([]);
+    setImageFiles([]); setImagePreviews([]); setExistingImages([]); setEditingId(null); setShowForm(false); setImageColorTags({});
   };
 
   const startEdit = async (p: any) => {
@@ -212,7 +277,6 @@ const AdminProducts = () => {
       }
     }
 
-    // Fetch existing images
     const urls: string[] = [];
     if (p.image_url) urls.push(p.image_url);
     const { data: extraImages } = await supabase
@@ -226,8 +290,6 @@ const AdminProducts = () => {
       });
     }
 
-    const colorVars = Array.isArray(p.color_variants) ? p.color_variants : [];
-
     setForm({
       name: p.name, name_bn: p.name_bn || "", price: String(p.price),
       original_price: p.original_price ? String(p.original_price) : "",
@@ -235,11 +297,8 @@ const AdminProducts = () => {
       description: p.description || "", description_bn: p.description_bn || "",
       is_featured: p.is_featured || false,
       sizes: initialSizes,
-      color_variants: colorVars,
-      enableColors: colorVars.length > 0,
     });
 
-    // Build color tags from existing images
     const { data: allImgs } = await supabase
       .from("product_images")
       .select("image_url, color_name")
@@ -249,14 +308,38 @@ const AdminProducts = () => {
     if (allImgs) {
       allImgs.forEach((img: any) => {
         if (img.color_name) {
-          // Find index in urls array
           const idx = urls.indexOf(img.image_url);
           if (idx >= 0) tags[idx] = img.color_name;
         }
       });
     }
 
-    setEditingId(p.id); setImageFiles([]); setImagePreviews([]); setExistingImages(urls); setShowForm(true); setImageColorTags(tags); setNewColorInput("");
+    const { data: variants } = await supabase
+      .from("product_variants" as any)
+      .select("id, color_name, image_url, stock_quantity, price")
+      .eq("product_id", p.id)
+      .order("sort_order");
+
+    const fallbackColors = Array.isArray(p.color_variants) ? p.color_variants : [];
+    const fallbackVariants: ProductVariantForm[] = fallbackColors.map((color: string) => ({
+      color_name: color,
+      image_url: allImgs?.find((img: any) => img.color_name === color)?.image_url || "",
+      stock_quantity: "0",
+      price: "",
+    }));
+
+    setProductVariants(
+      (variants && variants.length > 0 ? variants : fallbackVariants).map((variant: any) => ({
+        id: variant.id,
+        color_name: variant.color_name || "",
+        image_url: variant.image_url || "",
+        stock_quantity: String(variant.stock_quantity ?? 0),
+        price: variant.price ? String(variant.price) : "",
+        image_file: null,
+      }))
+    );
+
+    setEditingId(p.id); setImageFiles([]); setImagePreviews([]); setExistingImages(urls); setShowForm(true); setImageColorTags(tags);
   };
 
   const filtered = products.filter((p: any) =>
@@ -270,6 +353,7 @@ const AdminProducts = () => {
   const subType = selectedSubCat ? getTemplateType(selectedSubCat.measurement_template) : "none";
   const selectedCatObj = categories.find((c: any) => c.name === form.category);
   const availableSubCats = selectedCatObj ? allSubCategories.filter((s: any) => s.category_id === selectedCatObj.id) : [];
+  const variantTotalStock = productVariants.reduce((sum, variant) => sum + (parseInt(variant.stock_quantity || "0", 10) || 0), 0);
 
   const renderSizeFields = () => {
     if (!form.sub_category || subType === "none") {
@@ -450,12 +534,12 @@ const AdminProducts = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <input
-                  value={subType !== "none" && Object.keys(form.sizes).length > 0 ? String(Object.values(form.sizes).reduce((acc: number, curr: any) => acc + (parseInt(curr?.stock ?? curr) || 0), 0)) : form.stock}
+                  value={productVariants.length > 0 ? String(variantTotalStock) : subType !== "none" && Object.keys(form.sizes).length > 0 ? String(Object.values(form.sizes).reduce((acc: number, curr: any) => acc + (parseInt(curr?.stock ?? curr) || 0), 0)) : form.stock}
                   onChange={(e) => setForm({ ...form, stock: e.target.value })}
-                  disabled={subType !== "none" && Object.keys(form.sizes).length > 0}
+                  disabled={productVariants.length > 0 || (subType !== "none" && Object.keys(form.sizes).length > 0)}
                   placeholder={t("admin.stock")}
                   type="number"
-                  className={inputCls + (subType !== "none" && Object.keys(form.sizes).length > 0 ? " opacity-50 cursor-not-allowed" : "")}
+                  className={inputCls + (productVariants.length > 0 || (subType !== "none" && Object.keys(form.sizes).length > 0) ? " opacity-50 cursor-not-allowed" : "")}
                 />
               </div>
 
@@ -554,86 +638,106 @@ const AdminProducts = () => {
                 {t("admin.featured")}
               </label>
 
-              {/* Color Variants Toggle & Management */}
-              <div className="space-y-3 border border-border p-3 rounded-lg bg-secondary/10">
-                <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
-                  <input type="checkbox" checked={form.enableColors} onChange={(e) => setForm({ ...form, enableColors: e.target.checked })} className="rounded" />
-                  🎨 কালার ভ্যারিয়েন্ট সক্রিয় করুন
-                </label>
-                {form.enableColors && (
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap gap-1.5">
-                      {form.color_variants.map((c, i) => (
-                        <span key={i} className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded text-xs font-medium">
-                          {c}
-                          <button type="button" onClick={() => setForm({ ...form, color_variants: form.color_variants.filter((_, idx) => idx !== i) })} className="hover:text-destructive">×</button>
-                        </span>
-                      ))}
-                    </div>
-                    <div className="flex gap-2">
-                      <input
-                        value={newColorInput}
-                        onChange={(e) => setNewColorInput(e.target.value)}
-                        placeholder="রঙের নাম (যেমন: Red, Blue)"
-                        className={`${inputCls} flex-1`}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            const v = newColorInput.trim();
-                            if (v && !form.color_variants.includes(v)) {
-                              setForm({ ...form, color_variants: [...form.color_variants, v] });
-                              setNewColorInput("");
-                            }
-                          }
-                        }}
-                      />
-                      <button type="button" onClick={() => {
-                        const v = newColorInput.trim();
-                        if (v && !form.color_variants.includes(v)) {
-                          setForm({ ...form, color_variants: [...form.color_variants, v] });
-                          setNewColorInput("");
-                        }
-                      }} className="px-3 py-1 bg-primary text-primary-foreground rounded-lg text-xs font-medium">
-                        <Plus size={14} />
-                      </button>
-                    </div>
-                    {form.color_variants.length > 0 && (existingImages.length > 0 || imagePreviews.length > 0) && (
-                      <div className="pt-2 border-t border-border/50">
-                        <p className="text-[10px] text-muted-foreground mb-2">ছবিতে রঙ ট্যাগ করুন (ঐচ্ছিক):</p>
-                        <div className="grid grid-cols-5 gap-2">
-                          {existingImages.map((url, i) => (
-                            <div key={`et-${i}`} className="space-y-1">
-                              <div className="aspect-square rounded overflow-hidden border border-border">
-                                <img src={url} alt="" className="w-full h-full object-cover" />
-                              </div>
-                              <select
-                                value={imageColorTags[i] || ""}
-                                onChange={(e) => setImageColorTags({ ...imageColorTags, [i]: e.target.value })}
-                                className="w-full text-[9px] px-1 py-0.5 border border-border rounded bg-card text-foreground"
-                              >
-                                <option value="">ট্যাগ নেই</option>
-                                {form.color_variants.map((c) => <option key={c} value={c}>{c}</option>)}
-                              </select>
+              <div className="space-y-3 border border-variant-border bg-variant-soft p-3 rounded-lg">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Color Variants</p>
+                    <p className="text-xs text-muted-foreground">প্রতি ভ্যারিয়েন্টে আলাদা ছবি, রঙের নাম, স্টক এবং প্রয়োজনে আলাদা দাম দিন।</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setProductVariants((prev) => [...prev, { color_name: "", image_url: "", image_file: null, stock_quantity: "0", price: "" }])}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-variant text-variant-foreground text-xs font-semibold"
+                  >
+                    <Plus size={14} /> Add Variant
+                  </button>
+                </div>
+
+                {productVariants.length === 0 ? (
+                  <div className="rounded-lg border border-dashed border-variant-border bg-card px-4 py-5 text-xs text-muted-foreground">
+                    এখনো কোনো color variant যোগ করা হয়নি।
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {productVariants.map((variant, index) => {
+                      const preview = variant.image_file ? URL.createObjectURL(variant.image_file) : variant.image_url;
+                      return (
+                        <div key={`${variant.id || "new"}-${index}`} className="grid gap-3 rounded-lg border border-border bg-card p-3 md:grid-cols-[88px_1fr_auto]">
+                          <div className="space-y-2">
+                            <div className="h-24 w-22 overflow-hidden rounded-lg border border-border bg-secondary">
+                              {preview ? (
+                                <img src={preview} alt={variant.color_name || `Variant ${index + 1}`} className="h-full w-full object-cover" />
+                              ) : (
+                                <div className="flex h-full items-center justify-center text-[10px] text-muted-foreground">No image</div>
+                              )}
                             </div>
-                          ))}
-                          {imagePreviews.map((src, i) => (
-                            <div key={`nt-${i}`} className="space-y-1">
-                              <div className="aspect-square rounded overflow-hidden border border-border">
-                                <img src={src} alt="" className="w-full h-full object-cover" />
-                              </div>
-                              <select
-                                value={imageColorTags[existingImages.length + i] || ""}
-                                onChange={(e) => setImageColorTags({ ...imageColorTags, [existingImages.length + i]: e.target.value })}
-                                className="w-full text-[9px] px-1 py-0.5 border border-border rounded bg-card text-foreground"
-                              >
-                                <option value="">ট্যাগ নেই</option>
-                                {form.color_variants.map((c) => <option key={c} value={c}>{c}</option>)}
-                              </select>
+                            <label className="block">
+                              <span className="sr-only">Upload variant image</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="w-full text-[10px] text-muted-foreground"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0] || null;
+                                  setProductVariants((prev) => prev.map((item, itemIndex) => itemIndex === index ? { ...item, image_file: file } : item));
+                                }}
+                              />
+                            </label>
+                          </div>
+
+                          <div className="grid gap-3 md:grid-cols-2">
+                            <div>
+                              <label className="mb-1 block text-[10px] font-medium text-muted-foreground">Color name</label>
+                              <input
+                                value={variant.color_name}
+                                onChange={(e) => setProductVariants((prev) => prev.map((item, itemIndex) => itemIndex === index ? { ...item, color_name: e.target.value } : item))}
+                                placeholder="যেমন: Black, Koliza"
+                                className={inputCls}
+                              />
                             </div>
-                          ))}
+                            <div>
+                              <label className="mb-1 block text-[10px] font-medium text-muted-foreground">Stock quantity</label>
+                              <input
+                                value={variant.stock_quantity}
+                                onChange={(e) => setProductVariants((prev) => prev.map((item, itemIndex) => itemIndex === index ? { ...item, stock_quantity: e.target.value } : item))}
+                                placeholder="0"
+                                type="number"
+                                className={inputCls}
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-1 block text-[10px] font-medium text-muted-foreground">Variant price (optional)</label>
+                              <input
+                                value={variant.price}
+                                onChange={(e) => setProductVariants((prev) => prev.map((item, itemIndex) => itemIndex === index ? { ...item, price: e.target.value } : item))}
+                                placeholder="Blank = base price"
+                                type="number"
+                                className={inputCls}
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-1 block text-[10px] font-medium text-muted-foreground">Existing image URL</label>
+                              <input
+                                value={variant.image_url}
+                                onChange={(e) => setProductVariants((prev) => prev.map((item, itemIndex) => itemIndex === index ? { ...item, image_url: e.target.value } : item))}
+                                placeholder="Uploaded image will override"
+                                className={inputCls}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex justify-end md:justify-start">
+                            <button
+                              type="button"
+                              onClick={() => setProductVariants((prev) => prev.filter((_, itemIndex) => itemIndex !== index))}
+                              className="h-10 w-10 rounded-lg border border-destructive/20 bg-destructive/10 text-destructive"
+                            >
+                              <X size={16} className="mx-auto" />
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      );
+                    })}
                   </div>
                 )}
               </div>

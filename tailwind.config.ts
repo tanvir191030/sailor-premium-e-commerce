@@ -66,6 +66,12 @@ export default {
         charcoal: "hsl(var(--charcoal))",
         cream: "hsl(var(--cream))",
         sand: "hsl(var(--sand))",
+        variant: {
+          DEFAULT: "hsl(var(--variant-accent))",
+          foreground: "hsl(var(--variant-accent-foreground))",
+          soft: "hsl(var(--variant-accent-soft))",
+          border: "hsl(var(--variant-accent-border))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
