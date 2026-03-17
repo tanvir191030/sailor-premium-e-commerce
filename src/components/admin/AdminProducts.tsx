@@ -18,6 +18,15 @@ const getTemplateType = (template: string): "clothing" | "hijab" | "shoes" | "no
   return "none";
 };
 
+type ProductVariantForm = {
+  id?: string;
+  color_name: string;
+  image_url: string;
+  image_file?: File | null;
+  stock_quantity: string;
+  price: string;
+};
+
 const AdminProducts = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
