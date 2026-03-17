@@ -178,11 +178,13 @@ const Checkout = () => {
       // 0. Stock validation
       for (const item of items) {
         if (item.variantId) {
-          const { data: variantData, error: variantError } = await supabase
-            .from("product_variants" as any)
+          const { data: rawVariantData, error: variantError } = await (supabase as any)
+            .from("product_variants")
             .select("color_name, stock_quantity")
             .eq("id", item.variantId)
             .maybeSingle();
+
+          const variantData = rawVariantData as { color_name: string; stock_quantity: number } | null;
 
           if (variantError || !variantData) {
             toast({ title: "Variant not found", description: `Could not verify stock for ${item.name}`, variant: "destructive" });
