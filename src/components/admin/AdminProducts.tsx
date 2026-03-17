@@ -77,7 +77,6 @@ const AdminProducts = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      // Determine primary image: first existing or first new upload
       let image_url: string | undefined = existingImages.length > 0 ? existingImages[0] : undefined;
       if (imageFiles.length > 0 && existingImages.length === 0) {
         image_url = await uploadProductImage(imageFiles[0]);
@@ -91,7 +90,7 @@ const AdminProducts = () => {
       if (subType === "clothing" || subType === "hijab" || subType === "shoes") {
         const variants: any = {};
         Object.entries(form.sizes).forEach(([size, data]: any) => {
-        if (data && data.stock && parseInt(data.stock) > 0) {
+          if (data && data.stock && parseInt(data.stock) > 0) {
             const variant: any = {
               stock: parseInt(data.stock),
               measurements: data.measurements || {}
@@ -108,7 +107,30 @@ const AdminProducts = () => {
         }
       }
 
-      const finalStock = finalSizes ? totalStockFromSizes : (parseInt(form.stock) || 0);
+      const cleanedVariants = productVariants
+        .map((variant, index) => ({
+          ...variant,
+          color_name: variant.color_name.trim(),
+          stock_quantity: String(parseInt(variant.stock_quantity || "0", 10) || 0),
+          price: variant.price?.trim() || "",
+          sort_order: index,
+        }))
+        .filter((variant) => variant.color_name || variant.image_url || variant.image_file);
+
+      const colorNames = cleanedVariants.map((variant) => variant.color_name.toLowerCase());
+      if (new Set(colorNames).size !== colorNames.length) {
+        throw new Error("Each variant color name must be unique.");
+      }
+      if (cleanedVariants.some((variant) => !variant.color_name)) {
+        throw new Error("Each variant must have a color name.");
+      }
+
+      const variantTotalStock = cleanedVariants.reduce((sum, variant) => sum + (parseInt(variant.stock_quantity, 10) || 0), 0);
+      const finalStock = cleanedVariants.length > 0
+        ? variantTotalStock
+        : finalSizes
+          ? totalStockFromSizes
+          : (parseInt(form.stock) || 0);
 
       const salePrice = parseFloat(form.price);
       const mrp = form.original_price ? parseFloat(form.original_price) : null;
@@ -124,22 +146,21 @@ const AdminProducts = () => {
         sizes: finalSizes,
         description: form.description || null,
         is_featured: form.is_featured,
-        color_variants: form.enableColors && form.color_variants.length > 0 ? form.color_variants : [],
+        color_variants: cleanedVariants.map((variant) => variant.color_name),
         ...(image_url && { image_url }),
       };
+
       let productId = editingId;
       if (editingId) {
         const { error } = await supabase.from("products").update(payload).eq("id", editingId);
         if (error) throw error;
 
-        // Remove old product_images and re-insert existing (non-primary) + new with color tags
         await supabase.from("product_images").delete().eq("product_id", editingId);
         let sortIdx = 1;
         for (let eIdx = 1; eIdx < existingImages.length; eIdx++) {
           const colorTag = imageColorTags[eIdx] || null;
           await supabase.from("product_images").insert({ product_id: editingId, image_url: existingImages[eIdx], sort_order: sortIdx++, is_primary: false, color_name: colorTag });
         }
-        // Upload new files (skip first if it became primary)
         const startIdx = existingImages.length === 0 ? 1 : 0;
         for (let i = startIdx; i < imageFiles.length; i++) {
           const url = await uploadProductImage(imageFiles[i]);
@@ -151,7 +172,6 @@ const AdminProducts = () => {
         const { data, error } = await supabase.from("products").insert(payload).select("id").single();
         if (error) throw error;
         productId = data.id;
-        // Upload additional images for new product with color tags
         if (imageFiles.length > 1 && productId) {
           for (let i = 1; i < imageFiles.length; i++) {
             const url = await uploadProductImage(imageFiles[i]);
@@ -159,6 +179,35 @@ const AdminProducts = () => {
             await supabase.from("product_images").insert({ product_id: productId, image_url: url, sort_order: i, is_primary: false, color_name: colorTag });
           }
         }
+      }
+
+      if (!productId) throw new Error("Unable to save product variants.");
+
+      await supabase.from("product_variants" as any).delete().eq("product_id", productId);
+
+      if (cleanedVariants.length > 0) {
+        const variantRows = [];
+        for (const [index, variant] of cleanedVariants.entries()) {
+          let variantImageUrl = variant.image_url;
+          if (variant.image_file) {
+            variantImageUrl = await uploadProductImage(variant.image_file);
+          }
+          if (!variantImageUrl) {
+            throw new Error(`Variant image is required for ${variant.color_name || `variant ${index + 1}`}.`);
+          }
+
+          variantRows.push({
+            product_id: productId,
+            color_name: variant.color_name,
+            image_url: variantImageUrl,
+            stock_quantity: parseInt(variant.stock_quantity, 10) || 0,
+            price: variant.price ? parseFloat(variant.price) : null,
+            sort_order: index,
+          });
+        }
+
+        const { error: variantError } = await supabase.from("product_variants" as any).insert(variantRows as any);
+        if (variantError) throw variantError;
       }
     },
     onSuccess: () => {
