@@ -273,6 +273,22 @@ const Checkout = () => {
 
       // 3. Subtract stock from products manually
       for (const item of items) {
+        if (item.variantId) {
+          const { data: currentVariant } = await supabase
+            .from("product_variants" as any)
+            .select("stock_quantity")
+            .eq("id", item.variantId)
+            .maybeSingle();
+
+          if (currentVariant) {
+            await supabase
+              .from("product_variants" as any)
+              .update({ stock_quantity: Math.max(0, Number(currentVariant.stock_quantity) - item.quantity) } as any)
+              .eq("id", item.variantId);
+          }
+          continue;
+        }
+
         const updateId = item.productId || item.id.split('-')[0];
         const { data: currentProduct } = await supabase
           .from("products")
