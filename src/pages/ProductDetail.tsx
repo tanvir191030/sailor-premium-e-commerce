@@ -397,16 +397,25 @@ const ProductDetail = () => {
 
   const colorVariants: string[] = Array.isArray((product as any).color_variants) ? (product as any).color_variants : [];
   const hasColors = colorVariants.length > 0;
+  const selectedVariant = productVariants.find((variant: any) => variant.id === selectedVariantId) || null;
+  const activeVariantPrice = selectedVariant && Number(selectedVariant.price) > 0 ? Number(selectedVariant.price) : activePrice;
 
   const cartPayload = cartPayloadBase
-    ? { ...cartPayloadBase, price: activePrice, size: selectedSize || undefined, color: selectedColor || undefined }
+    ? {
+        ...cartPayloadBase,
+        price: activeVariantPrice,
+        size: selectedSize || undefined,
+        color: selectedVariant?.color_name || selectedColor || undefined,
+        variantId: selectedVariant?.id || undefined,
+        image: selectedVariant?.image_url || galleryImages[0] || "/placeholder.svg",
+      }
     : null;
 
   const hasSpecificSizes = !isNoSizeProduct && sizeVariants && Object.keys(sizeVariants).length > 0;
 
   const displaySizes = hasSpecificSizes ? Object.keys(sizeVariants) : (sizeType === "shoes" ? SHOE_SIZES : SIZES);
 
-  const isInStock = product.stock > 0;
+  const isInStock = selectedVariant ? Number(selectedVariant.stock_quantity) > 0 : product.stock > 0;
   const wishlisted = isWishlisted(product.id);
   const currentImage = galleryImages[activeIndex] || "/placeholder.svg";
 
