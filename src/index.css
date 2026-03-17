@@ -61,6 +61,10 @@
     --charcoal: 0 0% 15%;
     --cream: 40 33% 96%;
     --sand: 35 25% 88%;
+    --variant-accent: 329 84% 54%;
+    --variant-accent-foreground: 0 0% 100%;
+    --variant-accent-soft: 329 100% 97%;
+    --variant-accent-border: 329 62% 84%;
 
     /* Sidebar */
     --sidebar-background: 0 0% 98%;
