@@ -256,8 +256,9 @@ const AdminProducts = () => {
   });
 
   const resetForm = () => {
-    setForm({ name: "", name_bn: "", price: "", original_price: "", category: "", brand: "", stock: "", description: "", description_bn: "", is_featured: false, sub_category: "", sizes: {}, color_variants: [], enableColors: false });
-    setImageFiles([]); setImagePreviews([]); setExistingImages([]); setEditingId(null); setShowForm(false); setImageColorTags({}); setNewColorInput("");
+    setForm({ name: "", name_bn: "", price: "", original_price: "", category: "", brand: "", stock: "", description: "", description_bn: "", is_featured: false, sub_category: "", sizes: {} });
+    setProductVariants([]);
+    setImageFiles([]); setImagePreviews([]); setExistingImages([]); setEditingId(null); setShowForm(false); setImageColorTags({});
   };
 
   const startEdit = async (p: any) => {
