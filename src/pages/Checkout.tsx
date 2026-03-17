@@ -177,7 +177,28 @@ const Checkout = () => {
     try {
       // 0. Stock validation
       for (const item of items) {
-        // Fallback to item.id if productId is mistakenly undefined (unlikely due to updated CartContext)
+        if (item.variantId) {
+          const { data: variantData, error: variantError } = await supabase
+            .from("product_variants" as any)
+            .select("color_name, stock_quantity")
+            .eq("id", item.variantId)
+            .maybeSingle();
+
+          if (variantError || !variantData) {
+            toast({ title: "Variant not found", description: `Could not verify stock for ${item.name}`, variant: "destructive" });
+            setSubmitting(false);
+            return;
+          }
+
+          if (Number(variantData.stock_quantity) < item.quantity) {
+            toast({ title: "Inadequate Stock", description: `Only ${variantData.stock_quantity} left for ${item.name} (${variantData.color_name}).`, variant: "destructive" });
+            setSubmitting(false);
+            return;
+          }
+
+          continue;
+        }
+
         const checkId = item.productId || item.id.split('-')[0];
         const { data: productData, error: productError } = await supabase
           .from("products")
