@@ -78,6 +78,20 @@ const ProductDetail = () => {
     enabled: !!id,
   });
 
+  const { data: productVariants = [] } = useQuery({
+    queryKey: ["product-variants", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("product_variants" as any)
+        .select("id, color_name, image_url, stock_quantity, price, sort_order")
+        .eq("product_id", id!)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!id,
+  });
+
   // Check if current visitor has a delivered order containing this product (by phone match)
   const [canReview, setCanReview] = useState<boolean | null>(null);
   const [buyerPhone, setBuyerPhone] = useState("");
