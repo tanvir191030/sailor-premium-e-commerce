@@ -12,7 +12,6 @@ const BuyNowDrawer = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Auto-close on /checkout
   useEffect(() => {
     if (location.pathname === "/checkout") setIsBuyNowOpen(false);
   }, [location.pathname, setIsBuyNowOpen]);
@@ -72,7 +71,13 @@ const BuyNowDrawer = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate text-foreground">{item.name}</p>
-                      <p className="text-xs text-muted-foreground mb-2">{[formatPrice(item.price), item.size, item.color].filter(Boolean).join(" · ")}</p>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        {[
+                          formatPrice(item.price),
+                          item.size ? `Size: ${item.size}` : null,
+                          item.color ? `Color: ${item.color}` : null,
+                        ].filter(Boolean).join(" · ")}
+                      </p>
                       <div className="flex items-center gap-2">
                         <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="w-6 h-6 flex items-center justify-center bg-secondary rounded text-foreground">
                           <Minus size={12} />

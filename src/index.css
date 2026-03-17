@@ -97,6 +97,10 @@
     --border: 0 0% 20%;
     --input: 0 0% 20%;
     --ring: 0 0% 80%;
+    --variant-accent: 329 72% 62%;
+    --variant-accent-foreground: 0 0% 100%;
+    --variant-accent-soft: 329 32% 18%;
+    --variant-accent-border: 329 34% 34%;
     --sidebar-background: 0 0% 8%;
     --sidebar-foreground: 0 0% 90%;
     --sidebar-primary: 0 0% 98%;

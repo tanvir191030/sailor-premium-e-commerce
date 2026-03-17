@@ -9,7 +9,6 @@ const CartDrawer = () => {
   const { items, isOpen, setIsOpen, removeItem, updateQuantity, totalItems, totalPrice } = useCart();
   const location = useLocation();
 
-  // Auto-close on /checkout
   useEffect(() => {
     if (location.pathname === "/checkout") setIsOpen(false);
   }, [location.pathname, setIsOpen]);
@@ -18,7 +17,6 @@ const CartDrawer = () => {
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -27,7 +25,6 @@ const CartDrawer = () => {
             onClick={() => setIsOpen(false)}
           />
 
-          {/* Drawer */}
           <motion.div
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
@@ -35,20 +32,16 @@ const CartDrawer = () => {
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
             className="fixed top-0 right-0 bottom-0 z-[100] w-full max-w-md bg-background shadow-2xl flex flex-col"
           >
-            {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-border">
               <div className="flex items-center gap-2">
                 <ShoppingBag size={20} />
-                <span className="font-medium text-sm uppercase tracking-wider">
-                  Cart ({totalItems})
-                </span>
+                <span className="font-medium text-sm uppercase tracking-wider">Cart ({totalItems})</span>
               </div>
               <button onClick={() => setIsOpen(false)} className="p-2 hover:opacity-70 transition-opacity">
                 <X size={20} />
               </button>
             </div>
 
-            {/* Items */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {items.length === 0 ? (
                 <div className="text-center py-16">
@@ -64,7 +57,11 @@ const CartDrawer = () => {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{item.name}</p>
                       <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
-                        {[item.category, item.size, item.color].filter(Boolean).join(" · ")}
+                        {[
+                          item.category,
+                          item.size ? `Size: ${item.size}` : null,
+                          item.color ? `Color: ${item.color}` : null,
+                        ].filter(Boolean).join(" · ")}
                       </p>
                       <p className="font-medium text-sm">{formatPrice(item.price)}</p>
                       <div className="flex items-center gap-2 mt-2">
@@ -83,10 +80,7 @@ const CartDrawer = () => {
                         </button>
                       </div>
                     </div>
-                    <button
-                      onClick={() => removeItem(item.id)}
-                      className="p-1 self-start hover:opacity-70 transition-opacity"
-                    >
+                    <button onClick={() => removeItem(item.id)} className="p-1 self-start hover:opacity-70 transition-opacity">
                       <X size={14} />
                     </button>
                   </div>
@@ -94,18 +88,13 @@ const CartDrawer = () => {
               )}
             </div>
 
-            {/* Footer */}
             {items.length > 0 && (
               <div className="border-t border-border p-4 space-y-3">
                 <div className="flex justify-between font-medium">
                   <span>Total</span>
                   <span>{formatPrice(totalPrice)}</span>
                 </div>
-                <Link
-                  to="/checkout"
-                  onClick={() => setIsOpen(false)}
-                  className="btn-primary block text-center w-full"
-                >
+                <Link to="/checkout" onClick={() => setIsOpen(false)} className="btn-primary block text-center w-full">
                   Checkout
                 </Link>
               </div>
