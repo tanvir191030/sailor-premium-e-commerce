@@ -638,86 +638,106 @@ const AdminProducts = () => {
                 {t("admin.featured")}
               </label>
 
-              {/* Color Variants Toggle & Management */}
-              <div className="space-y-3 border border-border p-3 rounded-lg bg-secondary/10">
-                <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
-                  <input type="checkbox" checked={form.enableColors} onChange={(e) => setForm({ ...form, enableColors: e.target.checked })} className="rounded" />
-                  🎨 কালার ভ্যারিয়েন্ট সক্রিয় করুন
-                </label>
-                {form.enableColors && (
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap gap-1.5">
-                      {form.color_variants.map((c, i) => (
-                        <span key={i} className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded text-xs font-medium">
-                          {c}
-                          <button type="button" onClick={() => setForm({ ...form, color_variants: form.color_variants.filter((_, idx) => idx !== i) })} className="hover:text-destructive">×</button>
-                        </span>
-                      ))}
-                    </div>
-                    <div className="flex gap-2">
-                      <input
-                        value={newColorInput}
-                        onChange={(e) => setNewColorInput(e.target.value)}
-                        placeholder="রঙের নাম (যেমন: Red, Blue)"
-                        className={`${inputCls} flex-1`}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            const v = newColorInput.trim();
-                            if (v && !form.color_variants.includes(v)) {
-                              setForm({ ...form, color_variants: [...form.color_variants, v] });
-                              setNewColorInput("");
-                            }
-                          }
-                        }}
-                      />
-                      <button type="button" onClick={() => {
-                        const v = newColorInput.trim();
-                        if (v && !form.color_variants.includes(v)) {
-                          setForm({ ...form, color_variants: [...form.color_variants, v] });
-                          setNewColorInput("");
-                        }
-                      }} className="px-3 py-1 bg-primary text-primary-foreground rounded-lg text-xs font-medium">
-                        <Plus size={14} />
-                      </button>
-                    </div>
-                    {form.color_variants.length > 0 && (existingImages.length > 0 || imagePreviews.length > 0) && (
-                      <div className="pt-2 border-t border-border/50">
-                        <p className="text-[10px] text-muted-foreground mb-2">ছবিতে রঙ ট্যাগ করুন (ঐচ্ছিক):</p>
-                        <div className="grid grid-cols-5 gap-2">
-                          {existingImages.map((url, i) => (
-                            <div key={`et-${i}`} className="space-y-1">
-                              <div className="aspect-square rounded overflow-hidden border border-border">
-                                <img src={url} alt="" className="w-full h-full object-cover" />
-                              </div>
-                              <select
-                                value={imageColorTags[i] || ""}
-                                onChange={(e) => setImageColorTags({ ...imageColorTags, [i]: e.target.value })}
-                                className="w-full text-[9px] px-1 py-0.5 border border-border rounded bg-card text-foreground"
-                              >
-                                <option value="">ট্যাগ নেই</option>
-                                {form.color_variants.map((c) => <option key={c} value={c}>{c}</option>)}
-                              </select>
+              <div className="space-y-3 border border-variant-border bg-variant-soft p-3 rounded-lg">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Color Variants</p>
+                    <p className="text-xs text-muted-foreground">প্রতি ভ্যারিয়েন্টে আলাদা ছবি, রঙের নাম, স্টক এবং প্রয়োজনে আলাদা দাম দিন।</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setProductVariants((prev) => [...prev, { color_name: "", image_url: "", image_file: null, stock_quantity: "0", price: "" }])}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-variant text-variant-foreground text-xs font-semibold"
+                  >
+                    <Plus size={14} /> Add Variant
+                  </button>
+                </div>
+
+                {productVariants.length === 0 ? (
+                  <div className="rounded-lg border border-dashed border-variant-border bg-card px-4 py-5 text-xs text-muted-foreground">
+                    এখনো কোনো color variant যোগ করা হয়নি।
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {productVariants.map((variant, index) => {
+                      const preview = variant.image_file ? URL.createObjectURL(variant.image_file) : variant.image_url;
+                      return (
+                        <div key={`${variant.id || "new"}-${index}`} className="grid gap-3 rounded-lg border border-border bg-card p-3 md:grid-cols-[88px_1fr_auto]">
+                          <div className="space-y-2">
+                            <div className="h-24 w-22 overflow-hidden rounded-lg border border-border bg-secondary">
+                              {preview ? (
+                                <img src={preview} alt={variant.color_name || `Variant ${index + 1}`} className="h-full w-full object-cover" />
+                              ) : (
+                                <div className="flex h-full items-center justify-center text-[10px] text-muted-foreground">No image</div>
+                              )}
                             </div>
-                          ))}
-                          {imagePreviews.map((src, i) => (
-                            <div key={`nt-${i}`} className="space-y-1">
-                              <div className="aspect-square rounded overflow-hidden border border-border">
-                                <img src={src} alt="" className="w-full h-full object-cover" />
-                              </div>
-                              <select
-                                value={imageColorTags[existingImages.length + i] || ""}
-                                onChange={(e) => setImageColorTags({ ...imageColorTags, [existingImages.length + i]: e.target.value })}
-                                className="w-full text-[9px] px-1 py-0.5 border border-border rounded bg-card text-foreground"
-                              >
-                                <option value="">ট্যাগ নেই</option>
-                                {form.color_variants.map((c) => <option key={c} value={c}>{c}</option>)}
-                              </select>
+                            <label className="block">
+                              <span className="sr-only">Upload variant image</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="w-full text-[10px] text-muted-foreground"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0] || null;
+                                  setProductVariants((prev) => prev.map((item, itemIndex) => itemIndex === index ? { ...item, image_file: file } : item));
+                                }}
+                              />
+                            </label>
+                          </div>
+
+                          <div className="grid gap-3 md:grid-cols-2">
+                            <div>
+                              <label className="mb-1 block text-[10px] font-medium text-muted-foreground">Color name</label>
+                              <input
+                                value={variant.color_name}
+                                onChange={(e) => setProductVariants((prev) => prev.map((item, itemIndex) => itemIndex === index ? { ...item, color_name: e.target.value } : item))}
+                                placeholder="যেমন: Black, Koliza"
+                                className={inputCls}
+                              />
                             </div>
-                          ))}
+                            <div>
+                              <label className="mb-1 block text-[10px] font-medium text-muted-foreground">Stock quantity</label>
+                              <input
+                                value={variant.stock_quantity}
+                                onChange={(e) => setProductVariants((prev) => prev.map((item, itemIndex) => itemIndex === index ? { ...item, stock_quantity: e.target.value } : item))}
+                                placeholder="0"
+                                type="number"
+                                className={inputCls}
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-1 block text-[10px] font-medium text-muted-foreground">Variant price (optional)</label>
+                              <input
+                                value={variant.price}
+                                onChange={(e) => setProductVariants((prev) => prev.map((item, itemIndex) => itemIndex === index ? { ...item, price: e.target.value } : item))}
+                                placeholder="Blank = base price"
+                                type="number"
+                                className={inputCls}
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-1 block text-[10px] font-medium text-muted-foreground">Existing image URL</label>
+                              <input
+                                value={variant.image_url}
+                                onChange={(e) => setProductVariants((prev) => prev.map((item, itemIndex) => itemIndex === index ? { ...item, image_url: e.target.value } : item))}
+                                placeholder="Uploaded image will override"
+                                className={inputCls}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex justify-end md:justify-start">
+                            <button
+                              type="button"
+                              onClick={() => setProductVariants((prev) => prev.filter((_, itemIndex) => itemIndex !== index))}
+                              className="h-10 w-10 rounded-lg border border-destructive/20 bg-destructive/10 text-destructive"
+                            >
+                              <X size={16} className="mx-auto" />
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      );
+                    })}
                   </div>
                 )}
               </div>
