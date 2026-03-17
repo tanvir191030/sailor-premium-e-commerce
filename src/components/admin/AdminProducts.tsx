@@ -353,6 +353,7 @@ const AdminProducts = () => {
   const subType = selectedSubCat ? getTemplateType(selectedSubCat.measurement_template) : "none";
   const selectedCatObj = categories.find((c: any) => c.name === form.category);
   const availableSubCats = selectedCatObj ? allSubCategories.filter((s: any) => s.category_id === selectedCatObj.id) : [];
+  const variantTotalStock = productVariants.reduce((sum, variant) => sum + (parseInt(variant.stock_quantity || "0", 10) || 0), 0);
 
   const renderSizeFields = () => {
     if (!form.sub_category || subType === "none") {
