@@ -277,7 +277,6 @@ const AdminProducts = () => {
       }
     }
 
-    // Fetch existing images
     const urls: string[] = [];
     if (p.image_url) urls.push(p.image_url);
     const { data: extraImages } = await supabase
@@ -291,8 +290,6 @@ const AdminProducts = () => {
       });
     }
 
-    const colorVars = Array.isArray(p.color_variants) ? p.color_variants : [];
-
     setForm({
       name: p.name, name_bn: p.name_bn || "", price: String(p.price),
       original_price: p.original_price ? String(p.original_price) : "",
@@ -300,11 +297,8 @@ const AdminProducts = () => {
       description: p.description || "", description_bn: p.description_bn || "",
       is_featured: p.is_featured || false,
       sizes: initialSizes,
-      color_variants: colorVars,
-      enableColors: colorVars.length > 0,
     });
 
-    // Build color tags from existing images
     const { data: allImgs } = await supabase
       .from("product_images")
       .select("image_url, color_name")
@@ -314,14 +308,38 @@ const AdminProducts = () => {
     if (allImgs) {
       allImgs.forEach((img: any) => {
         if (img.color_name) {
-          // Find index in urls array
           const idx = urls.indexOf(img.image_url);
           if (idx >= 0) tags[idx] = img.color_name;
         }
       });
     }
 
-    setEditingId(p.id); setImageFiles([]); setImagePreviews([]); setExistingImages(urls); setShowForm(true); setImageColorTags(tags); setNewColorInput("");
+    const { data: variants } = await supabase
+      .from("product_variants" as any)
+      .select("id, color_name, image_url, stock_quantity, price")
+      .eq("product_id", p.id)
+      .order("sort_order");
+
+    const fallbackColors = Array.isArray(p.color_variants) ? p.color_variants : [];
+    const fallbackVariants: ProductVariantForm[] = fallbackColors.map((color: string) => ({
+      color_name: color,
+      image_url: allImgs?.find((img: any) => img.color_name === color)?.image_url || "",
+      stock_quantity: "0",
+      price: "",
+    }));
+
+    setProductVariants(
+      (variants && variants.length > 0 ? variants : fallbackVariants).map((variant: any) => ({
+        id: variant.id,
+        color_name: variant.color_name || "",
+        image_url: variant.image_url || "",
+        stock_quantity: String(variant.stock_quantity ?? 0),
+        price: variant.price ? String(variant.price) : "",
+        image_file: null,
+      }))
+    );
+
+    setEditingId(p.id); setImageFiles([]); setImagePreviews([]); setExistingImages(urls); setShowForm(true); setImageColorTags(tags);
   };
 
   const filtered = products.filter((p: any) =>
