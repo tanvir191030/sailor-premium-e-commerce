@@ -37,14 +37,12 @@ const AdminProducts = () => {
     stock: "", description: "", description_bn: "", is_featured: false,
     sub_category: "",
     sizes: {} as any,
-    color_variants: [] as string[],
-    enableColors: false,
   });
+  const [productVariants, setProductVariants] = useState<ProductVariantForm[]>([]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]); // URLs from DB
   const [imageColorTags, setImageColorTags] = useState<Record<number, string>>({}); // index -> color name
-  const [newColorInput, setNewColorInput] = useState("");
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { data: allSubCategories = [] } = useSubCategories();
