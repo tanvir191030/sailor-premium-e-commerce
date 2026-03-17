@@ -626,36 +626,54 @@ const ProductDetail = () => {
                   )}
                 </div>
 
-                {/* Color Variants — only shown if admin added colors */}
-                {hasColors && (
-                  <div>
-                    <span className="text-sm font-medium mb-2.5 block">
-                      রঙ বেছে নিন
-                      {selectedColor && <span className="text-muted-foreground font-normal ml-2">— {selectedColor}</span>}
-                    </span>
-                    <div className="flex gap-2 flex-wrap">
-                      {colorVariants.map((color: string) => {
-                        const isActive = selectedColor === color;
-                        const colorImg = colorImageMap[color];
+                {hasColors && productVariants.length > 0 && (
+                  <div className="space-y-3">
+                    <div>
+                      <span className="text-sm font-medium mb-1 block">রঙ বেছে নিন</span>
+                      <p className="text-xs text-muted-foreground">পছন্দের রঙের কার্ড থেকে সরাসরি কার্টে যোগ করুন।</p>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {productVariants.map((variant: any) => {
+                        const variantPrice = Number(variant.price) > 0 ? Number(variant.price) : activePrice;
+                        const variantOutOfStock = Number(variant.stock_quantity) <= 0;
+                        const isActive = selectedVariantId === variant.id;
                         return (
-                          <button
-                            key={color}
-                            onClick={() => {
-                              setSelectedColor(isActive ? null : color);
-                              // Switch to the color-tagged image if available
-                              if (!isActive && colorImg) {
-                                const idx = galleryImages.indexOf(colorImg);
-                                if (idx >= 0) setActiveIndex(idx);
-                              }
-                            }}
-                            className={`min-w-[44px] min-h-[44px] px-3 py-2 text-sm font-medium border transition-colors ${
-                              isActive
-                                ? "bg-primary text-primary-foreground border-primary"
-                                : "bg-background text-foreground border-border hover:border-primary"
-                            }`}
-                          >
-                            {color}
-                          </button>
+                          <div key={variant.id} className={`border bg-card p-3 transition-all ${isActive ? "border-variant bg-variant-soft" : "border-border hover:border-variant-border"}`}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedVariantId(variant.id);
+                                setSelectedColor(variant.color_name);
+                                const colorImg = variant.image_url || colorImageMap[variant.color_name];
+                                if (colorImg) {
+                                  const idx = galleryImages.indexOf(colorImg);
+                                  if (idx >= 0) setActiveIndex(idx);
+                                }
+                              }}
+                              className="block w-full text-left"
+                            >
+                              <div className="aspect-[4/5] overflow-hidden bg-secondary mb-3">
+                                <img src={variant.image_url || "/placeholder.svg"} alt={variant.color_name} className="w-full h-full object-cover" />
+                              </div>
+                              <div className="flex items-start justify-between gap-2 mb-3">
+                                <div>
+                                  <p className="font-semibold text-foreground">{variant.color_name}</p>
+                                  <p className="text-xs text-muted-foreground">{formatPrice(variantPrice)}</p>
+                                </div>
+                                <span className={`text-[10px] px-2 py-1 border ${variantOutOfStock ? "border-destructive/20 text-destructive bg-destructive/10" : "border-variant-border text-variant bg-variant-soft"}`}>
+                                  {variantOutOfStock ? "Out of Stock" : `${variant.stock_quantity} pcs`}
+                                </span>
+                              </div>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleAddToCart(variant)}
+                              disabled={variantOutOfStock}
+                              className={`w-full h-11 text-xs font-bold tracking-[0.12em] transition-colors ${variantOutOfStock ? "bg-secondary text-muted-foreground cursor-not-allowed" : "bg-variant text-variant-foreground hover:opacity-90"}`}
+                            >
+                              {variantOutOfStock ? "OUT OF STOCK" : "ADD TO CART"}
+                            </button>
+                          </div>
                         );
                       })}
                     </div>
