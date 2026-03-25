@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { CreditCard, Save, Truck, Gift, ShieldCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -18,8 +18,14 @@ const AdminPayments = () => {
   const { toast } = useToast();
 
   const { data: settings = [] } = useQuery({
-    queryKey: ["site-settings"],
-    queryFn: async () => { const { data, error } = await supabase.from("site_settings").select("*"); if (error) throw error; return data; },
+    queryKey: ["admin-payment-settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("site_settings")
+        .select("id, key, value, updated_at");
+      if (error) throw error;
+      return data;
+    },
   });
 
   const getSetting = (key: string) => settings.find((s: any) => s.key === key)?.value || "";
@@ -32,7 +38,6 @@ const AdminPayments = () => {
   const [orderMode, setOrderMode] = useState("cod");
   const [initialized, setInitialized] = useState(false);
 
-  // Sync from server only on initial load
   useEffect(() => {
     if (settings.length > 0 && !initialized) {
       setBkashNumber(getSetting("bkash_number"));
@@ -60,17 +65,26 @@ const AdminPayments = () => {
     try {
       for (const { key, value } of pairs) {
         const existing = settings.find((s: any) => s.key === key);
-        if (existing) {
-          const { error } = await supabase.from("site_settings").update({ value, updated_at: new Date().toISOString() }).eq("id", existing.id);
+        if (existing?.id) {
+          const { error } = await supabase
+            .from("site_settings")
+            .update({ value, updated_at: new Date().toISOString() })
+            .eq("id", existing.id);
           if (error) throw error;
         } else {
           const { error } = await supabase.from("site_settings").insert({ key, value });
           if (error) throw error;
         }
       }
-      await queryClient.invalidateQueries({ queryKey: ["site-settings"] });
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["admin-payment-settings"] }),
+        queryClient.invalidateQueries({ queryKey: ["site-settings"] }),
+      ]);
+
       toast({ title: "সেটিংস সেভ হয়েছে ✅" });
-    } catch (err) {
+    } catch (error) {
+      console.error("Failed to save payment settings", error);
       toast({ title: "সেভ করতে সমস্যা হয়েছে", variant: "destructive" });
     }
   };
