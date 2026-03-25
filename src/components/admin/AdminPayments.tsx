@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { CreditCard, Save, Truck, Gift, ShieldCheck } from "lucide-react";
@@ -30,31 +30,49 @@ const AdminPayments = () => {
   const [shippingCost, setShippingCost] = useState("");
   const [freeDelivery, setFreeDelivery] = useState(false);
   const [orderMode, setOrderMode] = useState("cod");
-  const [loaded, setLoaded] = useState(false);
+  const [initialized, setInitialized] = useState(false);
 
-  if (settings.length > 0 && !loaded) {
-    setBkashNumber(getSetting("bkash_number")); setNagadNumber(getSetting("nagad_number")); setRocketNumber(getSetting("rocket_number"));
-    setDefaultCourier(getSetting("default_courier")); setShippingCost(getSetting("shipping_cost"));
-    setFreeDelivery(getSetting("free_delivery") === "true");
-    setOrderMode(getSetting("order_confirmation_mode") || "cod");
-    setLoaded(true);
-  }
+  // Sync from server only on initial load
+  useEffect(() => {
+    if (settings.length > 0 && !initialized) {
+      setBkashNumber(getSetting("bkash_number"));
+      setNagadNumber(getSetting("nagad_number"));
+      setRocketNumber(getSetting("rocket_number"));
+      setDefaultCourier(getSetting("default_courier"));
+      setShippingCost(getSetting("shipping_cost"));
+      setFreeDelivery(getSetting("free_delivery") === "true");
+      setOrderMode(getSetting("order_confirmation_mode") || "cod");
+      setInitialized(true);
+    }
+  }, [settings, initialized]);
 
-  const saveSetting = useMutation({
-    mutationFn: async ({ key, value }: { key: string; value: string }) => {
-      const existing = settings.find((s: any) => s.key === key);
-      if (existing) { const { error } = await supabase.from("site_settings").update({ value, updated_at: new Date().toISOString() }).eq("id", existing.id); if (error) throw error; }
-      else { const { error } = await supabase.from("site_settings").insert({ key, value }); if (error) throw error; }
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["site-settings"] }),
-  });
+  const handleSave = async () => {
+    const pairs = [
+      { key: "bkash_number", value: bkashNumber },
+      { key: "nagad_number", value: nagadNumber },
+      { key: "rocket_number", value: rocketNumber },
+      { key: "default_courier", value: defaultCourier },
+      { key: "shipping_cost", value: shippingCost },
+      { key: "free_delivery", value: freeDelivery ? "true" : "false" },
+      { key: "order_confirmation_mode", value: orderMode },
+    ];
 
-  const handleSave = () => {
-    saveSetting.mutate({ key: "bkash_number", value: bkashNumber }); saveSetting.mutate({ key: "nagad_number", value: nagadNumber });
-    saveSetting.mutate({ key: "rocket_number", value: rocketNumber }); saveSetting.mutate({ key: "default_courier", value: defaultCourier });
-    saveSetting.mutate({ key: "shipping_cost", value: shippingCost }); saveSetting.mutate({ key: "free_delivery", value: freeDelivery ? "true" : "false" });
-    saveSetting.mutate({ key: "order_confirmation_mode", value: orderMode });
-    toast({ title: "সেটিংস সেভ হয়েছে" });
+    try {
+      for (const { key, value } of pairs) {
+        const existing = settings.find((s: any) => s.key === key);
+        if (existing) {
+          const { error } = await supabase.from("site_settings").update({ value, updated_at: new Date().toISOString() }).eq("id", existing.id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.from("site_settings").insert({ key, value });
+          if (error) throw error;
+        }
+      }
+      await queryClient.invalidateQueries({ queryKey: ["site-settings"] });
+      toast({ title: "সেটিংস সেভ হয়েছে ✅" });
+    } catch (err) {
+      toast({ title: "সেভ করতে সমস্যা হয়েছে", variant: "destructive" });
+    }
   };
 
   const gateways = [
